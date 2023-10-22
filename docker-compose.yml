@@ -1,0 +1,64 @@
+version: "3.7"
+
+services:
+  onyx_db:
+    #image: mongo:5.0.2
+    image: mongo
+    restart: always
+    container_name: onyx_db
+    ports:
+      - 4004:27017
+    networks:
+      onyx_net:
+        ipv4_address: "172.23.0.2"
+    volumes:
+      - onyx_vol:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: *
+      MONGO_INITDB_ROOT_PASSWORD: *
+    command: mongod --auth
+  onyx_api:
+    build: ./onyx-api/
+    restart: always
+    container_name: onyx_api
+    env_file:
+      - .env-api
+    ports:
+      - 4444:4444
+      - 4488:4488
+    networks:
+      onyx_net:
+        ipv4_address: "172.23.0.3"
+    depends_on:
+      - onyx_db
+  onyx_client:
+    build: ./onyx-client/
+    restart: always
+    container_name: onyx_client
+    env_file:
+      - .env.local
+    ports:
+      - 4040:4040
+    networks:
+      onyx_net:
+        ipv4_address: "172.23.0.4"
+    depends_on:
+      - onyx_api
+
+volumes:
+  outer_vol:
+    name: outer_volume
+  onyx_vol:
+    name: onyx_volume
+
+networks:
+  outer_net:
+    name: outer_network
+    driver: bridge
+  onyx_net:
+    name: onyx_network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.23.0.0/16"
+          #gateway: "172.23.0.1"
