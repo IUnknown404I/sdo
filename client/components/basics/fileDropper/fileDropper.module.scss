@@ -1,0 +1,145 @@
+@use './styles/utility';
+
+.container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1rem;
+    width: 100%;
+
+    .dropper {
+        padding-top: 10%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        align-content: center;
+        justify-content: center;
+        text-align: center;
+        width: min(800px, 90vw);
+        height: min(500px, 60vh);
+        font-size: 1rem;
+        cursor: pointer;
+        background-color: rgba(lightblue, 0.35);
+        border: 2px outset utility.$mrg_lightblue;
+        font-weight: lighter;
+        transition: all 0.35s ease-out;
+        overflow: hidden;
+        z-index: 1;
+
+        .dropZone {
+            position: absolute;
+            inset: 0 0 0 0;
+            z-index: 5;
+        }
+
+        * {
+            user-select: none;
+            z-index: 2;
+        }
+
+        > p {
+            transition: all 0.25s ease-out;
+            opacity: 1;
+        }
+        > span {
+            transform: translateY(-400%);
+            transition: all 0.25s ease-out;
+            opacity: 0;
+        }
+
+        svg {
+            transition: all 0.3s ease-out;
+            font-size: 2.5rem;
+            color: utility.$mrg_lightblue;
+        }
+
+        &:before,
+        &:after {
+            content: '';
+            position: absolute;
+            right: unset;
+            bottom: unset;
+            top: 20px;
+            left: 20px;
+            width: 20%;
+            height: 20%;
+            border-left: 1px solid utility.$mrg_lightblue;
+            border-top: 1px solid utility.$mrg_lightblue;
+            transition: all 0.35s ease-out;
+        }
+
+        &:after {
+            top: unset;
+            left: unset;
+            bottom: 20px;
+            right: 20px;
+            transform: rotate(180deg);
+        }
+
+        &:hover {
+            background-color: rgba(dodgerblue, 0.85);
+
+            > p,
+            > span {
+                svg {
+                    color: white;
+                }
+
+                color: white;
+            }
+
+            &:before,
+            &:after {
+                border-color: white;
+            }
+        }
+    }
+
+    .dragover {
+        background-color: rgba(mediumseagreen, 0.35);
+        border-color: forestgreen;
+
+        > p {
+            transform: translateY(200%);
+            opacity: 0;
+        }
+
+        > span {
+            transform: translateY(-100%);
+            opacity: 1;
+
+            svg {
+                color: darkgreen;
+            }
+        }
+
+        &:before {
+            left: 80%;
+            border-color: forestgreen;
+            transform: rotate(90deg) translateX(15%);
+        }
+
+        &:after {
+            right: 80%;
+            border-color: forestgreen;
+            transform: rotate(270deg) translateX(15%);
+        }
+
+        &.wrong {
+            background-color: rgba(#ff6868, 0.65);
+            border-color: darkred;
+
+            &:before {
+                border-color: darkred;
+            }
+
+            &:after {
+                border-color: darkred;
+            }
+        }
+    }
+}

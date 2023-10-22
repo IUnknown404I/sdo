@@ -1,0 +1,24 @@
+{
+	"extends": [
+		"stylelint-config-standard",
+		"stylelint-order-config-standard",
+		"stylelint-prettier/recommended"
+	],
+	"plugins": ["stylelint-order"],
+	"rules": {
+		"indentation": ["tab"],
+		"selector-class-pattern": "^.*$",
+		"font-family-no-missing-generic-family-keyword": [
+			true,
+			{
+				"ignoreFontFamilies": ["HeliosCondC"]
+			}
+		],
+		"declaration-block-no-redundant-longhand-properties": [
+			true,
+			{
+				"ignoreShorthands": ["/grid/"]
+			}
+		]
+	}
+}

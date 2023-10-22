@@ -1,0 +1,97 @@
+@use './utility';
+@use './keyframes';
+@use './overrides';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: rgb(4, 23, 54);
+    cursor: pointer;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgb(0, 111, 186);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+}
+
+@font-face {
+  font-family: HeliosCondC;
+  src: url('/fonts/HeliosCond/helioscondc.ttf');
+  src: url('/fonts/HeliosCond/HeliosCond.woff');
+  src: url('/fonts/HeliosCond/HeliosCond.woff');
+
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body,
+main {
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: rgb(4, 23, 54);
+    cursor: pointer;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgb(0, 111, 186);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  @media screen and (max-width: 1450px) {
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+  }
+}
+
+body {
+  font-family: var(--default-font-stack);
+
+  a {
+    text-decoration: none;
+  }
+}
+
+:root {
+  --default-font-stack: 'HeliosCondC', system, sans-serif;
+}
+
+.light-mode {
+  ::-moz-selection {
+    background-color: rgba(#006fba, 0.25);
+    color: #006fba !important;
+  }
+
+  ::selection {
+    background-color: rgba(#006fba, 0.25);
+    color: #034c7c !important;
+  }
+}
+
+.dark-mode {
+  ::-moz-selection {
+    background-color: rgba(#006fba, 0.5);
+    color: #11eeee !important;
+  }
+
+  ::selection {
+    background-color: rgba(#006fba, 0.5);
+    color: #11eeee !important;
+  }
+}

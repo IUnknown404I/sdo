@@ -1,0 +1,67 @@
+$mrg_gray: #edf1f5;
+$mrg_lightblue: #006fba;
+$mrg_darkblue: #041736;
+
+@mixin textShadow($size1: 0, $size2: 1px, $size3: 1px, $color: rgba(darkblue, 0.3)) {
+    color: $color;
+    text-shadow: $size1 $size2 $size3 rgba($color, 0.5);
+}
+
+@mixin backgroundH2TextCustom($left, $top, $font-size) {
+    position: relative;
+    height: 0;
+    user-select: none;
+    z-index: 0 !important;
+    left: $left;
+    top: $top;
+    font-size: $font-size;
+    color: rgba(lightgray, 0.5);
+    text-shadow: none;
+}
+
+@mixin animatedUnderline($padding-bottom: 1px) {
+    padding-bottom: $padding-bottom;
+    text-decoration: none;
+    background-image: linear-gradient($mrg_lightblue, $mrg_lightblue);
+    background-image: -moz-linear-gradient($mrg_lightblue, $mrg_lightblue);
+    background-position: 0% 100%;
+    background-repeat: no-repeat;
+    background-size: 0% 2px;
+
+    &:hover {
+        background-size: 100% 2px;
+    }
+}
+
+@mixin animatedSideLeftLine($padding-left: 1px) {
+    padding-left: $padding-left;
+    text-decoration: none;
+    background-image: linear-gradient($mrg_lightblue, $mrg_lightblue);
+    background-image: -moz-linear-gradient($mrg_lightblue, $mrg_lightblue);
+    background-position: 100% 0%;
+    background-repeat: no-repeat;
+    background-size: 2px 0%;
+
+    &:hover {
+        background-size: 2px 100%;
+    }
+}
+
+@mixin centeredFlex() {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+@mixin leftAligment() {
+    justify-content: flex-start;
+    align-items: flex-start;
+    text-align: left;
+}
+
+@mixin rightAligment() {
+    justify-content: flex-end;
+    align-items: flex-end;
+    text-align: right;
+}

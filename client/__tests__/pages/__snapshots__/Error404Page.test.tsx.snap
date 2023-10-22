@@ -1,0 +1,289 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Error404Page -> correct renders 1`] = `
+<div>
+  <main>
+    <div
+      class="MuiBox-root css-hxsz7m"
+    >
+      <div
+        class="MuiBox-root css-1o75y23"
+      >
+        <div
+          class="MuiBox-root css-ncb1l7"
+        >
+          <img
+            alt="НОЦ Инжиниринг"
+            data-nimg="fill"
+            decoding="async"
+            fetchpriority="high"
+            src="/logo/logo-gmi.svg"
+            style="position: absolute; height: 100%; width: 100%; left: 0px; top: 0px; right: 0px; bottom: 0px; object-fit: contain; color: transparent;"
+          />
+        </div>
+        <div
+          class="MuiBox-root css-0"
+        >
+          <div
+            class="MuiSpeedDial-root MuiSpeedDial-directionDown css-4lgsr-MuiSpeedDial-root"
+            role="presentation"
+          >
+            <button
+              aria-controls="SupportContacts-actions"
+              aria-expanded="false"
+              aria-haspopup="true"
+              aria-label="Support Contacts"
+              class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiSpeedDial-fab css-7dv1rb-MuiButtonBase-root-MuiFab-root-MuiSpeedDial-fab"
+              style="transform: none; webkit-transition: transform 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms; transition: transform 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
+              tabindex="0"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-i4bv87-MuiSvgIcon-root"
+                data-testid="SupportAgentIcon"
+                focusable="false"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M21 12.22C21 6.73 16.74 3 12 3c-4.69 0-9 3.65-9 9.28-.6.34-1 .98-1 1.72v2c0 1.1.9 2 2 2h1v-6.1c0-3.87 3.13-7 7-7s7 3.13 7 7V19h-8v2h8c1.1 0 2-.9 2-2v-1.22c.59-.31 1-.92 1-1.64v-2.3c0-.7-.41-1.31-1-1.62z"
+                />
+                <circle
+                  cx="9"
+                  cy="13"
+                  r="1"
+                />
+                <circle
+                  cx="15"
+                  cy="13"
+                  r="1"
+                />
+                <path
+                  d="M18 11.03C17.52 8.18 15.04 6 12.05 6c-3.03 0-6.29 2.51-6.03 6.45 2.47-1.01 4.33-3.21 4.86-5.89 1.31 2.63 4 4.44 7.12 4.47z"
+                />
+              </svg>
+              <span
+                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+              />
+            </button>
+            <div
+              aria-orientation="vertical"
+              class="MuiSpeedDial-actions MuiSpeedDial-actionsClosed css-1s28u9o-MuiSpeedDial-actions"
+              id="SupportContacts-actions"
+              role="menu"
+            >
+              <button
+                aria-label="Написать письмо"
+                class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeSmall MuiFab-default MuiFab-root MuiFab-circular MuiFab-sizeSmall MuiFab-default MuiSpeedDialAction-fab MuiSpeedDialAction-fabClosed css-13srr63-MuiButtonBase-root-MuiFab-root-MuiSpeedDialAction-fab"
+                data-mui-internal-clone-element="true"
+                role="menuitem"
+                style="transition-delay: 60ms;"
+                tabindex="-1"
+                type="button"
+              >
+                <a
+                  aria-label="send email"
+                  href="mailto:u2610272@mrgeng.ru"
+                  rel="noreffer"
+                  target="_blank"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-i4bv87-MuiSvgIcon-root"
+                    data-testid="AlternateEmailIcon"
+                    focusable="false"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
+                    />
+                  </svg>
+                </a>
+                <span
+                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                />
+              </button>
+              <button
+                aria-label="Позвонить на телефон"
+                class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeSmall MuiFab-default MuiFab-root MuiFab-circular MuiFab-sizeSmall MuiFab-default MuiSpeedDialAction-fab MuiSpeedDialAction-fabClosed css-13srr63-MuiButtonBase-root-MuiFab-root-MuiSpeedDialAction-fab"
+                data-mui-internal-clone-element="true"
+                role="menuitem"
+                style="transition-delay: 30ms;"
+                tabindex="-1"
+                type="button"
+              >
+                <a
+                  aria-label="phone call"
+                  href="tel:+78122003162"
+                  rel="noreffer"
+                  target="_blank"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-i4bv87-MuiSvgIcon-root"
+                    data-testid="PhoneForwardedRoundedIcon"
+                    focusable="false"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="m22.65 5.65-3.79-3.79c-.32-.32-.86-.1-.86.35V4h-3.5c-.28 0-.5.22-.5.5v3c0 .28.22.5.5.5H18v1.79c0 .45.54.67.85.35l3.79-3.79c.2-.19.2-.51.01-.7zm-3.42 9.61-2.54-.29c-.61-.07-1.21.14-1.64.57l-1.84 1.84c-2.83-1.44-5.15-3.75-6.59-6.59l1.85-1.85c.43-.43.64-1.03.57-1.64l-.29-2.52c-.12-1.01-.97-1.77-1.99-1.77H5.03c-1.13 0-2.07.94-2 2.07.53 8.54 7.36 15.36 15.89 15.89 1.13.07 2.07-.87 2.07-2v-1.73c.01-1.01-.75-1.86-1.76-1.98z"
+                    />
+                  </svg>
+                </a>
+                <span
+                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                />
+              </button>
+            </div>
+          </div>
+          <button
+            aria-label="Тёмная тема"
+            class="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit MuiIconButton-sizeMedium css-h2j12n-MuiButtonBase-root-MuiIconButton-root"
+            data-mui-internal-clone-element="true"
+            tabindex="0"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-i4bv87-MuiSvgIcon-root"
+              data-testid="NightsStayOutlinedIcon"
+              focusable="false"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M19.78 17.51c-2.47 0-6.57-1.33-8.68-5.43-2.33-4.51-.5-8.48.53-10.07C6.27 2.2 1.98 6.59 1.98 12c0 .14.02.28.02.42.61-.26 1.28-.42 1.98-.42 0-3.09 1.73-5.77 4.3-7.1-.5 2.19-.54 5.04 1.04 8.1 1.57 3.04 4.18 4.95 6.8 5.86-1.23.74-2.65 1.15-4.13 1.15-.5 0-1-.05-1.48-.14-.37.7-.94 1.27-1.64 1.64.98.32 2.03.5 3.11.5 3.5 0 6.58-1.8 8.37-4.52-.17.01-.37.02-.57.02z"
+              />
+              <path
+                d="M7 16h-.18C6.4 14.84 5.3 14 4 14c-1.66 0-3 1.34-3 3s1.34 3 3 3h3c1.1 0 2-.9 2-2s-.9-2-2-2z"
+              />
+            </svg>
+            <span
+              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+            />
+          </button>
+          <a
+            href="https://umcmrg.ru"
+            target="_blank"
+          >
+            <button
+              aria-label="Перейти на сайт НОЦ"
+              class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1xq2oc3-MuiButtonBase-root-MuiIconButton-root"
+              data-mui-internal-clone-element="true"
+              tabindex="0"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1kjwmoo-MuiSvgIcon-root"
+                data-testid="LanguageRoundedIcon"
+                focusable="false"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"
+                />
+              </svg>
+              <span
+                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+              />
+            </button>
+          </a>
+        </div>
+      </div>
+      <div
+        class="MuiBox-root css-zycx86"
+      >
+        <div
+          class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation5 css-k1i4sl-MuiPaper-root"
+        >
+          <div
+            class="MuiBox-root css-1snj1at"
+          >
+            <h1
+              class="MuiTypography-root MuiTypography-h1 MuiTypography-alignLeft css-au9ah3-MuiTypography-root"
+            >
+              СТРАНИЦА НЕ НАЙДЕНА
+            </h1>
+            <img
+              alt="Not found error icon"
+              height="75"
+              src="/icons/lock_error.svg"
+              width="75"
+            />
+          </div>
+          <hr
+            class="MuiDivider-root MuiDivider-fullWidth css-1mmxp0v-MuiDivider-root"
+          />
+          <p
+            class="MuiTypography-root MuiTypography-body2 MuiTypography-alignLeft css-1gmybjs-MuiTypography-root"
+          >
+            Веб-ресурс по запрошенному адресу не найден!
+          </p>
+          <p
+            class="MuiTypography-root MuiTypography-body1 MuiTypography-alignLeft css-185ybi3-MuiTypography-root"
+          >
+            Вы перешли на адрес 
+            <strong>
+              системы дистанционного обучения
+            </strong>
+             научно-образовательного центра ООО "Газпром межрегионгаз инжиниринг".
+          </p>
+          <hr
+            class="MuiDivider-root MuiDivider-fullWidth css-1d7f473-MuiDivider-root"
+          />
+          <p
+            class="MuiTypography-root MuiTypography-body1 MuiTypography-alignLeft css-185ybi3-MuiTypography-root"
+          >
+            <strong>
+              Войдите в систему
+            </strong>
+             для поиска искомой информации или вернитесь назад по истории просмотра.
+          </p>
+        </div>
+        <div
+          class="MuiBox-root css-tig9ab"
+        >
+          <div
+            class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation5 css-183y8vo-MuiPaper-root"
+          >
+            <button
+              class="MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-fullWidth MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-fullWidth css-14c72w9-MuiButtonBase-root-MuiButton-root"
+              tabindex="0"
+              type="button"
+            >
+              Назад
+              <span
+                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+              />
+            </button>
+          </div>
+          <div
+            class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation5 css-1ywh7rh-MuiPaper-root"
+          >
+            <a
+              href="/"
+              style="display: block;"
+            >
+              <button
+                class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-fullWidth MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-fullWidth css-15yonkk-MuiButtonBase-root-MuiButton-root"
+                tabindex="0"
+                type="button"
+              >
+                Личный кабинет
+                <span
+                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                />
+              </button>
+            </a>
+          </div>
+        </div>
+      </div>
+      <h3
+        class="MuiTypography-root MuiTypography-h3 MuiTypography-alignCenter css-7jg05v-MuiTypography-root"
+      >
+        © Система дистанционного образования научно-образовательного центра ООО «Газпром межрегионгаз инжиниринг», 2023
+      </h3>
+    </div>
+  </main>
+</div>
+`;

@@ -1,0 +1,17 @@
+public
+node_modules
+.next
+.idea
+.git
+.env
+.env.local
+.gitignore
+.css
+.svg
+.scss
+.md
+Dockerfile
+docker-compose.yml
+package.json
+package-lock.json
+yarn.lock
