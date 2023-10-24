@@ -11,6 +11,7 @@ import AuthProtectWrapper from '../layout/AuthProtectWrapper';
 import CommunicationWrapper from '../layout/CommunicationWrapper';
 import MetaWrapper from '../layout/MetaWrapper';
 import { store } from '../redux/store';
+import '../styles/ckeditor5.css';
 import '../styles/globals.scss';
 import ToggleColorMode from '../theme/Theme';
 import * as gtag from '../utils/gtag';
@@ -54,12 +55,13 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
 						strategy='afterInteractive'
 						dangerouslySetInnerHTML={{
 							__html: `
-            			window.dataLayer = window.dataLayer || [];
-            			function gtag(){dataLayer.push(arguments);}
-            			gtag('js', new Date());
-            			gtag('config', '${gtag.GA_TRACKING_ID}', {
-              			page_path: window.location.pathname,
-            			});`,
+            					window.dataLayer = window.dataLayer || [];
+            					function gtag(){dataLayer.push(arguments);}
+            					gtag('js', new Date());
+            					gtag('config', '${gtag.GA_TRACKING_ID}', {
+              					page_path: window.location.pathname,
+            					});
+							`,
 						}}
 					/>
 				</>

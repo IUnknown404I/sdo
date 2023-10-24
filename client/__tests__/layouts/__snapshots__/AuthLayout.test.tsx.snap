@@ -18,7 +18,6 @@ exports[`AuthLayout -> correct renders 1`] = `
             alt="НОЦ Инжиниринг"
             data-nimg="fill"
             decoding="async"
-            fetchpriority="high"
             src="/logo/logo-gmi.svg"
             style="position: absolute; height: 100%; width: 100%; left: 0px; top: 0px; right: 0px; bottom: 0px; object-fit: contain; color: transparent;"
           />

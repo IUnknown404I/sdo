@@ -25,7 +25,6 @@ export interface ChatI {
 	online: number;
 }
 
-type xxxxx = Pick<ChatI, 'messages'>['messages'];
 export const getChatEndpoints = (
 	build: EndpointBuilder<
 		BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError, {} & RetryOptions, {}>,

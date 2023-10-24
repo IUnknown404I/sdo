@@ -3,6 +3,7 @@ import { getAuthEndpoints } from './endpoints/authEnd';
 import { getChatEndpoints } from './endpoints/chatEnd';
 import { getUserEndpoints } from './endpoints/userEnd';
 import { baseQueryWithRetry } from './utils/apiUtils';
+import { getCoursesEndpoints } from './endpoints/coursesEnd';
 
 export const TAG_TYPES_RTK = [
 	// auth
@@ -13,6 +14,8 @@ export const TAG_TYPES_RTK = [
 	...['Avatars'],
 	// messanger
 	...['Chats', 'Friends', 'UsersData'],
+	// courses
+	...['Courses', 'CourseData'],
 ] as const;
 export type TagTypesRTK = (typeof TAG_TYPES_RTK)[number];
 
@@ -25,6 +28,7 @@ export const rtkApi = createApi({
 			...getAuthEndpoints(build),
 			...getUserEndpoints(build),
 			...getChatEndpoints(build),
+			...getCoursesEndpoints(build),
 		};
 	},
 });

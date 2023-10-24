@@ -50,9 +50,6 @@ module.exports = {
 	},
 
 	typescript: {
-		// !! WARN !!
-		// Dangerously allow production builds to successfully complete even if
-		// your project has type errors.
 		ignoreBuildErrors: true,
 	},
 };
@@ -71,6 +68,8 @@ function getAllRewrites() {
 		// { source: '', destination: '' },
 	];
 	const nextFilesRewites = [
+		{ source: '/cache-sw.js', destination: '/sw/cache-sw.js' },
+
 		{ source: '/favicon', destination: '/favicon.ico' },
 		{ source: '/static/favicon', destination: '/favicon.ico' },
 		{ source: '/static/favicon.ico', destination: '/favicon.ico' },

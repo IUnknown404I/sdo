@@ -1,6 +1,6 @@
 import { Box, ClickAwayListener, SxProps, Theme, Tooltip, Typography, Zoom } from '@mui/material';
 import Link from 'next/link';
-import React, { ElementType, HTMLAttributeAnchorTarget, ReactNode } from 'react';
+import React, { AriaAttributes, ElementType, HTMLAttributeAnchorTarget, ReactNode } from 'react';
 
 /**
  * @IUnknown404I Returns corporate link component. Can be restyled and wrapped by tooltip or wrapped by box wrapper according props attributes.
@@ -18,6 +18,7 @@ export const OnyxTypography = (props: OnyxTypographyI) => {
 	let component = (
 		<Typography
 			id={props.id}
+			{...props.ariaProps}
 			component={props.component || (props.boxWrapper ? 'div' : 'p')}
 			color={props.tpColor || (props.lkHref ? 'primary' : undefined)}
 			fontSize={props.tpSize}
@@ -94,6 +95,7 @@ export const OnyxTypography = (props: OnyxTypographyI) => {
 
 	return props.boxWrapper ? (
 		<Box
+			{...props.ariaProps}
 			width={props.boxWidth || '100%'}
 			sx={{
 				...props.sx,
@@ -117,6 +119,7 @@ export const OnyxTypography = (props: OnyxTypographyI) => {
 
 export interface OnyxTypographyI {
 	id?: string;
+	ariaProps?: AriaAttributes;
 	component?: ElementType<any>;
 	children?: ReactNode | ReactNode[];
 	text?: string;

@@ -10,6 +10,7 @@ import {
 	twoOnyxDatesDifference,
 } from './date-utils';
 import logapp from './logapp';
+import { copyTextToClipboard } from './utilityFunctions';
 
 describe('Logapp -> ', () => {
 	console = {
@@ -94,5 +95,9 @@ describe('Utilities ->', () => {
 	test('# twoOnyxDatesDifference:', () => {
 		expect(twoOnyxDatesDifference('30.11.2023 17:51.29', '30.11.2023 17:51.29')).toBe(0);
 		expect(twoOnyxDatesDifference('31.11.2023 17:51.29', '30.11.2023 17:51.29')).not.toBe(0);
+	});
+
+	test('# copy text to the clipboard', () => {
+		expect(copyTextToClipboard('').then(data => expect(data).toBeUndefined()));
 	});
 });

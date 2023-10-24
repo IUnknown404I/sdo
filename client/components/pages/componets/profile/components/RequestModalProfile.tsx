@@ -28,6 +28,15 @@ interface PasswordModalProfileI {
 	emailField?: boolean;
 }
 
+/**
+ * @IUnknown404I Provides Modals for changing protected profile-properties like email or password.
+ * @param props as object:
+ * - state as boolean Modal state;
+ * - setState as Dispatch for Modal state changing events;
+ * - callback as async Function with { password: string; email?: string } payload-object passed;
+ * - emailField (optional) for email-Request modal pane mode.
+ * @returns a ReactNode as Modal pane contained all according async logic.
+ */
 const RequestModalProfile = (props: PasswordModalProfileI) => {
 	const userEmail = useTypedSelector(store => store.user.email);
 	const { Loader, state: loadingState, setState: setLoadingState } = useLoading({ iconVariant: true });
@@ -87,7 +96,13 @@ const RequestModalProfile = (props: PasswordModalProfileI) => {
 	}, [modalState]);
 
 	return (
-		<OnyxAlertModal state={props.state} setState={props.setState} title='Подтвердите действие' hideFooter>
+		<OnyxAlertModal
+			state={props.state}
+			setState={props.setState}
+			title='Подтвердите действие'
+			hideFooter
+			sx={{ maxWidth: 'min(98%, 600px)' }}
+		>
 			<form
 				name={props.emailField ? 'email-change-form' : 'password-change-form'}
 				onSubmit={formik.handleSubmit}

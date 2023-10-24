@@ -3,7 +3,7 @@
 exports[`LoginForm -> correct renders 1`] = `
 <div>
   <div
-    class="MuiBox-root css-a365kd"
+    class="MuiBox-root css-1xmam07"
   >
     <div
       class="MuiBox-root css-xoaw21"
@@ -63,12 +63,12 @@ exports[`LoginForm -> correct renders 1`] = `
                     aria-label="Использовать почту"
                     class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-i4bv87-MuiSvgIcon-root"
                     data-mui-internal-clone-element="true"
-                    data-testid="AlternateEmailRoundedIcon"
+                    data-testid="AccountCircleRoundedIcon"
                     focusable="false"
                     viewBox="0 0 24 24"
                   >
                     <path
-                      d="M12.72 2.03C6.63 1.6 1.6 6.63 2.03 12.72 2.39 18.01 7.01 22 12.31 22H16c.55 0 1-.45 1-1s-.45-1-1-1h-3.67c-3.73 0-7.15-2.42-8.08-6.03-1.49-5.8 3.91-11.21 9.71-9.71C17.58 5.18 20 8.6 20 12.33v1.1c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57v-1.25c0-2.51-1.78-4.77-4.26-5.12-3.4-.49-6.27 2.45-5.66 5.87.34 1.91 1.83 3.49 3.72 3.94 1.84.43 3.59-.16 4.74-1.33.89 1.22 2.67 1.86 4.3 1.21 1.34-.53 2.16-1.9 2.16-3.34v-1.09c0-5.31-3.99-9.93-9.28-10.29zM12 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"
                     />
                   </svg>
                   <span
@@ -187,7 +187,7 @@ exports[`LoginForm -> correct renders 1`] = `
                 Запомнить меня
               </p>
             </label>
-            <div
+            <span
               aria-label="Восстановить доступ"
               class=""
               data-mui-internal-clone-element="true"
@@ -195,18 +195,16 @@ exports[`LoginForm -> correct renders 1`] = `
               <a
                 href="/recovery"
               >
-                 
                 <p
-                  class="MuiTypography-root MuiTypography-body2 MuiTypography-alignRight css-1fobvis-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body2 MuiTypography-alignRight css-vssuxv-MuiTypography-root"
                 >
                   Забыли пароль?
                 </p>
-                 
               </a>
-            </div>
+            </span>
           </div>
           <button
-            class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-fullWidth MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-fullWidth css-mcbokb-MuiButtonBase-root-MuiButton-root"
+            class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-fullWidth MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-fullWidth css-p7oec8-MuiButtonBase-root-MuiButton-root"
             tabindex="0"
             type="submit"
           >
@@ -238,23 +236,33 @@ exports[`LoginForm -> correct renders 1`] = `
             class="MuiDivider-root MuiDivider-fullWidth css-9mgopn-MuiDivider-root"
           />
           <div
-            class="MuiBox-root css-asvefe"
+            class="MuiBox-root css-fv2zs6"
           >
             <div
-              aria-label="Регистрация"
-              class=""
-              data-mui-internal-clone-element="true"
+              class="MuiBox-root css-9elqfl"
+            >
+              <div
+                aria-label="Показать справку"
+                class="MuiTypography-root MuiTypography-body2 MuiTypography-alignLeft css-1vb8bex-MuiTypography-root"
+                data-mui-internal-clone-element="true"
+              >
+                Аккаунт заблокирован?
+              </div>
+            </div>
+            <div
+              class="MuiBox-root css-134wu7r"
             >
               <a
+                aria-label="Регистрация"
+                class=""
+                data-mui-internal-clone-element="true"
                 href="/registration"
               >
-                 
-                <p
-                  class="MuiTypography-root MuiTypography-body2 MuiTypography-alignRight css-1y0zz0f-MuiTypography-root"
+                <div
+                  class="MuiTypography-root MuiTypography-body2 MuiTypography-alignRight css-nccj0v-MuiTypography-root"
                 >
                   Ещё нет аккаунта?
-                </p>
-                 
+                </div>
               </a>
             </div>
           </div>

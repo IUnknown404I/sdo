@@ -3,8 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { NotValidDataError } from 'errors/NotValidDataError';
 import { existsSync, lstatSync, mkdir, mkdirSync, unlink } from 'fs';
 import { Model } from 'mongoose';
-import { isProductionMode } from 'utils/utilityFunctions';
-import { Course, CoursesDocument } from './courses.schema';
+import { Course, CourseI, CoursePrivatePartI, CoursePublicPartI, CoursesDocument } from './courses.schema';
 import StreamZip = require('node-stream-zip');
 
 const SCROM_MIME = {
@@ -31,6 +30,16 @@ const SCROM_MIME = {
 	zip: 'application/zip',
 } as const;
 const SCROM_DIR_PATH = 'public/scorm/packages/' as const;
+
+export const COURSE_FULL_PROJECTION: { [key: string]: 1 | 0 } = { _id: 0, access: 0 };
+export const COURSE_PUBLIC_PROJECTION: { [key: string]: 1 | 0 } = { icon: 1, main: 1, cid: 1 };
+export const COURSE_PRIVATE_PROJECTION: { [key: string]: 1 | 0 } = {
+	status: 1,
+	sections: 1,
+	lectures: 1,
+	documents: 1,
+	scorms: 1,
+};
 
 @Injectable()
 export class CoursesService {
@@ -143,7 +152,7 @@ export class CoursesService {
 				for (const entry of Object.values(await zip.entries())) {
 					// check only first layer
 					if (!!entry.name.split('/')[1]) break;
-					
+
 					// check for the right (equal) naming rules
 					if (
 						entry.name.replace('/', '') === archiveName.slice(0, archiveName.indexOf('.')) &&
@@ -228,16 +237,29 @@ export class CoursesService {
 		return Array.from(new Set(allCategories).values());
 	}
 
-	async getCoursesList() {
+	async getCoursesList(): Promise<CoursePublicPartI[]> {
 		return await this.coursesModel.find(
 			{ $or: [{ status: true }, { status: undefined }] },
-			{ _id: 0, cid: 1, icon: 1, main: 1 },
+			COURSE_PUBLIC_PROJECTION,
 		);
 	}
 
-	async getCourseData(cid: string): Promise<Course> {
+	async getCourseData(cid: string): Promise<CourseI> {
 		if (!cid) throw new NotValidDataError();
-		return await this.coursesModel.findOne({ cid }, { _id: 0 });
+		return await this.coursesModel.findOne({ cid }, COURSE_FULL_PROJECTION);
+	}
+
+	async getCoursePublicData(cid: string): Promise<CoursePublicPartI> {
+		if (!cid) throw new NotValidDataError();
+		return await this.coursesModel.findOne({ cid }, COURSE_PUBLIC_PROJECTION);
+	}
+
+	async getCoursePrivateData(cid: string): Promise<CoursePrivatePartI> {
+		if (!cid) throw new NotValidDataError();
+		return await this.coursesModel.findOne(
+			{ cid },
+			COURSE_PRIVATE_PROJECTION,
+		);
 	}
 
 	async createDir(dirPath: string, async?: boolean, wait?: boolean): Promise<void> {

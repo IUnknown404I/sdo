@@ -66,7 +66,8 @@ export const checkProductionMode = (): boolean => process.env.NEXT_PUBLIC_PRODUC
  * @IUnknown404I funciton for copying text. Uses deprecated browser API as fallback in edge cases.
  * @param text as string to copy.
  */
-export async function copyTextToClipboard(text: string) {
+export async function copyTextToClipboard(text: string): Promise<void | undefined> {
+	if (!text) return;
 	if (!navigator.clipboard) {
 		// deprecated fallback
 		fallbackCopyTextToClipboard(text);
@@ -80,7 +81,8 @@ export async function copyTextToClipboard(text: string) {
  * @IUnknown404I use this function only if navigator.clipboard object isn't avaible.
  * @param text as string to copy.
  */
-function fallbackCopyTextToClipboard(text: string) {
+function fallbackCopyTextToClipboard(text: string): void | undefined {
+	if (!text) return;
 	var textArea = document.createElement('textarea');
 	textArea.value = text;
 	textArea.style.opacity = '0';
@@ -119,4 +121,34 @@ export function scrollDivToBottom(
 			element.current.scrollTo({ top: element.current.scrollHeight });
 		}
 	}, timeout);
+}
+
+/**
+ * @IUnknown404I Basic function to convert any number to Roman number;
+ * @param num as number to be processed;
+ * @returns string as roman number.
+ */
+export function convertToRomanNumeral(num: number): string {
+	let numberToConvert = num;
+	return [
+		{ value: 1000, char: 'M' },
+		{ value: 900, char: 'CM' },
+		{ value: 500, char: 'D' },
+		{ value: 400, char: 'CD' },
+		{ value: 100, char: 'C' },
+		{ value: 90, char: 'XC' },
+		{ value: 50, char: 'L' },
+		{ value: 40, char: 'XL' },
+		{ value: 10, char: 'X' },
+		{ value: 9, char: 'IX' },
+		{ value: 5, char: 'V' },
+		{ value: 4, char: 'IV' },
+		{ value: 1, char: 'I' },
+	].reduce((accum, cur) => {
+		while (numberToConvert / cur.value >= 1) {
+			accum += cur.char;
+			numberToConvert -= cur.value;
+		}
+		return accum;
+	}, '');
 }

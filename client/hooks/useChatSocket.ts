@@ -81,8 +81,9 @@ export function useChatSocket(passedRid?: string): [typeof chatSocket, boolean, 
 		else chatSocket.disconnect();
 
 		return () => {
-			chatSocket.emit('user:pre-disconnect', { username: userData.username || '' });
-			chatSocket.disconnect();
+			// TODO: need to be profiled the pre-disconnect event
+			// chatSocket.emit('user:pre-disconnect', { username: userData.username || '' });
+			// chatSocket.disconnect();
 		};
 	}, [auth]);
 

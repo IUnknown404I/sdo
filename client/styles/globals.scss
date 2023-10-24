@@ -60,12 +60,20 @@ main {
   }
 }
 
-body {
+body,
+div {
   font-family: var(--default-font-stack);
+}
 
-  a {
-    text-decoration: none;
-  }
+body a {
+  text-decoration: none;
+}
+
+img {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  pointer-events: none;
 }
 
 :root {

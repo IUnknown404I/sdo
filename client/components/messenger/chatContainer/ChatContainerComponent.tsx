@@ -101,7 +101,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 				backgroundColor: theme =>
 					props.transparent ? 'transparent' : theme.palette.mode === 'light' ? '#ffffff' : '',
 				display: props.mode !== 'full' ? 'flex' : '',
-				flexDirection: props.mode !== 'full' ? 'row' : '',
+				flexDirection: { xs: 'column', lg: props.mode !== 'full' ? 'row' : '' },
 				alignItems: props.mode !== 'full' ? 'center' : '',
 				justifyContent: props.mode !== 'full' ? 'space-between' : '',
 				gap: props.mode !== 'full' ? '1rem' : '',
@@ -133,7 +133,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 					sx={{
 						width: '100%',
 						paddingRight: props.isFullMode ? 'undefined' : '.5rem',
-						borderRight: props.isFullMode ? undefined : '1px solid lightgrey',
+						borderRight: { xs: 'none', lg: props.isFullMode ? undefined : '1px solid lightgrey' },
 					}}
 				>
 					{props.elevatedHeader != null ? (
@@ -158,17 +158,26 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 											name={currentDialogName}
 											widthAvatar={55}
 											heightAvatar={55}
-											fontSize='1.25rem'
 										/>
 									)}
-								<OnyxTypography tpColor='primary' tpSize='1.25rem' tpWeight='bold' boxWrapper>
+								<OnyxTypography
+									tpColor='primary'
+									tpWeight='bold'
+									boxWrapper
+									sx={{ fontSize: { sx: '1.15rem', lg: '1.25rem' } }}
+								>
 									{currentDialogName || chatData?.name || 'Заголовок диалога'}
 								</OnyxTypography>
 							</Stack>
 						</Paper>
 					) : (
 						!!!props.disableHeader && (
-							<OnyxTypography tpColor='primary' tpSize='1.25rem' tpWeight='bold' boxWrapper>
+							<OnyxTypography
+								tpColor='primary'
+								tpWeight='bold'
+								boxWrapper
+								sx={{ fontSize: { sx: '1.15rem', lg: '1.25rem' } }}
+							>
 								{currentDialogName || chatData?.name || 'Заголовок диалога'}
 							</OnyxTypography>
 						)
@@ -204,7 +213,6 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 							)}
 
 							<Box sx={{ display: 'inline-flex', gap: '.5rem' }}>
-								{}
 								<OnyxTypography
 									tpColor='secondary'
 									tpSize='.85rem'
@@ -242,6 +250,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 						}
 						overflow='hidden'
 						borderRadius='5px'
+						sx={{ display: { xs: props.isFullMode ? 'block' : 'none', sm: 'block' } }}
 					>
 						<DialogContainer
 							chatDomRef={props.chatDomRef}
@@ -282,9 +291,12 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 
 			<Stack
 				width={props.isFullMode ? '100%' : 'fit-content'}
-				direction={props.isFullMode ? 'row' : 'column'}
-				justifyContent='space-between'
 				alignItems={props.isFullMode ? 'flex-end' : 'center'}
+				justifyContent='space-between'
+				sx={{
+					flexDirection: { xs: 'row', lg: props.isFullMode ? 'row' : 'column' },
+					gap: { xs: '1rem', lg: '' },
+				}}
 			>
 				{props.mode !== 'full' && (
 					<Stack
@@ -293,9 +305,14 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 						gap={props.isFullMode ? 2 : 0}
 					>
 						<OnyxTypography
-							tpColor='secondary'
 							tpSize='.85rem'
-							tpAlign={typeof props.participators === 'string' ? 'left' : 'right'}
+							tpColor='secondary'
+							sx={{
+								textAlign: {
+									xs: 'unset',
+									lg: typeof props.participators === 'string' ? 'left' : 'right',
+								},
+							}}
 						>
 							{
 								<>
@@ -321,7 +338,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 				)}
 
 				{props.inputEnable ? (
-					<Stack width='100%' direction='column' alignItems='center' gap={0} overflow='hidden'>
+					<Stack width='100%' direction='column' alignItems='center' overflow='hidden' gap={0}>
 						<Divider sx={{ width: '100%', margin: '.25rem auto 0' }} />
 
 						<Stack

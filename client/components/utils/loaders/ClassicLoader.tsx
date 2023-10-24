@@ -3,6 +3,7 @@ import CircularProgress, { circularProgressClasses } from '@mui/material/Circula
 import { SxProps, Theme } from '@mui/system';
 
 export interface ClassicLoaderI {
+	variant?: 'determinate' | 'indeterminate';
 	iconVariant?: boolean;
 	size?: number;
 	disableShrink?: boolean;
@@ -20,10 +21,16 @@ export interface ClassicLoaderI {
 	};
 }
 
+/**
+ * @IUnknown404I Corporative classic round loader component with many custom options.
+ * @param props
+ * @returns ReactNode component as Loader.
+ */
 const ClassicLoader = (props: ClassicLoaderI): JSX.Element => {
 	return props.iconVariant ? (
 		<CircularProgress
-			variant='indeterminate'
+			value={!!props.variant ? (props.value !== undefined ? props.value : 80) : undefined}
+			variant={props.variant || 'indeterminate'}
 			disableShrink={props.disableShrink === undefined ? true : props.disableShrink}
 			size={props.size || 24}
 			thickness={props.thickness || 8}
@@ -72,11 +79,11 @@ const ClassicLoader = (props: ClassicLoaderI): JSX.Element => {
 				}}
 			/>
 			<CircularProgress
-				variant='indeterminate'
+				variant={props.variant || 'indeterminate'}
 				size={props.size || 24}
 				disableShrink={props.disableShrink === undefined ? true : props.disableShrink}
 				thickness={props.thickness || 4}
-				// value={props.value || 80}
+				value={!!props.variant ? (props.value !== undefined ? props.value : 80) : undefined}
 				sx={{
 					color: props.color
 						? theme => (theme.palette.mode === 'light' ? props.color!.lightTheme : props.color!.darkTheme)

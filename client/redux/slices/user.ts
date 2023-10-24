@@ -18,15 +18,15 @@ export const userSlice = createSlice({
 				(state[attr as keyof AccessTokenPayload] as unknown) = action.payload[attr as keyof AccessTokenPayload];
 			}
 		},
-		clearUserData: state => {
-			state = initialUserState;
-		},
 		personal: (state, action: PayloadAction<UserPersonalT>) => {
 			if (Object.keys(action.payload).length === 0) return;
 			for (const attr in action.payload) {
 				if (state.personal === undefined) state.personal = {};
 				state.personal[attr as keyof UserPersonalT] = action.payload[attr as keyof UserPersonalT];
 			}
+		},
+		clearUserData: state => {
+			state = initialUserState;
 		},
 	},
 });
@@ -70,7 +70,7 @@ export type UserPersonalT = {
 	company?: string;
 	position?: string;
 	tel?: string;
-	avatar?: string
+	avatar?: string;
 };
 
 export type UserMetaInformationI = {
@@ -78,4 +78,4 @@ export type UserMetaInformationI = {
 	contactVisibility: boolean;
 	pushStatus: boolean;
 	prefferedCommunication: 'email' | 'tel' | 'service';
-}
+};

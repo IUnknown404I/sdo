@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 import { rtkApi } from '../../../redux/api';
 import { useTypedSelector } from '../../../redux/hooks';
 import { OnyxTypography } from '../../basics/OnyxTypography';
-import { SidebarBadgeButton } from '../../layout/sidebar/Sidebar';
+import { SidebarBadgeButton } from '../../layout/sidebar/SidebarElements';
 import { MessengerSearchBox, MessengerSidebarTab } from './../BasicComponents';
 import MessengerTabContent from './../MessengerTabContent';
 
@@ -23,6 +23,7 @@ export type DialogType = {
 };
 
 interface MessengerSidebarProps {
+	sideOverride?: 'left' | 'right';
 	detachedDrawer?: boolean;
 	controlled?: {
 		state: boolean;
@@ -38,7 +39,7 @@ const MessengerSidebar = (props: MessengerSidebarProps) => {
 
 	const activeDialogState = useTypedSelector(store => store.messenger.activeDialog);
 	const [tab, setTab] = React.useState<number>(0);
-	const [side, setSide] = React.useState<'left' | 'right'>(lgBreakpoint ? 'left' : 'right');
+	const [side, setSide] = React.useState<'left' | 'right'>(props.sideOverride || lgBreakpoint ? 'left' : 'right');
 	const [dragging, setDragging] = React.useState<boolean>(false);
 	const [sidebarState, setSidebarState] = React.useState<boolean>(false);
 	const [searchChatsValue, setSearchChatsValue] = React.useState<string>('');
@@ -46,6 +47,8 @@ const MessengerSidebar = (props: MessengerSidebarProps) => {
 	const { data: friendsObject } = rtkApi.useFriendsQuery('');
 
 	React.useEffect(() => {
+		if (!!props.sideOverride) return;
+
 		if (!lgBreakpoint && side === 'left') setSide('right');
 		else if (lgBreakpoint && side === 'right') setSide('left');
 	}, [lgBreakpoint]);
@@ -66,11 +69,10 @@ const MessengerSidebar = (props: MessengerSidebarProps) => {
 			)}
 
 			<SwipeableDrawer
-				keepMounted
 				id={drawerID}
 				anchor={side}
 				elevation={4}
-				swipeAreaWidth={50}
+				swipeAreaWidth={lgBreakpoint ? 0 : 50}
 				draggable={lgBreakpoint}
 				open={props.controlled !== undefined ? props.controlled.state : sidebarState}
 				allowSwipeInChildren

@@ -1,15 +1,35 @@
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import MarkUnreadChatAltOutlinedIcon from '@mui/icons-material/MarkUnreadChatAltOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
-import { Divider, Drawer, IconButton, Typography } from '@mui/material';
+import { Divider, Drawer, IconButton, SxProps, Tooltip, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AccountMenu, Footer, LogoGMI, NotificationMenu, Search, Sidebar, SwitchTheme } from '../..';
+import MessengerSidebar from '../../messenger/sidebarComponents/MessengerSidebar';
 
-export const Header = (props: { publicMode?: boolean }) => {
+interface HeaderI {
+	publicMode?: boolean;
+	chatIcon?: boolean;
+	disableRoundMark?: boolean;
+	sx?: SxProps;
+}
+
+/**
+ * @IUnknown404I Header complex component, including basic and mobile versions.
+ * @param props as object:
+ * - sx?: as standart MUI SxProps object;
+ * - publicMode?: boolean = is the current Page only for authorized users -> false; if for public use -> true;
+ * - chatIcon?: boolean = activate the izolated chat instance within the header or not;
+ * - disableRoundMark?: boolean = should or not hide the :before and :after boxes in the left-upper corner of the <main> component which is responsible for the roundless of the box.
+ * @returns an ReactNode element of the <header> element for the App.
+ */
+export const Header = (props: HeaderI) => {
 	const router = useRouter();
 	const [sidebarDrawer, setSidebarDrawer] = useState<boolean>(false);
+	const [messangerState, setMessangerState] = React.useState<boolean>(false);
 
 	return (
 		<Stack
@@ -22,28 +42,32 @@ export const Header = (props: { publicMode?: boolean }) => {
 				height: '100px',
 				position: 'absolute',
 				top: 0,
-				zIndex: 100,
 				bgcolor: 'background.default',
 				color: 'text.primary',
-				'&:before': {
-					content: { md: 'unset', lg: '""' },
-					position: 'absolute',
-					bottom: '-10px',
-					left: '0',
-					backgroundColor: theme => (theme.palette.mode === 'light' ? 'white' : '#0a1929'),
-					width: '10px',
-					height: '10px',
-				},
-				'&:after': {
-					content: { md: 'unset', lg: '""' },
-					position: 'absolute',
-					bottom: '-10px',
-					left: '0',
-					backgroundColor: theme => (theme.palette.mode === 'light' ? '#eceff1' : '#102a43'),
-					width: '10px',
-					height: '10px',
-					borderTopLeftRadius: '20px',
-				},
+				'&:before': props.disableRoundMark
+					? {}
+					: {
+							content: { md: 'unset', lg: '""' },
+							position: 'absolute',
+							bottom: '-10px',
+							left: '0',
+							backgroundColor: theme => (theme.palette.mode === 'light' ? 'white' : '#0a1929'),
+							width: '10px',
+							height: '10px',
+					  },
+				'&:after': props.disableRoundMark
+					? {}
+					: {
+							content: { md: 'unset', lg: '""' },
+							position: 'absolute',
+							bottom: '-10px',
+							left: '0',
+							backgroundColor: theme => (theme.palette.mode === 'light' ? '#eceff1' : '#102a43'),
+							width: '10px',
+							height: '10px',
+							borderTopLeftRadius: '20px',
+					  },
+				...props.sx,
 			}}
 		>
 			<Box
@@ -79,7 +103,26 @@ export const Header = (props: { publicMode?: boolean }) => {
 				</Typography>
 			</Box>
 
-			{props.publicMode ? <OuterStack /> : <InnerStack drawerState={sidebarDrawer} toggleDrawer={toggleDrawer} />}
+			{props.publicMode ? (
+				<OuterStack />
+			) : (
+				<InnerStack
+					chatIcon={props.chatIcon}
+					chatIconClick={props.chatIcon ? () => setMessangerState(prev => !prev) : undefined}
+					drawerState={sidebarDrawer}
+					toggleDrawer={toggleDrawer}
+				/>
+			)}
+
+			{props.chatIcon &&
+				createPortal(
+					<MessengerSidebar
+						detachedDrawer
+						sideOverride='right'
+						controlled={{ state: messangerState, setState: setMessangerState }}
+					/>,
+					document.body,
+				)}
 		</Stack>
 	);
 
@@ -139,7 +182,12 @@ function OuterStack() {
 	);
 }
 
-function InnerStack(payload: { toggleDrawer: (e: any) => void; drawerState: boolean }) {
+function InnerStack(payload: {
+	chatIcon?: boolean;
+	chatIconClick?: Function;
+	toggleDrawer: (e: any) => void;
+	drawerState: boolean;
+}) {
 	return (
 		<Stack
 			sx={{
@@ -166,6 +214,23 @@ function InnerStack(payload: { toggleDrawer: (e: any) => void; drawerState: bool
 					},
 				}}
 			>
+				{payload.chatIcon && (
+					<Box>
+						<Tooltip title='Открыть мессенджер'>
+							<IconButton
+								sx={{ color: 'blackText.main' }}
+								aria-label='search'
+								onClick={
+									!!payload.chatIconClick ? () => (payload.chatIconClick as Function)() : () => {}
+								}
+							>
+								<MarkUnreadChatAltOutlinedIcon
+									sx={{ fontSize: '1.5rem', transform: 'rotateY(180deg)' }}
+								/>
+							</IconButton>
+						</Tooltip>
+					</Box>
+				)}
 				<Search />
 				<NotificationMenu />
 				<SwitchTheme />

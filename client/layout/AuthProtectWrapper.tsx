@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import { unwrapResult } from '@reduxjs/toolkit';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { notification } from '../components/utils/notifications/Notification';
 import useLoading from '../hooks/useLoading';
 import { LoginFullObjI, rtkApi } from '../redux/api';
@@ -14,7 +14,6 @@ import { clearUserData } from '../redux/slices/user';
 import AuthThunks from '../redux/thunks/auth';
 import { checkTokenValidityWithDate } from '../utils/http';
 import logapp from '../utils/logapp';
-import AppDataSubscriber from './AppDataSubscriber';
 
 const ALLOWED_PATHS: string[] = [
 	'login',
@@ -37,7 +36,7 @@ const allowedURIPaths = {
  * @param {JSX.Element | JSX.Element[]} children as inherited nodes.
  * @returns a protected wrapper with all auth logic for use across the application.
  */
-const AuthProtectWrapper = (props: { children: JSX.Element | JSX.Element[] }): JSX.Element => {
+const AuthProtectWrapper = (props: { children: ReactNode | ReactNode[] }): JSX.Element => {
 	const theme = useTheme();
 	const router = useRouter();
 	const dispatch = useTypedDispatch();
@@ -70,6 +69,7 @@ const AuthProtectWrapper = (props: { children: JSX.Element | JSX.Element[] }): J
 	});
 
 	React.useEffect(() => {
+		checkPreviousRequestedData();
 		if (isFetching.current) return;
 		isFetching.current = true;
 
@@ -77,13 +77,19 @@ const AuthProtectWrapper = (props: { children: JSX.Element | JSX.Element[] }): J
 			// force redirect from auth forms to app if user already logged-in
 			if (auth && (router.route === '/login' || router.route === '/registry' || router.route === '/recovery')) {
 				if (checkAuthValidity()) {
+					const requestedPath = localStorage.getItem('initial-requested-path');
+					if (!!requestedPath) {
+						checkPreviousRequestedData(true);
+						router.push(requestedPath.split(' ')[0]);
+						return;
+					}
 					redirectToApp();
 					resolve();
 				}
 			}
 			const isPublicRoute = checkUrlPath(router.asPath);
 
-			// public route --> revalidating
+			// public route and no auth --> revalidating
 			if (isPublicRoute && (!auth || !checkAuthValidity())) refreshLogic();
 			// not auth and private data requested --> refreshing
 			else if (!auth && !isPublicRoute) refreshLogic();
@@ -93,16 +99,13 @@ const AuthProtectWrapper = (props: { children: JSX.Element | JSX.Element[] }): J
 
 			resolve();
 		}).finally(() => (isFetching.current = false));
+
+		return () => {
+			checkPreviousRequestedData();
+		};
 	}, [auth, router.asPath]);
 
-	if (auth || (!auth && checkUrlPath(router.asPath)))
-		return auth ? (
-			<AppDataSubscriber>
-				{Array.isArray(props.children) ? props.children.map(el => el) : props.children}
-			</AppDataSubscriber>
-		) : (
-			<>{Array.isArray(props.children) ? props.children.map(el => el) : props.children}</>
-		);
+	if (auth || (!auth && checkUrlPath(router.asPath))) return <>{props.children}</>;
 	else
 		return (
 			<Box
@@ -195,35 +198,42 @@ const AuthProtectWrapper = (props: { children: JSX.Element | JSX.Element[] }): J
 	 * Redirecting to the login page with signing out and clearing tokens if needed. Also the auth-warn toast will occure.
 	 */
 	function redirectToLoginPage(): void {
-		if (!checkUrlPath(router.asPath)) {
-			cookiesClearReq.call('', '');
-			dispatch(clearUserData());
-			dispatch(clearBearer());
-			dispatch(clearAccessToken());
-			if (auth) dispatch(setAuthState(false));
+		if (checkUrlPath(router.asPath)) return;
 
-			router.push('/login').then(async () =>
-				setTimeout(() => {
-					const message = 'Вы не авторизованы! Войдите в систему для доступа к запрошенному ресурсу.';
-					const displayedToasts = document?.querySelectorAll('.Toastify__toast');
-					let isDublicate = false;
+		// saving the requested path for next authorization in this session
+		if (
+			router.asPath !== '/' &&
+			router.asPath !== '/login' &&
+			router.asPath !== '/registry' &&
+			router.asPath !== '/recovery'
+		)
+			localStorage.setItem('initial-requested-path', router.asPath + ' ' + Date.now());
 
-					if (displayedToasts.length)
-						displayedToasts.forEach(toast =>
-							toast.innerHTML.includes(message) ? (isDublicate = true) : {},
-						);
+		cookiesClearReq.call('', '');
+		dispatch(clearUserData());
+		dispatch(clearBearer());
+		dispatch(clearAccessToken());
+		if (auth) dispatch(setAuthState(false));
 
-					logapp.log('[%] found Toast dublicate. Aborting notification.');
-					if (!isDublicate)
-						notification({
-							message,
-							type: 'error',
-							autoClose: 6000,
-							theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
-						});
-				}, 1000),
-			);
-		}
+		router.push('/login').then(async () =>
+			setTimeout(() => {
+				const message = 'Вы не авторизованы! Войдите в систему для доступа к запрошенному ресурсу.';
+				const displayedToasts = document?.querySelectorAll('.Toastify__toast');
+				let isDublicate = false;
+
+				if (displayedToasts.length)
+					displayedToasts.forEach(toast => (toast.innerHTML.includes(message) ? (isDublicate = true) : {}));
+
+				logapp.log('[%] found Toast dublicate. Aborting notification.');
+				if (!isDublicate)
+					notification({
+						message,
+						type: 'error',
+						autoClose: 6000,
+						theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
+					});
+			}, 1000),
+		);
 	}
 
 	/**
@@ -241,6 +251,15 @@ const AuthProtectWrapper = (props: { children: JSX.Element | JSX.Element[] }): J
 
 	function redirectToApp(): void {
 		router.push('/').then();
+	}
+
+	function checkPreviousRequestedData(clear: boolean = false) {
+		const previousRequest = localStorage.getItem('initial-requested-path');
+		if (!previousRequest) return;
+
+		const previousTime = previousRequest.split(' ')[1];
+		if (clear || Date.now() - parseInt(previousTime) > 10 * 60 * 1000)
+			localStorage.setItem('initial-requested-path', '');
 	}
 };
 

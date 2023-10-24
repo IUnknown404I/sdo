@@ -6,7 +6,7 @@ import {
 	MenuItem,
 	Select,
 	SelectChangeEvent,
-	SxProps
+	SxProps,
 } from '@mui/material';
 import React from 'react';
 import { OnyxTypography } from './OnyxTypography';
@@ -15,7 +15,7 @@ const flexBase: SxProps = {
 	display: 'flex',
 	flexDirection: 'row',
 	justifyContent: 'flex-start',
-	alignItems: 'flex-end',
+	alignItems: 'center',
 	gap: '.75rem',
 };
 
@@ -86,6 +86,8 @@ const OnyxSelect = (props: OnyxSelectProps): JSX.Element => {
 					color: 'inherit',
 					fontSize: '1.15rem',
 					marginTop: '0',
+					marginLeft: props.reversed ? '0' : '.5rem',
+					marginRight: props.reversed ? '.5rem' : '0',
 				}}
 				size='large'
 				variant='text'
@@ -115,7 +117,7 @@ const OnyxSelect = (props: OnyxSelectProps): JSX.Element => {
 						label={props.label}
 						labelPlacement={props.labelPlacement || 'start'}
 						control={<SelectElement />}
-						sx={{ '> label': { gap: '.75rem' } }}
+						sx={{ gap: '.5rem', '> label': { gap: '.75rem' } }}
 					/>
 				) : (
 					<SelectElement />

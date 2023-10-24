@@ -8,7 +8,11 @@ import React from 'react';
  */
 const OnyxLink = (
 	payload: LinkProps &
-		React.AnchorHTMLAttributes<HTMLAnchorElement> & { blockElement?: boolean; fullwidth?: boolean },
+		React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+			disabled?: boolean;
+			blockElement?: boolean;
+			fullwidth?: boolean;
+		},
 ) => {
 	let payloadCopy: typeof payload = { href: '' };
 	for (const attribute in payload)
@@ -27,9 +31,17 @@ const OnyxLink = (
 			style={{
 				color: 'inherit',
 				display: payload.blockElement ? 'block' : '',
-				...payload.style,
 				width: payload.fullwidth ? '100%' : undefined,
+				...payload.style,
 			}}
+			onClick={
+				!!payload.disabled
+					? e => {
+							e.preventDefault();
+							e.stopPropagation();
+					  }
+					: payload.onClick
+			}
 		>
 			{payload.children}
 		</Link>

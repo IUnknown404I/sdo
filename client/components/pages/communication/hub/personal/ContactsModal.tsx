@@ -73,7 +73,7 @@ const ContactsModal = (props: ContactsModalProps) => {
 					<OnyxTypography sx={{ color: theme => theme.palette.error.main, display: 'inline' }}>
 						ВАЖНО!
 					</OnyxTypography>{' '}
-					В профиле во вкладке "Безопасность" можно запретить поиск своего аккаунта в системе.
+					В профиле во вкладке &quot;Безопасность&quot; можно запретить поиск своего аккаунта в системе.
 				</OnyxTypography>
 
 				<form onSubmit={e => searchInit(e)}>

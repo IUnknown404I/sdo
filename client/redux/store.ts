@@ -13,6 +13,7 @@ import { authSlice } from './slices/auth';
 import { axiosInstanceSlice } from './slices/axiosInstance';
 import { messengerSlice } from './slices/messenger';
 import { userSlice } from './slices/user';
+import { coursesSlice } from './slices/courses';
 
 export const rootEndpoint = [rtkApi];
 
@@ -22,8 +23,9 @@ const rootReducer = combineReducers({
 	auth: authSlice.reducer,
 	user: userSlice.reducer,
 	accessToken: accessTokenSlice.reducer,
-	axiosInstance: axiosInstanceSlice.reducer,
+	axiosInstance: axiosInstanceSlice?.reducer,
 	messenger: messengerSlice.reducer,
+	courses: coursesSlice.reducer,
 	// api
 	[rtkApi.reducerPath]: rtkApi.reducer,
 	// ...rootEndpoint.reduce((accum, endpoint) => {

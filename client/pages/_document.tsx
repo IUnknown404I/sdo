@@ -14,12 +14,42 @@ class MyDocument extends Document {
 				<Head>
 					<meta charSet='utf-8' />
 					<meta name='robots' content='noindex, nofollow' />
-					<link rel='icon' href='/favicon.ico' />
 					<meta
 						name='copyright'
 						lang='ru'
 						content='Научно-образовательный центр ООО «Газпром межрегионгаз инжиниринг»'
 					/>
+					<link rel='manifest' href='/pwa/manifest.json' />
+
+					<link rel='apple-touch-icon' sizes='57x57' href='/pwa/pwa/apple-icon-57x57.png' />
+					<link rel='apple-touch-icon' sizes='60x60' href='/pwa/apple-icon-60x60.png' />
+					<link rel='apple-touch-icon' sizes='72x72' href='/pwa/apple-icon-72x72.png' />
+					<link rel='apple-touch-icon' sizes='76x76' href='/pwa/apple-icon-76x76.png' />
+					<link rel='apple-touch-icon' sizes='114x114' href='/pwa/apple-icon-114x114.png' />
+					<link rel='apple-touch-icon' sizes='120x120' href='/pwa/apple-icon-120x120.png' />
+					<link rel='apple-touch-icon' sizes='144x144' href='/pwa/apple-icon-144x144.png' />
+					<link rel='apple-touch-icon' sizes='152x152' href='/pwa/apple-icon-152x152.png' />
+					<link rel='apple-touch-icon' sizes='180x180' href='/pwa/apple-icon-180x180.png' />
+					<link rel='icon' href='/pwa/favicon.ico' />
+					<link rel='icon' type='image/png' sizes='192x192' href='/pwa/android-icon-192x192.png' />
+					<link rel='icon' type='image/png' sizes='32x32' href='/pwa/favicon-32x32.png' />
+					<link rel='icon' type='image/png' sizes='96x96' href='/pwa/favicon-96x96.png' />
+					<link rel='icon' type='image/png' sizes='16x16' href='/pwa/favicon-16x16.png' />
+
+					<meta name='theme-color' content='#ffffff' />
+					<meta name='msapplication-TileColor' content='#ffffff' />
+					<meta name='msapplication-TileImage' content='/ms-icon-144x144.png' />
+					<meta name='msapplication-navbutton-color' content='#ffffff' />
+
+					<meta name='mobile-web-app-capable' content='yes' />
+					<meta name='apple-mobile-web-app-capable' content='yes' />
+					<meta name='application-name' content='Educational platform' />
+					<meta name='apple-mobile-web-app-title' content='Educational platform' />
+					<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />
+					<meta name='msapplication-starturl' content='/' />
+
+					{/* service workers initialize */}
+					<script async src='/sw/initializeSW.js' />
 
 					{/* init for Yandex Metrics */}
 					{checkProductionMode() && (

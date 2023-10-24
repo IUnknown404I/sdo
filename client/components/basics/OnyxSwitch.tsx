@@ -1,6 +1,7 @@
+import { Box } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import { styled } from '@mui/material/styles';
+import { SxProps, styled } from '@mui/material/styles';
 import React from 'react';
 
 const AndroidSwitch = styled(Switch)(({ theme, size }) => ({
@@ -54,14 +55,14 @@ const OnyxSwitch = (props: OnyxSwitchI) => {
 		props.setState(event.target.checked);
 	};
 
-	return (
+	const SwitchForm = (
 		<FormControlLabel
 			label={props.label}
 			labelPlacement={props.labelPlacement}
 			sx={{
 				display: 'flex',
 				justifyContent: 'flex-start',
-				width: '100%',
+				width: 'fit-content',
 				gap: '.5rem',
 				'span:nth-child(2)': {
 					display: 'flex',
@@ -70,6 +71,7 @@ const OnyxSwitch = (props: OnyxSwitchI) => {
 					alignItems: 'center',
 					fontSize: props.size === 'small' ? '.75rem' : '',
 				},
+				...(props.sx || {}),
 			}}
 			control={
 				<AndroidSwitch
@@ -82,6 +84,8 @@ const OnyxSwitch = (props: OnyxSwitchI) => {
 			}
 		/>
 	);
+
+	return props.wrapped ? <Box sx={props.wrapperSx}>{SwitchForm}</Box> : SwitchForm;
 };
 
 export interface OnyxSwitchI {
@@ -92,6 +96,9 @@ export interface OnyxSwitchI {
 	size?: 'small' | 'medium';
 	labelPlacement?: 'end' | 'start' | 'top' | 'bottom';
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
+	wrapped?: boolean;
+	wrapperSx?: SxProps;
+	sx?: SxProps;
 	// formProps?: FormControlLabelProps;
 }
 

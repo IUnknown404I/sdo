@@ -4,12 +4,15 @@ const globals = require('globals');
 
 module.exports = [
 	{
-		"root": true,
+		extends: ['plugin:@next/next/recommended', 'eslint:recommended', 'next'],
+		root: true,
 		files: ['**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}'],
 		rules: {
-			// ... any rules you want
 			'react/jsx-uses-react': 'error',
 			'react/jsx-uses-vars': 'error',
+			'react/no-unknown-property': 'off',
+			'react-hooks/exhaustive-deps': 'off',
+			'@next/next/no-img-element': 'off',
 		},
 		...reactRecommended,
 		languageOptions: {
@@ -21,7 +24,6 @@ module.exports = [
 		},
 	},
 ];
-
 
 // There is config from the old settings .eslintrc.json
 // {

@@ -16,7 +16,6 @@ exports[`Error404Page -> correct renders 1`] = `
             alt="НОЦ Инжиниринг"
             data-nimg="fill"
             decoding="async"
-            fetchpriority="high"
             src="/logo/logo-gmi.svg"
             style="position: absolute; height: 100%; width: 100%; left: 0px; top: 0px; right: 0px; bottom: 0px; object-fit: contain; color: transparent;"
           />
@@ -222,7 +221,7 @@ exports[`Error404Page -> correct renders 1`] = `
           <p
             class="MuiTypography-root MuiTypography-body1 MuiTypography-alignLeft css-185ybi3-MuiTypography-root"
           >
-            Вы перешли на адрес 
+            Вы перешли на веб-адрес страницы 
             <strong>
               системы дистанционного обучения
             </strong>
@@ -269,7 +268,7 @@ exports[`Error404Page -> correct renders 1`] = `
                 tabindex="0"
                 type="button"
               >
-                Личный кабинет
+                войти в систему
                 <span
                   class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                 />

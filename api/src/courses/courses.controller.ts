@@ -1,12 +1,13 @@
-import { Controller, Get, Param, Query, Response, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, Response, StreamableFile, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { NotValidDataError } from 'errors/NotValidDataError';
-import { createReadStream, existsSync, lstatSync } from 'fs';
+import { createReadStream } from 'fs';
 import { StringValidationPipe } from 'globalPipes/StringValidationPipe';
-import { Course } from './courses.schema';
+import { AccessTokenGuard } from 'guards/AccessTokenGuard';
+import { getCurrentDomain } from 'utils/utilityFunctions';
+import { CoursePrivatePartI, CoursePublicPartI } from './courses.schema';
 import { CoursesService } from './courses.service';
 import StreamZip = require('node-stream-zip');
-import { getCurrentDomain } from 'utils/utilityFunctions';
 
 @Controller('courses')
 export class CoursesController {
@@ -36,10 +37,24 @@ export class CoursesController {
 		return await this.coursesService.getAllTitles();
 	}
 
+	@UseGuards(AccessTokenGuard)
 	@Get(':cid')
 	@ApiTags('Courses')
-	async getCourseData(@Param('cid', StringValidationPipe) cid): Promise<Course> {
+	async getCourseData(@Param('cid', StringValidationPipe) cid): Promise<CoursePublicPartI> {
 		return await this.coursesService.getCourseData(cid);
+	}
+
+	@Get(':cid/public')
+	@ApiTags('Courses')
+	async getCoursePublicData(@Param('cid', StringValidationPipe) cid): Promise<CoursePublicPartI> {
+		return await this.coursesService.getCoursePublicData(cid);
+	}
+
+	@UseGuards(AccessTokenGuard)
+	@Get(':cid/private')
+	@ApiTags('Courses')
+	async getCoursePrivateData(@Param('cid', StringValidationPipe) cid): Promise<CoursePrivatePartI> {
+		return await this.coursesService.getCoursePrivateData(cid);
 	}
 
 	@Get('scorm/:scname/:filename')

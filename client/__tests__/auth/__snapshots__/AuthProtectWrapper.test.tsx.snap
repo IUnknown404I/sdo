@@ -1,16 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`AuthProtectWrapper -> auth state test: 1`] = `
-<div>
-  <div
-    class="Toastify"
-  />
-  <p>
-    Test render!
-  </p>
-</div>
-`;
-
 exports[`AuthProtectWrapper -> authorized state test: 1`] = `
 <div>
   <div

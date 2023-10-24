@@ -19,6 +19,7 @@ import { rtkApi } from '../../../redux/api';
 import { useAppDispatch } from '../../../redux/store';
 import AuthThunks from '../../../redux/thunks/auth';
 import OnyxLink from '../../basics/OnyxLink';
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 
 export const AccountMenu = () => {
 	const { data, currentData, isLoading, isError, refetch } = rtkApi.usePersonalQuery('');
@@ -27,17 +28,23 @@ export const AccountMenu = () => {
 	const open = Boolean(anchorEl);
 	const dispatcher = useAppDispatch();
 
-	const AccountSubs: Array<{
+	type AccountSubsType = {
 		text: string;
 		href?: string;
 		onClick?: React.MouseEventHandler<HTMLLIElement>;
 		icon?: JSX.Element;
-	}> = [
-		{ text: 'Мой профиль', href: '/account/profile?current=cabinet', icon: <ManageAccountsOutlinedIcon /> },
-		{ text: 'Мои курсы', href: '/account/courses', icon: <FolderOutlinedIcon /> },
-		{ text: 'Настройки', href: '/account/profile?current=settings', icon: <Settings /> },
-		{ text: 'Выйти', onClick: handleLogOut, icon: <Logout /> },
-	];
+	};
+	const AccountSubs: { personal: AccountSubsType[]; config: AccountSubsType[] } = {
+		personal: [
+			{ text: 'Личный кабинет', href: '/', icon: <BadgeOutlinedIcon /> },
+			{ text: 'Мой профиль', href: '/account/profile?current=cabinet', icon: <ManageAccountsOutlinedIcon /> },
+			{ text: 'Мои курсы', href: '/account/courses', icon: <FolderOutlinedIcon /> },
+		],
+		config: [
+			{ text: 'Настройки', href: '/account/profile?current=settings', icon: <Settings /> },
+			{ text: 'Выйти', onClick: handleLogOut, icon: <Logout /> },
+		],
+	};
 
 	return (
 		<>
@@ -108,13 +115,23 @@ export const AccountMenu = () => {
 				</Box>
 
 				<Divider />
-				{AccountSubs.map(el =>
+				{AccountSubs.personal.map((el, index) =>
 					el.href ? (
-						<OnyxLink blockElement href={el.href}>
+						<OnyxLink blockElement href={el.href} key={index}>
 							<AccountMenuItem text={el.text} onClick={el.onClick} icon={el.icon} />
 						</OnyxLink>
 					) : (
-						<AccountMenuItem text={el.text} onClick={el.onClick} icon={el.icon} />
+						<AccountMenuItem text={el.text} onClick={el.onClick} icon={el.icon} key={index} />
+					),
+				)}
+				<Divider />
+				{AccountSubs.config.map((el, index) =>
+					el.href ? (
+						<OnyxLink blockElement href={el.href} key={index}>
+							<AccountMenuItem text={el.text} onClick={el.onClick} icon={el.icon} />
+						</OnyxLink>
+					) : (
+						<AccountMenuItem text={el.text} onClick={el.onClick} icon={el.icon} key={index} />
 					),
 				)}
 			</Menu>

@@ -26,12 +26,12 @@ export interface OnyxAlertModalI {
 /**
  * @IUnknown404I return modal pane for making alerts and notifications.
  * @param props: { state: boolean, setState: Function, title: string, children: JSX.Element | JSX.Element[], uncontrolled?: boolean, disableButton?: undefined | true | { buttonText: string }, hideButtonOnOpen?: boolean, disableCloseIcon?: boolean, disableCloseButton?: boolean, hideFooter?: boolean }
- - uncontrolled mode:  any clicks out of modal pane wouldn't close it;
- - disableButton:      will return only ModalPane without opening button;
- - hideButtonOnOpen:   will return both button and modal with invisible mode for button while the modal is on the screen;
- - disableCloseIcon:   disabling the closing icon in the top-right corner of the modal (on the xs breakpoint will be forcibly hidden);
- - disableCloseButton: disabling the closing button in the footer (on the xs breakpoint will be forcibly displayed if footer is not disabled);
- - hideFooter:         disabling the whole footer. 
+ * - uncontrolled mode:  any clicks out of modal pane wouldn't close it;
+ * - disableButton:      will return only ModalPane without opening button;
+ * - hideButtonOnOpen:   will return both button and modal with invisible mode for button while the modal is on the screen;
+ * - disableCloseIcon:   disabling the closing icon in the top-right corner of the modal (on the xs breakpoint will be forcibly hidden);
+ * - disableCloseButton: disabling the closing button in the footer (on the xs breakpoint will be forcibly displayed if footer is not disabled);
+ * - hideFooter:         disabling the whole footer.
  * @returns Modal Pane as dismounted React.Element.
  */
 const OnyxAlertModal = (props: OnyxAlertModalI) => {
@@ -76,7 +76,6 @@ const OnyxAlertModal = (props: OnyxAlertModalI) => {
 				BackdropProps={{
 					timeout: 750,
 				}}
-				sx={props.sx}
 			>
 				<Fade in={props.state}>
 					<Box
@@ -85,7 +84,7 @@ const OnyxAlertModal = (props: OnyxAlertModalI) => {
 							top: '50%',
 							left: '50%',
 							transform: 'translate(-50%, -50%)',
-							width: props.fullWidth ? 'auto' : props.width || 600,
+							width: props.fullWidth ? '100%' : props.width || 'fit-content',
 							minWidth: { xs: 'min(95vw)', sm: '' },
 							maxWidth: '98vw',
 							maxHeight: '98vh',
@@ -102,6 +101,7 @@ const OnyxAlertModal = (props: OnyxAlertModalI) => {
 							boxShadow: '0px 0px 46px 9px rgba(130, 149, 163, 0.2)',
 							overflow: 'hidden',
 							overflowY: 'auto',
+							...props.sx,
 						}}
 					>
 						{props.disableCloseIcon ? (

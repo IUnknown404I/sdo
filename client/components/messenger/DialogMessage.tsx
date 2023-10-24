@@ -307,9 +307,10 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 
 	function parseMessageLine(line: string): ReactNode {
 		const words = line.split(' ');
-		return words.map(word =>
+		return words.map((word, index) =>
 			word.startsWith('http://') || word.startsWith('https://') ? (
 				<OnyxTypography
+					key={index}
 					component='span'
 					hoverStyles
 					text={word.concat(' ')}

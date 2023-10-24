@@ -164,7 +164,7 @@ const LoginElement = (props: LoginElementI): JSX.Element => {
 								<Checkbox checked={props.dataSave} onClick={() => props.setDataSave(!props.dataSave)} />
 							}
 							label={
-								<Typography variant='body2' align='right'>
+								<Typography component='span' variant='body2' align='right'>
 									Запомнить меня
 								</Typography>
 							}

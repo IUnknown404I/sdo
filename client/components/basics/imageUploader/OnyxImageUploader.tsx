@@ -121,7 +121,6 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 
 	return (
 		<OnyxAlertModal
-			fullWidth
 			keepMounted={false}
 			title='Выбор изображения из БД'
 			state={props.state}
@@ -303,7 +302,6 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 			)}
 
 			<OnyxAlertModal
-				fullWidth
 				title='Загрузить изображение'
 				state={uploadModal}
 				setState={setUploadModal}

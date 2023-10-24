@@ -14,6 +14,7 @@ import {
 	EducationEvaluationsChart,
 	EducationPlan,
 } from '../../../index';
+import OnyxLink from '../../../basics/OnyxLink';
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -76,14 +77,18 @@ export const Education = () => {
 						width='130px'
 						height='80px'
 					/>
-					<Button
-						endIcon={<ExitToAppOutlinedIcon />}
-						sx={{ borderRadius: '40px', width: '100%', height: '100%' }}
-						color='primary'
-						size='large'
-					>
-						Перейти к курсу
-					</Button>
+
+					<OnyxLink href='/courses/personal-protective-equipment' fullwidth style={{ marginInline: '.5rem' }}>
+						<Button
+							endIcon={<ExitToAppOutlinedIcon />}
+							sx={{ borderRadius: '40px', width: '100%', height: '100%' }}
+							color='primary'
+							size='large'
+						>
+							Перейти к курсу
+						</Button>
+					</OnyxLink>
+
 					<Stack direction={'row'}>
 						<IconButton aria-label='left' size='large'>
 							<ArrowBackIosOutlinedIcon />

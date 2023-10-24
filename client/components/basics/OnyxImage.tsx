@@ -3,14 +3,15 @@ import { SxProps } from '@mui/material/styles';
 import Image from 'next/image';
 
 export interface OnyxImageI {
-    src: string;
-    alt: string;
+	src: string;
+	alt: string;
 	position?: 'absolute' | 'fixed' | 'relative' | 'static' | 'sticky';
 	margin?: string;
 	width?: string;
 	height?: string;
 	align?: 'left' | 'center' | 'right';
-    sx?: SxProps;
+	unoptimized?: boolean;
+	sx?: SxProps;
 }
 
 /**
@@ -41,13 +42,19 @@ const OnyxImage = (props: OnyxImageI) => {
 				: props.align === 'right'
 				? 'flex-end'
 				: 'center',
-        minWidth: '50px',
-        minHeight: '50px',
+		minWidth: '50px',
+		minHeight: '50px',
 	};
 
 	return (
-		<Box sx={{...validStyles, ...props.sx}}>
-			<Image src={props.src} alt={props.alt} fill style={{ objectFit: 'contain' }} />
+		<Box sx={{ ...validStyles, ...props.sx }}>
+			<Image
+				src={props.src}
+				unoptimized={props.unoptimized}
+				alt={props.alt}
+				fill
+				style={{ objectFit: 'contain' }}
+			/>
 		</Box>
 	);
 };

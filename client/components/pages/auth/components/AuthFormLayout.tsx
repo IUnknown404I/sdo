@@ -1,6 +1,6 @@
-import React, { FormEventHandler } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
+import { FormEventHandler } from 'react';
 import AuthCopyrights from './AuthCopyrights';
 
 const AuthFormLayout = (props: {

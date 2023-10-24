@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Head from 'next/head';
 import CoursesListPage, { CoursesI } from '../../components/pages/courses/CoursesListPage';
-import CoursesLayout from '../../layout/CoursesLayout';
+import { Layout } from '../../layout/Layout';
 
 const CoursePage = (props: { coursesList: Pick<CoursesI, 'cid' | 'icon' | 'main'>[]; coursesCategories: string[] }) => {
 	return (
@@ -12,9 +12,9 @@ const CoursePage = (props: { coursesList: Pick<CoursesI, 'cid' | 'icon' | 'main'
 				<meta name='robots' content='index, follow' />
 			</Head>
 
-			<CoursesLayout>
+			<Layout>
 				<CoursesListPage list={props.coursesList} categories={props.coursesCategories} />
-			</CoursesLayout>
+			</Layout>
 		</>
 	);
 };

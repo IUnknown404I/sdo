@@ -131,7 +131,7 @@ const LoginForm = () => {
 
 	/**
 	 * @IUnknown404I
-	 * The function for displaing toast duo passed responses and control the error messages of Login form.
+	 * The function for displaing toast according passed response and control the error messages for Login form.
 	 * @param payload as [object]: AccessTokenI & { lastPages?: string } or you can pass an error string for displaying corresponding info.
 	 */
 	function validateLoginResponce(payload: string | LoginFullObjI, username?: string, email?: string): void {

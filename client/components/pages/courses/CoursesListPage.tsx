@@ -6,6 +6,7 @@ import { Box, Button, Grow, InputAdornment, Pagination, Paper, Stack, TextField 
 import Image from 'next/image';
 import React from 'react';
 import useCoursesList from '../../../hooks/useCoursesList';
+import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
 import { scrollDocumentToTop } from '../../../utils/utilityFunctions';
 import OnyxSelect from '../../basics/OnyxSelect';
 import { OnyxTypography } from '../../basics/OnyxTypography';
@@ -17,8 +18,11 @@ const CoursesListPage = (props: { list: Pick<CoursesI, 'cid' | 'icon' | 'main'>[
 	const [category, setCategory] = React.useState<string>('Все категории');
 	const [currentPage, setCurrentPage] = React.useState<number>(1);
 
-	const courses = useCoursesList({ list: props.list, categoryFilter: category, nameRegex: title });
-	// const categories = Array.from(new Set(props.list.map(course => course.main.category)));
+	const courses = useCoursesList({
+		list: props.list,
+		categoryFilter: category,
+		nameRegex: useDebouncedValue(title, 350)[0],
+	});
 
 	function getCourses(pageNumber: number): typeof props.list {
 		if (pageNumber > Math.ceil(courses.length / COUNT_PER_PAGE) || pageNumber < 1) return [];
@@ -76,7 +80,7 @@ const CoursesListPage = (props: { list: Pick<CoursesI, 'cid' | 'icon' | 'main'>[
 					</Stack>
 				</Paper>
 
-				<Stack component='section' direction='column' gap={2} className='courses-container'>
+				<Stack component='section' direction='column' gap={2} className='courses-container' width='100%'>
 					{getCourses(currentPage).map(course => (
 						<CourseCard {...course} key={course.cid} />
 					))}

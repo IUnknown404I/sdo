@@ -224,7 +224,7 @@ function ContactCard(
 								)
 							) : (
 								<>
-									<ClassicLoader iconVariant /> 'Проверяем...'
+									<ClassicLoader iconVariant /> Проверяем...
 								</>
 							)}
 						</Button>

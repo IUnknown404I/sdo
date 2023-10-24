@@ -139,6 +139,13 @@ export class ChatController {
 	@ApiTags('Chats')
 	@UseGuards(RefreshOrAccessTokenGuard)
 	async getUserChatData(@Param('username') username: string): Promise<UserChatDataI> {
+		if (username === 'system')
+			return {
+				username: 'system',
+				email: 'umcmrg@yandex.ru',
+				name: 'СДО',
+				surname: 'Бот',
+			};
 		return await this.chatsService.getUserChatData(username);
 	}
 

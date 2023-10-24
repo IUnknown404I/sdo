@@ -5,8 +5,8 @@ import { RootState } from '../store';
 import AuthThunks from '../thunks/auth';
 
 export interface AccessTokenI {
-	access_token: string | undefined;
-	expires_in: string | undefined;
+	access_token?: string;
+	expires_in?: string;
 }
 
 export const initialAccessTokenState: AccessTokenI = {
@@ -19,9 +19,9 @@ export const accessTokenSlice = createSlice({
 	initialState: initialAccessTokenState,
 	reducers: {
 		setAccessToken: (state, action: PayloadAction<AccessTokenI | LoginFullObjI>) => {
-			type payloadAttributes = 'access_token' | 'expires_in';
 			for (const attr in action.payload) {
-				if (attr !== 'lastPages') state[attr as payloadAttributes] = action.payload[attr as payloadAttributes];
+				if (attr !== 'lastPages')
+					state[attr as keyof AccessTokenI] = action.payload[attr as keyof AccessTokenI];
 			}
 		},
 		clearAccessToken: state => {
@@ -30,7 +30,7 @@ export const accessTokenSlice = createSlice({
 	},
 	extraReducers: builder => {
 		builder.addCase(AuthThunks.fetchAndUpdateTokens.fulfilled, (state, action) => {
-			logapp.log('THUNK REFRESH TOKEN TRIGGERED with result = ', action.payload);
+			logapp.log('[#] THUNK REFRESH TOKEN TRIGGERED with result = ', action.payload);
 		});
 	},
 });

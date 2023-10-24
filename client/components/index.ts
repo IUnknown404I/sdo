@@ -21,7 +21,7 @@ export * from './pages/componets/dashboard/_parts/awardsCard/AwardsCard';
 
 //userCourses
 export * from './pages/componets/userCourses/UserCourses';
-export * from './pages/componets/userCourses/_parts/CourseCardPersonal/CourseCardPersonal';
+export * from './pages/componets/userCourses/CourseCardPersonal';
 export * from './parts/courseCardSmall/CourseCardSmall';
 
 //education

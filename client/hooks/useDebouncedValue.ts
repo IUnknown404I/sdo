@@ -10,7 +10,6 @@ import React from 'react';
  * - X is debounced value;
  * - Y is clearFunction.
  */
-//TODO: doesnt work as planned. Infinity reload detected.
 export function useDebouncedValue<T = any>(
 	value: T,
 	delay: number,

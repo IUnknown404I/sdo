@@ -21,13 +21,13 @@ const mockStore = configureMockStore([thunk]);
 const expectedElement = (
 	<span
 		aria-label=''
-		class='MuiCircularProgress-root MuiCircularProgress-indeterminate MuiCircularProgress-colorPrimary css-185k7aw-MuiCircularProgress-root'
+		className='MuiCircularProgress-root MuiCircularProgress-indeterminate MuiCircularProgress-colorPrimary css-185k7aw-MuiCircularProgress-root'
 		role='progressbar'
-		style='width: 64px; height: 64px;'
+		style={{ width: '64px', height: '64px' }}
 	>
-		<svg class='MuiCircularProgress-svg css-1idz92c-MuiCircularProgress-svg' viewBox='22 22 44 44'>
+		<svg className='MuiCircularProgress-svg css-1idz92c-MuiCircularProgress-svg' viewBox='22 22 44 44'>
 			<circle
-				class='MuiCircularProgress-circle MuiCircularProgress-circleIndeterminate css-176wh8e-MuiCircularProgress-circle'
+				className='MuiCircularProgress-circle MuiCircularProgress-circleIndeterminate css-176wh8e-MuiCircularProgress-circle'
 				cx='44'
 				cy='44'
 				fill='none'
@@ -64,7 +64,6 @@ describe('AuthProtectWrapper ->', () => {
 			</Provider>,
 		);
 
-
 		waitFor(() => expect(container).toMatchSnapshot());
 		waitFor(() => expect(getByText('Test render!')).not.toBeInTheDocument());
 		waitFor(() => expect(expectedElement as unknown as HTMLElement).toBeInTheDocument());
@@ -80,7 +79,8 @@ describe('AuthProtectWrapper ->', () => {
 			},
 			accessToken: {
 				...initialAccessTokenState,
-				access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJuYWRtaW4iLCJlbWFpbCI6IiIsImNvbXBhbnkiOiIiLCJpc0FjdGl2ZSI6dHJ1ZSwiaXNCbG9ja2VkIjpmYWxzZSwiYmxvY2tSZWFzb24iOiIiLCJsYXN0TG9naW5JbiI6IjAxLjAxLjIwMjMgMTU6NTAuMjgiLCJmYWlsZWRBdHRlbXB0cyI6MCwiY3JlYXRlZEF0IjoiMDEuMDEuMjAyMyAxNDo0Ny4zMyIsImlhdCI6MTY4NTUzOTUwOCwiZXhwIjoxOTg1NTM5Njg4fQ.UnjzG45xKdFWK6bbcd4ZKYeGPny0cD9CYbaA4HpFEhU',
+				access_token:
+					'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJuYWRtaW4iLCJlbWFpbCI6IiIsImNvbXBhbnkiOiIiLCJpc0FjdGl2ZSI6dHJ1ZSwiaXNCbG9ja2VkIjpmYWxzZSwiYmxvY2tSZWFzb24iOiIiLCJsYXN0TG9naW5JbiI6IjAxLjAxLjIwMjMgMTU6NTAuMjgiLCJmYWlsZWRBdHRlbXB0cyI6MCwiY3JlYXRlZEF0IjoiMDEuMDEuMjAyMyAxNDo0Ny4zMyIsImlhdCI6MTY4NTUzOTUwOCwiZXhwIjoxOTg1NTM5Njg4fQ.UnjzG45xKdFWK6bbcd4ZKYeGPny0cD9CYbaA4HpFEhU',
 				expires_in: '2033-05-31T13:30:43.978Z',
 			},
 			user: {

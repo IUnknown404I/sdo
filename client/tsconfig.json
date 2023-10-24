@@ -17,6 +17,6 @@
 		"jsx": "preserve",
 		"incremental": true
 	},
-	"include": ["next-env-custom.d.ts", "images.d.ts", "**/*.ts", "**/*.tsx", "jest.config.js"],
+	"include": ["next-env-custom.d.ts", "images.d.ts", "**/*.ts", "**/*.tsx", "jest.config.js", "public/sw/initializeSW.js", "components/editors/TextEditor.jsx"],
 	"exclude": ["node_modules", "utils/gtag.ts", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"]
 }

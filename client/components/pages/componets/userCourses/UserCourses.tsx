@@ -7,15 +7,14 @@ import * as React from 'react';
 import { SetStateAction, useState } from 'react';
 import { querySwitcher } from '../../../../utils/http';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
-import { CourseCardPersonal } from '../../../index';
+import CourseCardPersonal from './CourseCardPersonal';
 
 const coursesData = [
 	{
-		id: '1',
 		date: '01.09.2022 - 14.09.2022',
 		typeCourse: 'Повышение квалификации',
 		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		actionLink: '/events',
+		href: '/courses/personal-protective-equipment',
 		status: 'active',
 		colorBadge: 'success',
 		textBadge: 'идет обучение',
@@ -25,11 +24,10 @@ const coursesData = [
 	},
 
 	{
-		id: '2',
 		date: '01.09.2022 - 14.09.2022',
 		typeCourse: 'Повышение квалификации',
 		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		actionLink: '/events',
+		href: '/courses/personal-protective-equipment',
 		status: 'completed',
 		colorBadge: 'secondary',
 		textBadge: 'обучение завершено',
@@ -38,11 +36,10 @@ const coursesData = [
 		colorCourse: '#cecece',
 	},
 	{
-		id: '3',
 		date: '01.09.2022 - 14.09.2022',
 		typeCourse: 'Повышение квалификации',
 		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		actionLink: '/events',
+		href: '/courses/personal-protective-equipment',
 		status: 'completed',
 		colorBadge: 'secondary',
 		textBadge: 'обучение завершено',
@@ -51,11 +48,10 @@ const coursesData = [
 		colorCourse: '#cecece',
 	},
 	{
-		id: '4',
 		date: '01.09.2022 - 14.09.2022',
 		typeCourse: 'Повышение квалификации',
 		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		actionLink: '/events',
+		href: '/courses/personal-protective-equipment',
 		status: 'upcoming',
 		colorBadge: 'warning',
 		textBadge: 'ожидается зачисление',
@@ -124,9 +120,9 @@ export const UserCourses = () => {
 						<Grid container sx={{ marginTop: '20px' }} spacing={2}>
 							{coursesData
 								.filter(el => el.status === 'active')
-								.map(course => {
+								.map((course, index) => {
 									return (
-										<Grid item xs={12} lg={12} key={course.id}>
+										<Grid item xs={12} lg={12} key={index}>
 											<CourseCardPersonal {...course} />
 										</Grid>
 									);
@@ -138,9 +134,9 @@ export const UserCourses = () => {
 						<Grid item sx={{ marginTop: '20px' }} spacing={2} container>
 							{coursesData
 								.filter(el => el.status === 'upcoming')
-								.map(course => {
+								.map((course, index) => {
 									return (
-										<Grid item xs={12} lg={12} key={course.id}>
+										<Grid item xs={12} lg={12} key={index}>
 											<CourseCardPersonal {...course} />
 										</Grid>
 									);
@@ -152,9 +148,9 @@ export const UserCourses = () => {
 						<Grid container sx={{ marginTop: '20px' }} spacing={2}>
 							{coursesData
 								.filter(el => el.status === 'completed')
-								.map(course => {
+								.map((course, index) => {
 									return (
-										<Grid item xs={12} lg={12} key={course.id}>
+										<Grid item xs={12} lg={12} key={index}>
 											<CourseCardPersonal {...course} />
 										</Grid>
 									);

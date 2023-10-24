@@ -8,16 +8,21 @@ export interface MessengerSliceI {
 	activeDialog: DialogType;
 }
 
+type xxx = Partial<MessengerSliceI['activeDialog']>;
+
 const initialMessengerSliceState: Partial<MessengerSliceI> = {};
 
 export const messengerSlice = createSlice({
 	name: 'messenger',
 	initialState: initialMessengerSliceState,
 	reducers: {
-		setUserChats: (state, action: PayloadAction<UserChatsObjectT | undefined>) => {
+		setUserChats: (state, action: PayloadAction<Partial<MessengerSliceI['chats']> | undefined>) => {
 			state.chats = action.payload ? JSON.parse(JSON.stringify(action.payload)) : undefined;
 		},
-		changeActiveSidebarDialog: (state, action: PayloadAction<DialogType | undefined>) => {
+		changeActiveSidebarDialog: (
+			state,
+			action: PayloadAction<Partial<MessengerSliceI['activeDialog']> | undefined>,
+		) => {
 			state.activeDialog = action.payload ? JSON.parse(JSON.stringify(action.payload)) : undefined;
 		},
 	},

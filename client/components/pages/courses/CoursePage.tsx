@@ -9,7 +9,7 @@ const CoursePageComponent = (props: { courseData: any }) => {
 	const router = useRouter();
 	return (
 		<Stack component='article' width='100%' direction='column' gap={2}>
-			<Stack width='100%' alignItems='center' justifyContent='space-around' direction='row' gap={1}>
+			<Stack width='100%' alignItems='center' justifyContent='space-between' direction='row' gap={1}>
 				<Box>
 					<OnyxTypography
 						text={props.courseData?.main?.title || 'Заголовок программы'}
@@ -67,7 +67,7 @@ const CoursePageComponent = (props: { courseData: any }) => {
 				<ScormPackageCard title='Интерактивная презентация. SSoft' />
 				<ScormPackageCard
 					title='Интерактивная презентация. MyOffice - Таблицы'
-					href={`/courses/${router.query.cid}/scorm?path=myoffice-tables_web/story.html`}
+					href={`/courses/${router.query.cid}/scorm?path=conutif/story.html`}
 				/>
 				<ScormPackageCard
 					title='Интерактивная презентация. Диспетчерская работа'

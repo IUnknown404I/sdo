@@ -13,7 +13,7 @@ export interface OnyxFormControlI {
 	loadingState?: boolean;
 	fullWidth?: boolean;
 	inputProps?: InputBaseProps;
-    fontWeight?: 'normal' | 'bold' | 'unset' | 'inherit' | 'initial';
+	fontWeight?: 'normal' | 'bold' | 'unset' | 'inherit' | 'initial';
 }
 
 /**
@@ -30,16 +30,12 @@ export interface OnyxFormControlI {
  *  - fontWeight?: 'normal' | 'bold' | 'unset' | 'inherit' | 'initial'. Will override default style.
  * @returns JSX.Element
  */
-export default function (props: OnyxFormControlI) {
+const OnyxFormControl = (props: OnyxFormControlI) => {
 	return (
 		<FormControl variant='outlined' fullWidth={props.fullWidth !== undefined ? props.fullWidth : true}>
 			<InputLabel
 				htmlFor={props.attribute}
-				sx={
-					props.attribute in props.formik?.errors
-						? { color: '#d63e3e' }
-						: {}
-				}
+				sx={props.attribute in props.formik?.errors ? { color: '#d63e3e' } : {}}
 			>
 				{props.label}
 			</InputLabel>
@@ -53,7 +49,7 @@ export default function (props: OnyxFormControlI) {
 				error={!!props.formik.errors[props.attribute]}
 				type={props.type}
 				label={props.label}
-                sx={{ fontWeight: props.fontWeight || 'bold' }}
+				sx={{ fontWeight: props.fontWeight || 'bold' }}
 			/>
 			{!!props.formik.errors[props.attribute] != null && (
 				<FormHelperText error>
@@ -63,4 +59,6 @@ export default function (props: OnyxFormControlI) {
 			)}
 		</FormControl>
 	);
-}
+};
+
+export default OnyxFormControl;

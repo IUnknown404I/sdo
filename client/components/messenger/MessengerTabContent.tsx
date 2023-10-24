@@ -57,7 +57,7 @@ function PublicDialogs(props: MessengerTabContentProps & { handleClick: (name: s
 			{fulfilledTimeStamp === undefined ? (
 				<ModernLoader loading centered containerSx={{ marginTop: '1rem' }} />
 			) : (
-				chats?.public.map(chat => <DialogBoxAndDialog {...props} rid={chat} publicChat />)
+				chats?.public.map(chat => <DialogBoxAndDialog {...props} key={chat} rid={chat} publicChat />)
 			)}
 		</>
 	);
@@ -70,7 +70,7 @@ function GroupDialogs(props: MessengerTabContentProps & { handleClick: (name: st
 	) : chats?.group && Array.isArray(chats.group) && chats.group.length > 0 ? (
 		<>
 			{chats.group.map(chat => (
-				<DialogBoxAndDialog {...props} rid={chat} />
+				<DialogBoxAndDialog {...props} key={chat} rid={chat} />
 			))}
 			<Divider sx={{ width: '50%', margin: '.5rem auto' }} />
 		</>
@@ -328,8 +328,8 @@ export function MessangerHelpTabContent(props: { mode?: 'small' | 'normal' }) {
 					icon={<PersonSearchIcon sx={{ fontSize: '2.15rem' }} />}
 				/>
 				<OnyxTypography>
-					В вашем <strong>Профиле</strong>, во вкладке <strong>Настройки</strong> имеется параметр "
-					<strong>Видимость профиля в системе</strong>". Этот параметр позволяет находить ваш контакт в
+					В вашем <strong>Профиле</strong>, во вкладке <strong>Настройки</strong> имеется параметр &quot;
+					<strong>Видимость профиля в системе</strong>&quot;. Этот параметр позволяет находить ваш контакт в
 					системе другим пользователям. Если же его отключить, то через поиск контактов вас будет не найти,
 					учтите это!
 				</OnyxTypography>
