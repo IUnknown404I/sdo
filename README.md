@@ -1,5 +1,8 @@
 # :desktop_computer: Platform for organizing remote learning
-System designed only in :ru: localization.
+System designed only in :ru: localization.\
+You can use an observe account to review the platform if u want to avoid registration & other pre-auth logic:
+- Login: __observer__
+- Password: __Observer2023*__
 
 ## :page_with_curl:	Description of the project
 This is preview of the studying platform with auth, messenger, data visualization, core of courses-items. The demo intended to be a subject for definition of the final MVP requirements.
