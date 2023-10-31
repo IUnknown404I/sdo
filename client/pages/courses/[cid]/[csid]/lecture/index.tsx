@@ -13,10 +13,8 @@ import { OnyxTypography } from '../../../../../components/basics/OnyxTypography'
 import SectionContentTextBlock from '../../../../../components/pages/courses/section-elements/EditFieldsetTextBlock/EditFieldsetTextBlock';
 import SectionContentContainer from '../../../../../components/pages/courses/section-elements/SectionContentContainer/SectionContentContainer';
 import SectionContentDivider from '../../../../../components/pages/courses/section-elements/SectionContentDivider/SectionContentDivider';
-import {
-	SectionContentBlockTitle,
-	SectionContentSlideTransition,
-} from '../../../../../components/pages/courses/section-elements/SectionItems';
+import SectionContentHeader from '../../../../../components/pages/courses/section-elements/SectionContentHeader/SectionContentHeader';
+import { SectionContentSlideTransition } from '../../../../../components/pages/courses/section-elements/SectionItems';
 import CoursesLayout from '../../../../../layout/CoursesLayout';
 import { useTypedDispatch, useTypedSelector } from '../../../../../redux/hooks';
 import { changeCourseViewMode } from '../../../../../redux/slices/courses';
@@ -64,7 +62,7 @@ const CourseSectionLecturePage = () => {
 				>
 					<SectionContentSlideTransition direction='left'>
 						<SectionContentContainer>
-							<SectionContentBlockTitle text='Средства защиты органов дыхания, рук, головы, лица, органа слуха, глаз' />
+							<SectionContentHeader text='Средства защиты органов дыхания, рук, головы, лица, органа слуха, глаз' />
 							<SectionContentTextBlock>
 								<OnyxTypography tpSize='1.1rem'>
 									<b>Средства индивидуальной защиты (СИЗ)</b> — средства, используемые работником для

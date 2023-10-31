@@ -253,7 +253,7 @@ export class UsersController {
 
 	@Put('personal')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
+	@UseGuards(RefreshOrAccessTokenGuard)
 	async updatePersonalUserdata(
 		@Request() req,
 		@Body('name', StringValidationPipe) name: string,
@@ -264,9 +264,16 @@ export class UsersController {
 		@Body('tel', StringOrUndefinedValidationPipe) tel?: string,
 		@Body('avatar', StringOrUndefinedValidationPipe) avatar?: string,
 	) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
+		let requestedUsername = '';
+		if (req.headers.authorization?.split(' ')[1])
+			requestedUsername = (
+				(await this.usersService.decodeJWT(req.headers.authorization?.split(' ')[1])) as AccessTokenPayload
+			).username;
+		else if (!!req.cookies.refreshToken) {
+			requestedUsername = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username || '';
+		}
+		if (!requestedUsername) throw new UnauthorizedException('Не удалось подтвердить данные пользователя!');
+
 		const parsedObject: UserPersonalT = {
 			name,
 			surname,
@@ -278,7 +285,7 @@ export class UsersController {
 		if (avatar) parsedObject.avatar = avatar;
 
 		return await this.usersService.updatePersonalUserData({
-			ident: { username: decodedTokenData.username },
+			ident: { username: requestedUsername },
 			personal: parsedObject,
 		});
 	}

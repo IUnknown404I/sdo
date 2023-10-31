@@ -1,19 +1,19 @@
-// TODO: proxing observable realize!
+// TODO: proxing observable refactor!
 // export const makeObservable = (target: Object, handler: (property: string, newValue?: any) => void) => {
 // 	console.log(target);
 // 	console.log(handler);
 
 // 	const observe = Symbol('observe');
 // 	const handlers = Symbol('handlers');
-// 	target[handlers] = [] as ((property: string, value: any) => void)[];
 
+// 	target[handlers] = [] as ((property: string, value: any) => void)[];
 // 	target[observe] = function () {
 // 		this[handlers].push(handler);
 // 	};
 
 // 	return new Proxy(target, {
 // 		get(target, property, receiver) {
-// 			console.log('SETTING', property);
+// 			console.log('GETTING', property);
 // 			if (Reflect.get(...arguments)) target[handlers].forEach(handler => handler(property));
 // 			return true;
 // 		},
@@ -33,7 +33,7 @@
 export const isType = <T>(x: any): x is T => true;
 
 /**
- * @IUnknown404I Simply return an array with all keys by deep scanning. Also can logs all steps.
+ * @IUnknown404I Simply return an array with all passed Objects' keys by deep scanning. Also can log all steps.
  * @param payload as [Object] with keys:
  * - obj: [Object] as main obj to analize;
  * - enableLogs?: [boolean], false by default. Pass true to logout every found key on the steps;

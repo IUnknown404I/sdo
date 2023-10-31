@@ -846,24 +846,33 @@ export class UsersService {
 		}
 	}
 
+	/**
+	 * @IUnknown404I This function updates the user according passed ident data with passed personal object.
+	 * If avatar changes, old file will be removed by the new one (as with upload-avatar function).
+	 * @param payload as Object with UserIdentPayload and UserPersonalType attributes;
+	 * @returns mongoose update-object or throws an error.
+	 */
 	async updatePersonalUserData(payload: { ident: UserIdentPayload; personal: UserPersonalT }) {
 		const requestedUser = await this.findUser({ ...payload.ident, secret: true });
 
-		// avatar file check
+		// current user's avatar file check
 		if (payload.personal.avatar) {
-			const validPath =
-				'public/users/avatars/' + requestedUser.personal.avatar.startsWith('/')
-					? requestedUser.personal.avatar.slice(1)
-					: requestedUser.personal.avatar;
+			const currentAvatarValidPath: string | undefined = requestedUser.personal.avatar
+				? 'public/users/avatars/' +
+				  (requestedUser.personal.avatar.startsWith('/')
+						? requestedUser.personal.avatar.slice(1)
+						: requestedUser.personal.avatar)
+				: undefined;
 
 			// check for uploaded image existance if passed new avatar from default list
 			if (
+				!!currentAvatarValidPath &&
 				requestedUser.personal.avatar !== payload.personal.avatar &&
 				requestedUser.personal.avatar.includes('defaults/') &&
-				fs.existsSync(validPath) &&
-				fs.lstatSync(validPath).isDirectory()
+				fs.existsSync(currentAvatarValidPath) &&
+				fs.lstatSync(currentAvatarValidPath).isDirectory()
 			)
-				fs.unlink(validPath, err => logapp.log(err));
+				fs.unlink(currentAvatarValidPath, err => logapp.log(err));
 		}
 
 		return await this.usersModel.updateOne(

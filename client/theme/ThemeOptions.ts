@@ -1,5 +1,8 @@
 import { blueGrey, green } from '@mui/material/colors';
 
+export const COROPRATIVE_COLOR_LIGHT = '#006FBA';
+export const COROPRATIVE_COLOR_DARK = '#66B2FF';
+
 export const lightThemePalette = {
 	primary: {
 		main: '#006FBA',

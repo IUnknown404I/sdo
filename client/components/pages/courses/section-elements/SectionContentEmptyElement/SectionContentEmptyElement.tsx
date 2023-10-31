@@ -2,15 +2,17 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ControlPointDuplicateIcon from '@mui/icons-material/ControlPointDuplicate';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import EditIcon from '@mui/icons-material/Edit';
 import ErrorIcon from '@mui/icons-material/Error';
-import SettingsIcon from '@mui/icons-material/Settings';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import { Box, Divider } from '@mui/material';
-import { ReactNode } from 'react';
+import React, { ComponentProps, ReactNode } from 'react';
 import { useTypedSelector } from '../../../../../redux/hooks';
-import OnyxSpeedDial from '../../../../basics/OnyxSpeedDial';
-import { EditFieldset, EditFieldsetLegend } from '../SectionEditElements';
+import {
+	EditFieldset,
+	EditFieldsetLegend,
+	SectionEditCofigButton,
+	SectionEditConfigSubDial,
+} from '../SectionEditElements';
 
 export function SectionContentEmptyElement() {
 	const viewMode = useTypedSelector(store => store.courses.mode);
@@ -25,7 +27,10 @@ export function SectionContentEmptyElement() {
 
 export default SectionContentEmptyElement;
 
-function EditFieldsetDividerWrapper(props: { children: ReactNode }) {
+function EditFieldsetDividerWrapper(
+	props: ComponentProps<typeof SectionContentEmptyElement> & { children: ReactNode },
+) {
+	const [configState, setConfigState] = React.useState<boolean>(false);
 	return (
 		<Box sx={{ width: '100%', zIndex: 0, '&:hover': { zIndex: 1 } }}>
 			<EditFieldset
@@ -33,37 +38,29 @@ function EditFieldsetDividerWrapper(props: { children: ReactNode }) {
 			>
 				<EditFieldsetLegend>
 					Пустой блок
-					<OnyxSpeedDial
+					<SectionEditCofigButton configState={configState} setConfigState={setConfigState} />
+					<SectionEditConfigSubDial
+						orderNumber={1}
 						icon={<SwapVertIcon />}
-						blockElement
-						disableOpenIcon
-						disableBackdrop
-						size='small'
-						placement='top'
-						itemsPlacement='right'
+						configState={configState}
 						ariaLabel='Container movement'
 						items={[
 							{ name: 'Переместить вниз', icon: <ArrowDropDownIcon /> },
 							{ name: 'Переместить вверх', icon: <ArrowDropUpIcon /> },
 						]}
-						containerSx={{ position: 'absolute', right: '-27px', top: '-7px' }}
 					/>
-					<OnyxSpeedDial
+					<SectionEditConfigSubDial
+						orderNumber={2}
 						icon={<ErrorIcon />}
-						blockElement
-						disableOpenIcon
-						disableBackdrop
-						size='small'
-						placement='top'
-						itemsPlacement='right'
-						ariaLabel='Container movement'
+						configState={configState}
+						ariaLabel='Container options'
 						items={[
 							{ name: 'Удалить элемент', icon: <DeleteForeverIcon color='error' /> },
 							{ name: 'Дублировать элемент', icon: <ControlPointDuplicateIcon /> },
 						]}
-						containerSx={{ position: 'absolute', right: '-52px', top: '-7px' }}
 					/>
 				</EditFieldsetLegend>
+
 				{props.children}
 			</EditFieldset>
 		</Box>

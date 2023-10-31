@@ -5,30 +5,40 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 import ErrorIcon from '@mui/icons-material/Error';
 import SecurityIcon from '@mui/icons-material/Security';
-import SettingsIcon from '@mui/icons-material/Settings';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
 import { Button, Stack } from '@mui/material';
 import { useRouter } from 'next/router';
-import { ComponentProps, ReactNode } from 'react';
+import React, { ComponentProps, ReactNode } from 'react';
 import { useTypedSelector } from '../../../../../redux/hooks';
 import OnyxLink from '../../../../basics/OnyxLink';
-import OnyxSpeedDial from '../../../../basics/OnyxSpeedDial';
 import { OnyxTypography } from '../../../../basics/OnyxTypography';
-import SectionContentLinkItem, { SectionItemBaseProps } from '../SectionContentLinkItem/SectionContentLinkItem';
-import { EditFieldset, EditFieldsetLegend, LINK_ITEM_MAP } from '../SectionEditElements';
+import { SectionItemBaseProps } from '../SectionContentLinkItem/SectionContentLinkItem';
+import {
+	EditFieldset,
+	EditFieldsetLegend,
+	SectionEditCofigButton,
+	SectionEditConfigSubDial,
+} from '../SectionEditElements';
 import { CourseSectionItemFooter } from '../SectionItems';
 
 type ScormItemsTypes = 'ispring' | 'storyline';
+const SCORM_MAP = {
+	scorm: {
+		href: '/images/courses/sections/scorm.png',
+		width: '50px',
+		hrefTitle: 'Интерактивная презентация',
+		fileType: 'Scorm-пакет',
+	},
+};
+
 function SectionScormItem(props: { scid: string; type: ScormItemsTypes } & SectionItemBaseProps) {
 	const router = useRouter();
 	const viewMode = useTypedSelector(store => store.courses.mode);
 
 	const ScormItem = (
 		<OnyxLink
-			href={`/courses/${router.query.cid}/${router.query.csid}/scorm?path=${props.scid}/${
-				props.type === 'ispring' ? 'index.html' : 'story.html'
-			}`}
+			href={`/courses/${router.query.cid}/${router.query.csid}/scorm/${props.scid}`}
 			title='Интерактивная презентация'
 			style={{ flexBasis: props.basis ? `${props.basis}%` : '100%' }}
 		>
@@ -38,16 +48,12 @@ function SectionScormItem(props: { scid: string; type: ScormItemsTypes } & Secti
 				sx={{ height: '100%', padding: '.5rem .5rem .25rem !important', flexDirection: 'column' }}
 			>
 				<Stack width='100%' height='100%' direction='row' alignItems='center' gap={2}>
-					<img
-						alt='Scorm package icon'
-						src={LINK_ITEM_MAP.scorm.href}
-						style={{ width: LINK_ITEM_MAP.scorm.width }}
-					/>
+					<img alt='Scorm package icon' src={SCORM_MAP.scorm.href} style={{ width: SCORM_MAP.scorm.width }} />
 					<OnyxTypography text={props.text} />
 				</Stack>
 				<CourseSectionItemFooter
 					viewed={props.viewed}
-					additional={{ fileSize: props.size, fileType: 'scorm' }}
+					additional={{ fileSize: props.fileSize, fileType: SCORM_MAP.scorm.fileType }}
 				/>
 			</Button>
 		</OnyxLink>
@@ -56,66 +62,63 @@ function SectionScormItem(props: { scid: string; type: ScormItemsTypes } & Secti
 	return viewMode === 'observe' ? (
 		ScormItem
 	) : (
-		<EditFieldsetScormWrapper {...props} type='scorm' title={`Scorm-пакет, тип: ${props.type}`}>
+		<EditFieldsetScormWrapper {...props} title={`Scorm-пакет, тип: ${props.type}`}>
 			{ScormItem}
 		</EditFieldsetScormWrapper>
 	);
 }
 
 export function EditFieldsetScormWrapper(
-	props: ComponentProps<typeof SectionContentLinkItem> & { title?: string; children: ReactNode },
+	props: ComponentProps<typeof SectionScormItem> & { title?: string; children: ReactNode },
 ) {
+	const router = useRouter();
+	const [configState, setConfigState] = React.useState<boolean>(false);
+
 	return (
 		<EditFieldset styles={{ borderStyle: 'ridge' }}>
 			<EditFieldsetLegend>
-				Элемент - {LINK_ITEM_MAP[props.type]['fileType']}
-				<OnyxSpeedDial
-					icon={<SettingsIcon />}
-					blockElement
-					disableOpenIcon
-					disableBackdrop
-					size='small'
-					placement='top'
-					itemsPlacement='right'
+				{props.title || `Элемент - ${SCORM_MAP.scorm.fileType}`}
+				<SectionEditCofigButton configState={configState} setConfigState={setConfigState} />
+				<SectionEditConfigSubDial
+					orderNumber={1}
+					configState={configState}
 					ariaLabel='Container config'
 					items={[
-						{ name: 'Ограничения', icon: <SecurityIcon /> },
-						{ name: 'Редактировать', icon: <EditIcon /> },
+						{
+							name: 'Ограничения',
+							icon: <SecurityIcon />,
+							href: `/courses/${router.query.cid}/${router.query.csid}/scorm/${props.scid}/config/security`,
+						},
+						{
+							name: 'Редактировать',
+							icon: <EditIcon />,
+							href: `/courses/${router.query.cid}/${router.query.csid}/scorm/${props.scid}/config`,
+						},
 					]}
-					containerSx={{ position: 'absolute', right: '-27px', top: '-7px' }}
 				/>
-				<OnyxSpeedDial
+				<SectionEditConfigSubDial
+					orderNumber={2}
 					icon={<SwapVertIcon />}
-					blockElement
-					disableOpenIcon
-					disableBackdrop
-					size='small'
-					placement='top'
-					itemsPlacement='right'
+					configState={configState}
 					ariaLabel='Container movement'
 					items={[
 						{ name: 'Переместить вниз', icon: <ArrowDropDownIcon /> },
 						{ name: 'Вынести из конейнера', icon: <UTurnLeftIcon /> },
 						{ name: 'Переместить вверх', icon: <ArrowDropUpIcon /> },
 					]}
-					containerSx={{ position: 'absolute', right: '-52px', top: '-7px' }}
 				/>
-				<OnyxSpeedDial
+				<SectionEditConfigSubDial
+					orderNumber={3}
 					icon={<ErrorIcon />}
-					blockElement
-					disableOpenIcon
-					disableBackdrop
-					size='small'
-					placement='top'
-					itemsPlacement='right'
+					configState={configState}
 					ariaLabel='Container movement'
 					items={[
 						{ name: 'Удалить элемент', icon: <DeleteForeverIcon color='error' /> },
 						{ name: 'Дублировать элемент', icon: <ControlPointDuplicateIcon /> },
 					]}
-					containerSx={{ position: 'absolute', right: '-77px', top: '-7px' }}
 				/>
 			</EditFieldsetLegend>
+
 			{props.children}
 		</EditFieldset>
 	);

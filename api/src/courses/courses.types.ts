@@ -11,6 +11,8 @@ interface CourseSectionAnyItemBaseI {
 }
 
 interface CourseSectionBasicStylesI {
+	color?: string;
+	elevation?: number;
 	borderWidth?: number;
 	borderColor?: string;
 	borderStyle?: string;
@@ -21,6 +23,7 @@ interface CourseSectionBaseI extends CourseSectionAnyItemBaseI {
 	status: boolean;
 	type: 'container';
 	subType: ContainersSubTypes;
+	styles: CourseSectionBasicStylesI;
 }
 
 export const isCourseSectionContainer = (obj: Object): obj is CourseSectionContainer =>
@@ -28,9 +31,6 @@ export const isCourseSectionContainer = (obj: Object): obj is CourseSectionConta
 export interface CourseSectionContainer extends CourseSectionBaseI {
 	subType: 'full';
 	content: Array<CourseSectionAnyElementType>;
-	styles: CourseSectionBasicStylesI & {
-		elevated: boolean;
-	};
 }
 
 export const isCourseSectionRowContainer = (obj: Object): obj is CourseSectionRowContainer =>
@@ -38,7 +38,6 @@ export const isCourseSectionRowContainer = (obj: Object): obj is CourseSectionRo
 export interface CourseSectionRowContainer extends CourseSectionBaseI {
 	subType: 'row';
 	content: [] | [CourseSectionAnyElementType] | [CourseSectionAnyElementType, CourseSectionAnyElementType];
-	styles: CourseSectionBasicStylesI;
 }
 
 // DIVIDERS:
@@ -64,19 +63,19 @@ interface CourseSectionItemBaseI extends CourseSectionAnyItemBaseI {
 	type: 'item';
 	subType: SectionItemsSubTypes;
 	title?: string;
-	styles: CourseSectionBasicStylesI & {
+	styles?: Omit<CourseSectionBasicStylesI, 'elevation'> & {
 		width?: 25 | 50 | 75 | 100;
 	};
-	security: {
+	security?: {
 		fromDate?: number;
 		toDate?: number;
 	};
-    viewed: boolean;
+	viewed?: boolean;
 }
 
 export const isCourseSectionItemLink = (obj: Object): obj is CourseSectionItemLinkI =>
 	'type' in obj && obj['type'] === 'item' && 'subType' in obj && obj['subType'] === 'link';
-interface CourseSectionItemLinkI extends CourseSectionItemBaseI {
+export interface CourseSectionItemLinkI extends CourseSectionItemBaseI {
 	title: string;
 	subType: 'link';
 	href: string;
@@ -85,7 +84,7 @@ interface CourseSectionItemLinkI extends CourseSectionItemBaseI {
 
 export const isCourseSectionItemDocument = (obj: Object): obj is CourseSectionItemDocumentI =>
 	'type' in obj && obj['type'] === 'item' && 'subType' in obj && obj['subType'] === 'document';
-interface CourseSectionItemDocumentI extends CourseSectionItemBaseI {
+export interface CourseSectionItemDocumentI extends CourseSectionItemBaseI {
 	title: string;
 	subType: 'document';
 	href: string;
@@ -95,7 +94,7 @@ interface CourseSectionItemDocumentI extends CourseSectionItemBaseI {
 
 export const isCourseSectionItemLecture = (obj: Object): obj is CourseSectionItemLectureI =>
 	'type' in obj && obj['type'] === 'item' && 'subType' in obj && obj['subType'] === 'lecture';
-interface CourseSectionItemLectureI extends CourseSectionItemBaseI {
+export interface CourseSectionItemLectureI extends CourseSectionItemBaseI {
 	title: string;
 	subType: 'lecture';
 	cslid: string;
@@ -103,7 +102,7 @@ interface CourseSectionItemLectureI extends CourseSectionItemBaseI {
 
 export const isCourseSectionItemScorm = (obj: Object): obj is CourseSectionItemScormI =>
 	'type' in obj && obj['type'] === 'item' && 'subType' in obj && obj['subType'] === 'scorm';
-interface CourseSectionItemScormI extends CourseSectionItemBaseI {
+export interface CourseSectionItemScormI extends CourseSectionItemBaseI {
 	title: string;
 	subType: 'scorm';
 	scid: string;
@@ -111,14 +110,15 @@ interface CourseSectionItemScormI extends CourseSectionItemBaseI {
 
 export const isCourseSectionItemHeader = (obj: Object): obj is CourseSectionItemHeaderI =>
 	'type' in obj && obj['type'] === 'item' && 'subType' in obj && obj['subType'] === 'header';
-interface CourseSectionItemHeaderI extends CourseSectionItemBaseI {
+export interface CourseSectionItemHeaderI extends CourseSectionItemBaseI {
 	title: string;
 	subType: 'header';
+	styles: Omit<CourseSectionBasicStylesI, 'elevation'>;
 }
 
 export const isCourseSectionItemFeedback = (obj: Object): obj is CourseSectionItemFeedbackI =>
 	'type' in obj && obj['type'] === 'item' && 'subType' in obj && obj['subType'] === 'feedback';
-interface CourseSectionItemFeedbackI extends CourseSectionItemBaseI {
+export interface CourseSectionItemFeedbackI extends CourseSectionItemBaseI {
 	title: string;
 	subType: 'feedback';
 	href: string;
@@ -127,7 +127,7 @@ interface CourseSectionItemFeedbackI extends CourseSectionItemBaseI {
 
 export const isCourseSectionItemText = (obj: Object): obj is CourseSectionItemTextI =>
 	'type' in obj && obj['type'] === 'item' && 'subType' in obj && obj['subType'] === 'text';
-interface CourseSectionItemTextI extends CourseSectionItemBaseI {
+export interface CourseSectionItemTextI extends CourseSectionItemBaseI {
 	subType: 'text';
 	content: string;
 }

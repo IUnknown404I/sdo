@@ -1,109 +1,126 @@
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import ControlPointIcon from '@mui/icons-material/ControlPoint';
 import ControlPointDuplicateIcon from '@mui/icons-material/ControlPointDuplicate';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import EditIcon from '@mui/icons-material/Edit';
-import EjectIcon from '@mui/icons-material/Eject';
+import DesignServicesIcon from '@mui/icons-material/DesignServices';
 import ErrorIcon from '@mui/icons-material/Error';
-import SettingsIcon from '@mui/icons-material/Settings';
+import FormatPaintIcon from '@mui/icons-material/FormatPaint';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { Button, Paper } from '@mui/material';
-import { ComponentProps, ReactNode } from 'react';
+import React, { ComponentProps, ReactNode } from 'react';
 import { useTypedSelector } from '../../../../../redux/hooks';
-import OnyxSpeedDial from '../../../../basics/OnyxSpeedDial';
-import { EditFieldset, EditFieldsetLegend } from '../SectionEditElements';
+import { CoursesReduxI } from '../../../../../redux/slices/courses';
+import { OnyxTypography } from '../../../../basics/OnyxTypography';
+import ContentContainerEditModal from '../../config-elements/ContentContainerEditModal';
+import { CourseSectionContainer } from '../../courseItemsTypes';
+import {
+	EditFieldset,
+	EditFieldsetLegend,
+	SectionEditCofigButton,
+	SectionEditConfigSubDial,
+} from '../SectionEditElements';
+import ContentAddElemetModal from '../../config-elements/ContentAddElemetModal';
 
-function SectionContentContainer(props: { children: ReactNode | ReactNode[]; elevated?: boolean }) {
+function SectionContentContainer(props: {
+	forcedMode?: CoursesReduxI['mode'];
+	status?: boolean;
+	children: ReactNode | ReactNode[];
+	styles?: CourseSectionContainer['styles'];
+}) {
 	const viewMode = useTypedSelector(store => store.courses.mode);
+	
 	const Container = (
 		<Paper
-			elevation={props.elevated ? 3 : 0}
+			elevation={props.styles?.elevation || 0}
 			sx={{
 				width: '100%',
 				display: 'flex',
 				flexDirection: 'column',
 				gap: '.5rem',
-				padding: props.elevated ? '1.25rem' : '',
-				border: props.elevated ? '1px solid #006fba' : '',
-				borderRadius: props.elevated ? '13px' : '',
+				padding: !!props.styles?.elevation ? '1.25rem' : '',
+				borderWidth: props.styles?.borderWidth ? `${props.styles.borderWidth}px` : '0px',
+				borderColor: props.styles?.borderColor,
+				borderStyle: props.styles?.borderStyle,
+				borderRadius: !!props.styles?.elevation ? '13px' : '',
 			}}
 		>
 			{props.children}
 		</Paper>
 	);
 
-	return viewMode === 'observe' ? (
+	return props.forcedMode === 'observe' || (props.forcedMode !== 'editor' && viewMode === 'observe') ? (
 		Container
 	) : (
-		<EditFieldsetContainerWrapper>{Container}</EditFieldsetContainerWrapper>
+		<EditFieldsetContainerWrapper {...props}>{Container}</EditFieldsetContainerWrapper>
 	);
 }
 
 export default SectionContentContainer;
 
 function EditFieldsetContainerWrapper(props: ComponentProps<typeof SectionContentContainer>) {
+	const [configState, setConfigState] = React.useState<boolean>(false);
+	const [configModalState, setConfigModalState] = React.useState<boolean>(false);
+	const [addModalState, setAddModalState] = React.useState<boolean>(false);
+
 	return (
 		<EditFieldset styles={{ border: '3px solid lightgray' }}>
 			<EditFieldsetLegend>
 				Контейнер
-				<OnyxSpeedDial
-					icon={<SettingsIcon />}
-					blockElement
-					disableOpenIcon
-					disableBackdrop
-					size='small'
-					placement='top'
-					itemsPlacement='right'
+				<SectionEditCofigButton configState={configState} setConfigState={setConfigState} />
+				<SectionEditConfigSubDial
+					orderNumber={1}
+					icon={<FormatPaintIcon />}
+					configState={configState}
 					ariaLabel='Container config'
 					items={[
-						{ name: 'Редактировать стили', icon: <EditIcon /> },
 						{
-							name: !!props.elevated ? 'Опустить контейнер' : 'Поднять контейнер',
-							icon: <EjectIcon sx={{ transform: !!props.elevated ? 'rotate(180deg)' : undefined }} />,
+							name: 'Редактировать стили',
+							icon: <DesignServicesIcon />,
+							onClick: () => setConfigModalState(prev => !prev),
 						},
 					]}
-					containerSx={{ position: 'absolute', right: '-27px', top: '-7px' }}
 				/>
-				<OnyxSpeedDial
+				<SectionEditConfigSubDial
+					orderNumber={2}
 					icon={<SwapVertIcon />}
-					blockElement
-					disableOpenIcon
-					disableBackdrop
-					size='small'
-					placement='top'
-					itemsPlacement='right'
+					configState={configState}
 					ariaLabel='Container movement'
 					items={[
 						{ name: 'Переместить вниз', icon: <ArrowDropDownIcon /> },
 						{ name: 'Переместить вверх', icon: <ArrowDropUpIcon /> },
 					]}
-					containerSx={{ position: 'absolute', right: '-52px', top: '-7px' }}
 				/>
-				<OnyxSpeedDial
+				<SectionEditConfigSubDial
+					orderNumber={3}
 					icon={<ErrorIcon />}
-					blockElement
-					disableOpenIcon
-					disableBackdrop
-					size='small'
-					placement='top'
-					itemsPlacement='right'
-					ariaLabel='Container movement'
+					configState={configState}
+					ariaLabel='Container options'
 					items={[
 						{ name: 'Удалить элемент', icon: <DeleteForeverIcon color='error' /> },
 						{ name: 'Скрыть элемент', icon: <VisibilityOffIcon color='error' /> },
 						{ name: 'Дублировать элемент', icon: <ControlPointDuplicateIcon /> },
 					]}
-					containerSx={{ position: 'absolute', right: '-77px', top: '-7px' }}
 				/>
 			</EditFieldsetLegend>
+
 			{props.children}
 
-			<Button variant='text' size='small' color='warning' sx={{ marginTop: '.25rem', fontSize: '.85rem' }}>
-				Добавить элемент в контейнер
-			</Button>
+			<OnyxTypography
+				component='div'
+				ttFollow={false}
+				ttPlacement='top'
+				ttNode='Добавить элемент в контейнер'
+				sx={{ marginTop: '.5rem', marginInline: 'auto', width: 'fit-content' }}
+			>
+				<Button variant='text' size='small' color='success' onClick={() => setAddModalState(prev => !prev)}>
+					<ControlPointIcon sx={{ fontSize: '2.25rem' }} />
+				</Button>
+			</OnyxTypography>
+
+			<ContentContainerEditModal modalState={configModalState} setModalState={setConfigModalState} {...props} />
+			<ContentAddElemetModal state={addModalState} setState={setAddModalState} />
 		</EditFieldset>
 	);
 }

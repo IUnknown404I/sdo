@@ -6,7 +6,7 @@ import chatSocket, { PUBLIC_WS_ROOMS } from '../sockets/chat.ws';
 /**
  * @IUnknown404I Component must be wrapped by AuthWrapper & ReduxWrapper & RTKQuerryWrapper.
  * @param passedRid: string or undefined as id of the server-room to connect.
- * @returns An Array[2]:
+ * @returns An Array[3]:
  * - chatSocket: Socket<ServerToClientEvents, ClientToServerEvents> custom instance;
  * - isConnected: boolean connection state between the client Socket and the server.
  */

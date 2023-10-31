@@ -1,9 +1,10 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { getAuthEndpoints } from './endpoints/authEnd';
 import { getChatEndpoints } from './endpoints/chatEnd';
+import { getCoursesEndpoints } from './endpoints/coursesEnd';
+import { getScormsEndpoints } from './endpoints/scormsEnd';
 import { getUserEndpoints } from './endpoints/userEnd';
 import { baseQueryWithRetry } from './utils/apiUtils';
-import { getCoursesEndpoints } from './endpoints/coursesEnd';
 
 export const TAG_TYPES_RTK = [
 	// auth
@@ -16,6 +17,8 @@ export const TAG_TYPES_RTK = [
 	...['Chats', 'Friends', 'UsersData'],
 	// courses
 	...['Courses', 'CourseData'],
+	// scorms
+	...['Scorms'],
 ] as const;
 export type TagTypesRTK = (typeof TAG_TYPES_RTK)[number];
 
@@ -29,6 +32,7 @@ export const rtkApi = createApi({
 			...getUserEndpoints(build),
 			...getChatEndpoints(build),
 			...getCoursesEndpoints(build),
+			...getScormsEndpoints(build),
 		};
 	},
 });

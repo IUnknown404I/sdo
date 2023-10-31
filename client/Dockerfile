@@ -1,4 +1,4 @@
-FROM node:19-alpine as dependencies
+FROM node:20-alpine as dependencies
 WORKDIR /opt/mrg
 COPY *.json ./
 EXPOSE 4040

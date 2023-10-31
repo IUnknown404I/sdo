@@ -1,6 +1,72 @@
-import { Box, SxProps } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { Box, Button, SxProps } from '@mui/material';
 import { ComponentProps, ReactNode } from 'react';
-import { SectionContentBlockTitle } from './SectionItems';
+import OnyxSpeedDial from '../../../basics/OnyxSpeedDial';
+import { OnyxTypography } from '../../../basics/OnyxTypography';
+
+export const configSxProps = (orderNumber: number = 1, configState: boolean = false): SxProps => ({
+	top: '-6px',
+	right: configState ? `-${(orderNumber + 1) * 17 + (orderNumber - 1) * 10}px` : '0',
+	opacity: configState ? '1' : '0',
+	position: 'absolute',
+	transition: 'all .25s ease-out',
+	'&:hover': { zIndex: 2 },
+});
+
+export const SectionEditCofigButton = (props: {
+	configState: boolean;
+	setConfigState: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
+	return (
+		<OnyxTypography
+			component='div'
+			ttPlacement='top'
+			ttFollow={false}
+			ttNode={props.configState ? 'Свернуть опции' : 'Редактировать'}
+			sx={{
+				position: 'absolute',
+				top: '-9px',
+				right: '2px',
+				width: 'fit-conent',
+				'&:hover': { zIndex: 2 },
+			}}
+		>
+			<Button onClick={() => props.setConfigState(prev => !prev)} sx={{ padding: 'unset', minWidth: 'unset' }}>
+				<SettingsIcon
+					sx={{
+						fontSize: '1.75rem',
+						transition: 'all .3s ease-out',
+						color: props.configState ? 'gray' : undefined,
+						transform: props.configState ? 'rotate(125deg)' : '',
+					}}
+				/>
+			</Button>
+		</OnyxTypography>
+	);
+};
+
+export const SectionEditConfigSubDial = (props: {
+	configState: boolean;
+	items: ComponentProps<typeof OnyxSpeedDial>['items'];
+	ariaLabel?: string;
+	orderNumber?: number;
+	icon?: ComponentProps<typeof OnyxSpeedDial>['icon'];
+}) => {
+	return (
+		<OnyxSpeedDial
+			icon={props.icon || <SettingsIcon />}
+			blockElement
+			disableOpenIcon
+			disableBackdrop
+			size='small'
+			placement='top'
+			itemsPlacement='right'
+			ariaLabel={props.ariaLabel || 'Config options'}
+			items={props.items}
+			containerSx={configSxProps(props.orderNumber || 1, props.configState)}
+		/>
+	);
+};
 
 export const LINK_ITEM_MAP = {
 	lecture: {
@@ -48,18 +114,6 @@ export const LINK_ITEM_MAP = {
 	},
 };
 
-export function EditFieldsetTitleWrapper(props: {
-	text: ComponentProps<typeof SectionContentBlockTitle>['text'];
-	children: ReactNode;
-}) {
-	return (
-		<EditFieldset styles={{ borderStyle: 'solid' }}>
-			<EditFieldsetLegend>Заголовок</EditFieldsetLegend>
-			{props.children}
-		</EditFieldset>
-	);
-}
-
 export function EditFieldset(props: { children: ReactNode | ReactNode[]; styles?: SxProps }) {
 	return (
 		<Box
@@ -67,7 +121,8 @@ export function EditFieldset(props: { children: ReactNode | ReactNode[]; styles?
 			sx={{
 				width: '100%',
 				position: 'relative',
-				padding: '10px 4px',
+				// padding: '10px 4px',
+				padding: '.75rem',
 				border: '1px dashed #c7c7c7',
 				borderRadius: '7px',
 				zIndex: 0,
@@ -87,6 +142,7 @@ export function EditFieldsetLegend(props: { children: ReactNode; styles?: SxProp
 			sx={{
 				position: 'relative',
 				paddingInline: '.5rem',
+				paddingRight: '32px',
 				marginLeft: '.75rem',
 				fontStyle: 'italic',
 				fontSize: '.7rem',

@@ -7,13 +7,13 @@ import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlin
 import SchoolIcon from '@mui/icons-material/School';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import SupportOutlinedIcon from '@mui/icons-material/SupportOutlined';
-import { Button, Divider, List, SxProps, Theme } from '@mui/material';
+import { Button, Divider, List, SxProps, Theme, useMediaQuery, useTheme } from '@mui/material';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import React, { ReactElement } from 'react';
+import React, { ComponentProps, ReactNode } from 'react';
 import { Footer, Header, LogoGMI } from '../components';
 import OnyxBreacrumbs, { BreadcrumbItem } from '../components/basics/OnyxBreadcrumbs';
 import OnyxRangeInput from '../components/basics/OnyxRangeInput';
@@ -23,29 +23,48 @@ import { useTypedDispatch, useTypedSelector } from '../redux/hooks';
 import { changeCourseViewMode } from '../redux/slices/courses';
 
 export interface ILayoutProps {
-	children: ReactElement | JSX.Element[];
+	children: ReactNode | ReactNode[];
 	contentContainerSx?: SxProps<Theme>;
 	breadcrumbsCourseContent?: BreadcrumbItem[];
 	progressValue?: number;
 	backButton?: boolean;
+	backButtonprops?: {
+		href?: string;
+		text?: string;
+		size?: ComponentProps<typeof Button>['size'];
+		variant?: ComponentProps<typeof Button>['variant'];
+		onClick?: Function;
+		sx?: SxProps;
+	};
 }
 
 const CoursesLayout = (props: ILayoutProps & { courseIconUrl?: string }): JSX.Element => {
+	const theme = useTheme();
+	const fullScreen = useMediaQuery(theme.breakpoints.up('md'));
+
 	const router = useRouter();
 	const dispatcher = useTypedDispatch();
 	const coursesViewMode = useTypedSelector(store => store.courses.mode);
 
 	const handleRouteBack = () => {
-		const basepath = router.asPath.includes('?')
-			? router.asPath.slice(0, router.asPath.indexOf('?'))
-			: router.asPath;
-		router.push(basepath.slice(0, basepath.lastIndexOf('/')));
+		if (!!props.backButtonprops?.href) router.push(props.backButtonprops.href);
+		else {
+			const basepath = router.asPath.includes('?')
+				? router.asPath.slice(0, router.asPath.indexOf('?'))
+				: router.asPath;
+			router.push(basepath.slice(0, basepath.lastIndexOf('/')));
+		}
 	};
 
 	React.useEffect(() => {
 		const storedViewedMode = localStorage.getItem('courses-view-mode');
 		if (!!storedViewedMode && storedViewedMode !== coursesViewMode)
 			dispatcher(changeCourseViewMode(storedViewedMode as typeof coursesViewMode));
+	}, []);
+
+	// forced update editor-mode to classic view for small devices
+	React.useEffect(() => {
+		if (!fullScreen && coursesViewMode === 'editor') dispatcher(changeCourseViewMode('observe'));
 	}, []);
 
 	return (
@@ -161,9 +180,7 @@ const CoursesLayout = (props: ILayoutProps & { courseIconUrl?: string }): JSX.El
 							borderTop: '1px solid',
 							borderLeft: '1px solid',
 							borderColor: 'lightgray',
-							// borderColor: theme => theme.palette.primary.main,
 							borderTopLeftRadius: '15px',
-							// backgroundColor: 'content.main',
 							...props.contentContainerSx,
 						}}
 					>
@@ -189,14 +206,22 @@ const CoursesLayout = (props: ILayoutProps & { courseIconUrl?: string }): JSX.El
 									]}
 									sx={{ marginBottom: '1rem' }}
 								/>
+
 								<Button
-									variant='outlined'
-									size='small'
-									onClick={handleRouteBack}
-									sx={{ paddingInline: '1rem' }}
+									size={props.backButtonprops?.size || 'small'}
+									variant={props.backButtonprops?.variant || 'outlined'}
+									onClick={
+										!!props.backButtonprops?.onClick
+											? () => {
+													props.backButtonprops!.onClick!();
+													handleRouteBack();
+											  }
+											: handleRouteBack
+									}
+									sx={{ paddingInline: '1rem', whiteSpace: 'nowrap', ...props.backButtonprops?.sx }}
 								>
 									<KeyboardBackspaceIcon sx={{ fontSize: '1.25rem', marginRight: '.25rem' }} />{' '}
-									Вернуться
+									{props.backButtonprops?.text || 'Вернуться'}
 								</Button>
 							</Stack>
 						) : (

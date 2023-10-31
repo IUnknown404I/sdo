@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tincan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://projecttincan.com/tincan.xsd">
+	<activities>
+		<activity id="http://6Ep3JbmHgML_course_id" type="http://adlnet.gov/expapi/activities/course">
+			<name lang="und">conutif_xapi</name>
+			<description lang="und">Тестовое задание</description>
+			<launch lang="und">index_lms.html</launch>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/5fJ3iCVd6pF" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">intro</name>
+			<description lang="und">intro</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/6M4AUoRkl1b" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">description</name>
+			<description lang="und">description</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/5uCkFd9b97m" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">args-func</name>
+			<description lang="und">args-func</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/6dMkcf2Xrhu" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">progress-step1</name>
+			<description lang="und">progress-step1</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/5pD8qzCi2d9" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">progress-step2</name>
+			<description lang="und">progress-step2</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/6jm6OeuqMk7" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">progress-step3</name>
+			<description lang="und">progress-step3</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/6C7is0XD3w6" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">progress-step4</name>
+			<description lang="und">progress-step4</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/5pwzSU7B8Gi" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">progress-step5</name>
+			<description lang="und">progress-step5</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/5kI5YjVV2L1" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">progress-step5</name>
+			<description lang="und">progress-step5</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/5eX0Pd5h9by" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">intro_practical</name>
+			<description lang="und">intro_practical</description>
+		</activity>
+		<activity id="http://6Ep3JbmHgML_course_id/6QiWq0WHTSj" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">countif</name>
+			<description lang="und">countif</description>
+		</activity>
+	</activities>
+</tincan>

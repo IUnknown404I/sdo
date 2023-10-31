@@ -1,9 +1,7 @@
-import React from 'react';
-import MinifiedHeader from './MinifiedHeader';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import { Typography } from '@mui/material';
 import AuthCopyrights from './AuthCopyrights';
+import MinifiedHeader from './MinifiedHeader';
 
 const ErrorLayout = (props: { children: JSX.Element | JSX.Element[]; footer: JSX.Element | JSX.Element[] }) => {
 	return (
@@ -55,7 +53,7 @@ const ErrorLayout = (props: { children: JSX.Element | JSX.Element[]; footer: JSX
 						backgroundColor: theme => (theme.palette.mode === 'light' ? '#ffffff' : '#162433'),
 					}}
 				>
-					{Array.isArray(props.children) ? props.children.map(el => <>{el}</>) : props.children}
+					{props.children}
 				</Paper>
 
 				<Box
@@ -74,7 +72,7 @@ const ErrorLayout = (props: { children: JSX.Element | JSX.Element[]; footer: JSX
 						gap: '1rem',
 					}}
 				>
-					{Array.isArray(props.footer) ? props.footer.map(el => <>{el}</>) : props.footer}
+					{props.footer}
 				</Box>
 			</Box>
 

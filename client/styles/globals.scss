@@ -69,12 +69,12 @@ body a {
   text-decoration: none;
 }
 
-img {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  pointer-events: none;
-}
+// img {
+//   -webkit-user-select: none;
+//   -moz-user-select: none;
+//   user-select: none;
+//   pointer-events: none;
+// }
 
 :root {
   --default-font-stack: 'HeliosCondC', system, sans-serif;

@@ -21,7 +21,6 @@ import CoursesLayout from '../../../../layout/CoursesLayout';
 import { rtkApi } from '../../../../redux/api';
 import { useTypedDispatch, useTypedSelector } from '../../../../redux/hooks';
 import { changeCourseViewMode } from '../../../../redux/slices/courses';
-import SectionContentBlock from '../../../../components/pages/courses/section-elements/SectionContentBlock';
 
 const CourseSectionPage = () => {
 	const router = useRouter();
@@ -94,20 +93,12 @@ const CourseSectionPage = () => {
 						</Stack>
 
 						{/* content */}
+						<SectionContent />
 						{/* <SectionContentBlock
 							sectionContent={
 								courseData.sections.find(section => section.csid === router.query.csid)?.content || []
 							}
 						/> */}
-						<Stack
-							id='section-content'
-							component='section'
-							direction='column'
-							gap={2}
-							sx={{ marginTop: '1rem' }}
-						>
-							<SectionContent />
-						</Stack>
 
 						{/* sections-pagination */}
 						<SectionContentPagination courseData={courseData} sectionData={sectionData} />

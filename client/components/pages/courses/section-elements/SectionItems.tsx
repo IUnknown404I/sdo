@@ -4,11 +4,10 @@ import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import { Box, Button, Slide, Stack } from '@mui/material';
 import { useRouter } from 'next/router';
 import { ReactElement, ReactNode } from 'react';
-import { useTypedSelector } from '../../../../redux/hooks';
 import OnyxLink from '../../../basics/OnyxLink';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
 import { CourseI, CourseSectionType } from '../coursesTypes';
-import { EditFieldsetTitleWrapper, LINK_ITEM_MAP } from './SectionEditElements';
+import { LINK_ITEM_MAP } from './SectionEditElements';
 
 export function SectionContentPagination(props: { courseData: CourseI; sectionData: CourseSectionType }) {
 	const router = useRouter();
@@ -82,29 +81,10 @@ export function SectionContentSlideTransition(props: {
 	);
 }
 
-export function SectionContentBlockTitle(props: { text: string; component?: React.ElementType<any> }) {
-	const viewMode = useTypedSelector(store => store.courses.mode);
-	const BlockTitle = (
-		<OnyxTypography
-			component={props.component || 'h2'}
-			text={props.text}
-			tpSize='1.5rem'
-			tpColor='primary'
-			sx={{ marginBottom: '.5rem' }}
-		/>
-	);
-
-	return viewMode === 'observe' ? (
-		BlockTitle
-	) : (
-		<EditFieldsetTitleWrapper text={props.text}>{BlockTitle}</EditFieldsetTitleWrapper>
-	);
-}
-
 export function CourseSectionItemFooter(props: {
 	viewed?: boolean;
 	showFileType?: boolean;
-	additional?: { fileSize?: number; fileType?: keyof typeof LINK_ITEM_MAP };
+	additional?: { fileSize?: number; fileType?: keyof typeof LINK_ITEM_MAP | string };
 }) {
 	return (
 		<OnyxTypography
@@ -121,7 +101,11 @@ export function CourseSectionItemFooter(props: {
 		>
 			{(props.additional?.fileSize || props.additional?.fileType) && (
 				<OnyxTypography component='span' tpSize='inherit' tpColor='secondary' sx={{ width: '100%' }}>
-					{!!props.additional.fileType && `${LINK_ITEM_MAP[props.additional.fileType].fileType}`}
+					{!!props.additional.fileType &&
+						`${
+							LINK_ITEM_MAP[props.additional.fileType as keyof typeof LINK_ITEM_MAP]?.fileType ||
+							props.additional.fileType
+						}`}
 					{!!props.additional.fileSize && `: ${props.additional.fileSize} Кб`}
 				</OnyxTypography>
 			)}

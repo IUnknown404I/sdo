@@ -9,6 +9,9 @@ import { EmailModule } from './email/email.module';
 import { FilesModule } from './files/files.module';
 import { ChatModule } from './chat/chat.module';
 import { CoursesModule } from './courses/courses.module';
+import { ScormsModule } from './scorms/scorms.module';
+import { DocumentsModule } from './documents/documents.module';
+import { LecturesModule } from './lectures/lectures.module';
 
 @Module({
 	imports: [
@@ -31,6 +34,9 @@ import { CoursesModule } from './courses/courses.module';
 		FilesModule,
 		ChatModule,
 		CoursesModule,
+		ScormsModule,
+		DocumentsModule,
+		LecturesModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

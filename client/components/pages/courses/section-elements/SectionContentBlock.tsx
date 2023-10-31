@@ -25,7 +25,7 @@ const SectionContentBlock = (props: { sectionContent: CourseSectionType['content
 		// CONTAINERS
 		if (isCourseSectionContainer(props))
 			return (
-				<SectionContentContainer key={props.csiid} elevated={props.styles.elevated}>
+				<SectionContentContainer key={props.csiid} styles={props.styles}>
 					{props.content
 						.toSorted((a, b) => a.orderNumber - b.orderNumber)
 						.map(element => parseSectionContentBlockElement(element))}

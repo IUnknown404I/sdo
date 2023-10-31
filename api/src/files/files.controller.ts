@@ -20,6 +20,7 @@ import { NotValidDataError } from 'errors/NotValidDataError';
 import * as fs from 'fs';
 import { createReadStream, existsSync } from 'fs';
 import { AccessTokenGuard } from 'guards/AccessTokenGuard';
+import { RefreshOrAccessTokenGuard } from 'guards/RefreshOrAccessTokenGuard';
 import { Error } from 'mongoose';
 import { diskStorage } from 'multer';
 import { AccessTokenPayload } from 'src/users/users.schema';
@@ -294,7 +295,7 @@ export class FilesController {
 	 * @param username string value of the requested user's username;
 	 * @returns Notification of seccessfull upload and userData update or an Error if somithing goes wrong.
 	 */
-	@UseGuards(AccessTokenGuard)
+	@UseGuards(RefreshOrAccessTokenGuard)
 	@Put('users/avatars/:username')
 	@ApiTags('Files')
 	@ApiConsumes('multipart/form-data')
@@ -337,11 +338,15 @@ export class FilesController {
 		@Request() req,
 		@Param('username') username: string,
 	) {
-		if (!req.headers.authorization && !username) throw new NotValidDataError('Не найдены атрибуты идентификации!');
-		const requestedUsername = req.headers.authorization
-			? ((await this.usersService.decodeJWT(req.headers.authorization?.split(' ')[1])) as AccessTokenPayload)
-					.username
-			: username;
+		let requestedUsername = '';
+		if (req.headers.authorization?.split(' ')[1])
+			requestedUsername = (
+				(await this.usersService.decodeJWT(req.headers.authorization?.split(' ')[1])) as AccessTokenPayload
+			).username;
+		else if (!!req.cookies.refreshToken) {
+			requestedUsername = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username || '';
+		}
+		if (!requestedUsername) throw new UnauthorizedException('Не найдены атрибуты идентификации!');
 		if (requestedUsername !== username) throw new UnauthorizedException('Недостаточно прав доступа!');
 
 		// edge case fs validation

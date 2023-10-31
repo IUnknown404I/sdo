@@ -1,15 +1,22 @@
-import { Button, List, ListItem } from '@mui/material';
+import ControlPointIcon from '@mui/icons-material/ControlPoint';
+import { Button, List, ListItem, Stack } from '@mui/material';
 import router from 'next/router';
+import React from 'react';
+import { useTypedSelector } from '../../../../redux/hooks';
 import OnyxLink from '../../../basics/OnyxLink';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
+import ContentAddElemetModal from '../config-elements/ContentAddElemetModal';
+import SectionContentTextBlock from './EditFieldsetTextBlock/EditFieldsetTextBlock';
 import SectionContentContainer from './SectionContentContainer/SectionContentContainer';
 import SectionContentDivider from './SectionContentDivider/SectionContentDivider';
+import SectionContentDocumentItem from './SectionContentDocumentItem/SectionContentDocumentItem';
 import SectionContentEmptyElement from './SectionContentEmptyElement/SectionContentEmptyElement';
+import SectionContentHeader from './SectionContentHeader/SectionContentHeader';
+import SectionContentLectureItem from './SectionContentLectureItem/SectionContentLectureItem';
 import SectionContentLinkItem from './SectionContentLinkItem/SectionContentLinkItem';
 import SectionContentRowContainer from './SectionContentRowContainer/SectionContentRowContainer';
-import { CourseSectionItemFooter, SectionContentBlockTitle, SectionContentSlideTransition } from './SectionItems';
+import { CourseSectionItemFooter, SectionContentSlideTransition } from './SectionItems';
 import SectionScormItem from './SectionScormItem/SectionScormItem';
-import SectionContentTextBlock from './EditFieldsetTextBlock/EditFieldsetTextBlock';
 
 /**
  * @deprecated
@@ -17,8 +24,11 @@ import SectionContentTextBlock from './EditFieldsetTextBlock/EditFieldsetTextBlo
  * @returns Array of ReactNode elements as the content-section for the sections.
  */
 const SectionContent = () => {
+	const viewMode = useTypedSelector(store => store.courses.mode);
+	const [addModalState, setAddModalState] = React.useState<boolean>(false);
+
 	return (
-		<>
+		<Stack id='section-content' component='section' direction='column' gap={2} sx={{ marginTop: '1rem' }}>
 			<SectionContentSlideTransition direction='left'>
 				<SectionContentContainer>
 					<SectionContentTextBlock>
@@ -64,40 +74,40 @@ const SectionContent = () => {
 			<SectionContentSlideTransition direction='left'>
 				<SectionContentContainer>
 					<SectionContentRowContainer>
-						<SectionContentLinkItem
+						<SectionContentLectureItem
 							viewed
-							type='lecture'
+							basis={50}
 							text='Лекция. Спецодежда'
 							href={`/courses/${router.query.cid}/${router.query.csid}/lecture?cslid=ysjKhfvbOMzcesA`}
 						/>
-						<SectionContentLinkItem
+						<SectionContentLectureItem
 							viewed
-							type='lecture'
+							basis={50}
 							text='Лекция. Спецобувь'
 							href={`/courses/${router.query.cid}/${router.query.csid}/lecture?cslid=ysjKhfvbOMzcesA`}
 						/>
 					</SectionContentRowContainer>
 					<SectionContentRowContainer>
-						<SectionContentLinkItem
+						<SectionContentLectureItem
 							viewed
-							type='lecture'
+							basis={50}
 							href={`/courses/${router.query.cid}/${router.query.csid}/lecture?cslid=ysjKhfvbOMzcesA`}
 							text='Лекция. Дерматологические средства защиты'
 						/>
-						<SectionContentLinkItem
-							type='lecture'
+						<SectionContentLectureItem
+							basis={50}
 							href={`/courses/${router.query.cid}/${router.query.csid}/lecture?cslid=ysjKhfvbOMzcesA`}
 							text='Лекция. Средства защиты органов дыхания, рук, головы, лица, органа слуха, глаз'
 						/>
 					</SectionContentRowContainer>
 					<SectionContentRowContainer>
-						<SectionContentLinkItem
-							type='lecture'
+						<SectionContentLectureItem
+							basis={50}
 							href={`/courses/${router.query.cid}/${router.query.csid}/lecture?cslid=ysjKhfvbOMzcesA`}
 							text='Лекция. Средства защиты от падения с высоты'
 						/>
-						<SectionContentLinkItem
-							type='lecture'
+						<SectionContentLectureItem
+							basis={50}
 							href={`/courses/${router.query.cid}/${router.query.csid}/lecture?cslid=ysjKhfvbOMzcesA`}
 							text='Лекция. Другие средства индивидуальной защиты'
 						/>
@@ -109,8 +119,8 @@ const SectionContent = () => {
 
 			<SectionContentSlideTransition>
 				<SectionContentContainer>
-					<SectionContentBlockTitle text='Интерактивные курсы и презентации' />
-					<SectionContentContainer elevated>
+					<SectionContentHeader title='Интерактивные курсы и презентации' />
+					<SectionContentContainer styles={{ elevation: 3 }}>
 						<SectionContentRowContainer alignItems='center'>
 							<OnyxTypography
 								ttNode='Перейти к интерактивному курсу'
@@ -182,19 +192,19 @@ const SectionContent = () => {
 
 					<SectionContentRowContainer>
 						<SectionScormItem
-							scid='dispatcher'
+							scid='hjkas724lf9s8askljbg432sadgbase7'
 							type='storyline'
 							text='Интерактивная презентация. Основы диспетчерского управления системами газоснабжения'
 						/>
 					</SectionContentRowContainer>
 					<SectionContentRowContainer>
 						<SectionScormItem
-							scid='conutif'
+							scid='hsa3fewa2htyjdsdsfdtrhdsahfg7gafsf2'
 							type='storyline'
 							text='Интерактивная презентация. Мой Оффис - Таблицы'
 						/>
 						<SectionScormItem
-							scid='ssoft'
+							scid='hjsd7fyt39dsajhb276fg2gdsahfg732sad6'
 							type='ispring'
 							text='Интерактивная презентация. Общие сведения - ССофт:Сигнал'
 						/>
@@ -206,18 +216,20 @@ const SectionContent = () => {
 
 			<SectionContentSlideTransition>
 				<SectionContentContainer>
-					<SectionContentBlockTitle text='Приказы, государственные стандарты и иные документы' />
+					<SectionContentHeader title='Приказы, государственные стандарты и иные документы' />
 					<SectionContentRowContainer>
-						<SectionContentLinkItem
+						<SectionContentDocumentItem
 							viewed
-							size={348}
+							basis={50}
+							fileSize={348}
 							type='pdf'
 							href={`/courses/${router.query.cid}/${router.query.csid}/document?csdid=ysjKhfvbOMzcesA`}
 							text='Приказ Минпромторга России от 27.05.2021 N 1934 "Об утверждении форм сертификата соответствия и декларации о соответствии и составов сведений, содержащихся в них"'
 						/>
-						<SectionContentLinkItem
+						<SectionContentDocumentItem
 							viewed
-							size={512}
+							basis={50}
+							fileSize={512}
 							type='pdf'
 							href={`/courses/${router.query.cid}/${router.query.csid}/document?csdid=ysjKhfvbOMzcesA`}
 							text='Приказ Минтруда России от 09.12.2014 N 997н "Об утверждении Типовых норм бесплатной выдачи специальной одежды, специальной обуви и других средств индивидуальной защиты работникам..."'
@@ -225,25 +237,29 @@ const SectionContent = () => {
 					</SectionContentRowContainer>
 
 					<SectionContentRowContainer>
-						<SectionContentLinkItem
+						<SectionContentDocumentItem
 							viewed
-							size={810}
-							type='pdf'
+							basis={50}
+							fileSize={810}
+							type='excel'
 							href={`/courses/${router.query.cid}/${router.query.csid}/document?csdid=ysjKhfvbOMzcesA`}
 							text='Решение Коллегии Евразийской экономической комиссии от 25.12.2012 N 293 (ред. от 20.12.2022) "О единых формах сертификата соответствия и декларации о соответствии требованиям технических регламентов"'
 						/>
-						<SectionContentLinkItem
-							size={177}
-							type='pdf'
+						<SectionContentDocumentItem
+							basis={50}
+							fileSize={177}
+							type='word'
 							href={`/courses/${router.query.cid}/${router.query.csid}/document?csdid=ysjKhfvbOMzcesA`}
 							text='ГОСТ 24297-2013 «Межгосударственный стандарт. Верификация закупленной продукции. Организация проведения и методы контроля»'
 						/>
 					</SectionContentRowContainer>
 
 					<SectionContentRowContainer>
-						<SectionContentLinkItem
-							size={562}
+						<SectionContentDocumentItem
+							basis={100}
+							fileSize={562}
 							type='ppt'
+							target='_blank'
 							href={`/courses/${router.query.cid}/${router.query.csid}/document?csdid=ysjKhfvbOMzcesA`}
 							text='Приказ Минтруда России от 29.10.2021 N 767н "Об утверждении Единых типовых норм выдачи средств индивидуальной защиты и смывающих средств" (вступает в силу с 01.09.2023г)'
 						/>
@@ -255,7 +271,7 @@ const SectionContent = () => {
 
 			<SectionContentSlideTransition>
 				<SectionContentContainer>
-					<SectionContentBlockTitle text='Дополнительные материалы к программе' />
+					<SectionContentHeader title='Дополнительные материалы к программе' />
 
 					<SectionContentRowContainer>
 						<SectionContentLinkItem
@@ -283,15 +299,78 @@ const SectionContent = () => {
 
 			<SectionContentSlideTransition>
 				<SectionContentContainer>
-					<SectionContentBlockTitle text='Отзыв о курсе по завершении программы' />
+					<SectionContentHeader title='Отзыв о курсе по завершении программы' />
 					<SectionContentLinkItem
+						basis={75}
 						type='feedback'
 						href='https://support.mrgeng.ru/outcome-training-program/'
 						text='Оцените образовательную программу - анкета обратной связи'
 					/>
 				</SectionContentContainer>
 			</SectionContentSlideTransition>
-		</>
+
+			{viewMode === 'editor' && (
+				<>
+					<Stack width='100%' direction='row' justifyContent='center' alignItems='center' gap={2}>
+						<OnyxTypography
+							component='div'
+							ttFollow={false}
+							ttPlacement='top'
+							ttNode='Добавить элемент в контейнер'
+							sx={{ marginTop: '.5rem', width: 'fit-content' }}
+						>
+							<Button
+								variant='text'
+								size='small'
+								color='success'
+								onClick={() => setAddModalState(prev => !prev)}
+							>
+								<ControlPointIcon sx={{ fontSize: '2.25rem' }} />
+								&nbsp; Добавить контейнер
+							</Button>
+						</OnyxTypography>
+
+						<OnyxTypography
+							component='div'
+							ttFollow={false}
+							ttPlacement='top'
+							ttNode='Добавить элемент в контейнер'
+							sx={{ marginTop: '.5rem', width: 'fit-content' }}
+						>
+							<Button
+								variant='text'
+								size='small'
+								color='success'
+								onClick={() => setAddModalState(prev => !prev)}
+							>
+								<ControlPointIcon sx={{ fontSize: '2.25rem' }} />
+								&nbsp; Добавить разделитель
+							</Button>
+						</OnyxTypography>
+
+						<OnyxTypography
+							component='div'
+							ttFollow={false}
+							ttPlacement='top'
+							ttNode='Добавить элемент в контейнер'
+							sx={{ marginTop: '.5rem', width: 'fit-content' }}
+						>
+							<Button
+								variant='text'
+								size='small'
+								color='success'
+								onClick={() => setAddModalState(prev => !prev)}
+							>
+								<ControlPointIcon sx={{ fontSize: '2.25rem' }} />
+								&nbsp; Добавить пустой блок
+							</Button>
+						</OnyxTypography>
+					</Stack>
+
+					<ContentAddElemetModal state={addModalState} setState={setAddModalState} />
+				</>
+			)}
+		</Stack>
 	);
 };
 
