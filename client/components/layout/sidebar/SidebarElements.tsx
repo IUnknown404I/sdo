@@ -95,23 +95,30 @@ export function SideListItem(props: {
 	text: string;
 	icon: JSX.Element;
 	selected?: boolean;
+	disabled?: boolean;
 	onClick?: Function;
 	sx?: SxProps;
 }) {
 	const ItemButtonElement = (
 		<ListItemButton
+			disabled={props.disabled}
 			selected={props.selected}
-			sx={{ borderRadius: '30px', marginBottom: '5px', ...props.sx }}
 			onClick={!!props.onClick ? () => (props.onClick as Function)() : undefined}
+			sx={{
+				borderRadius: '30px',
+				marginBottom: '5px',
+				cursor: props.disabled ? 'not-allowed' : 'pointer',
+				...props.sx,
+			}}
 		>
-			<ListItemIcon>{props.icon}</ListItemIcon>
+			<ListItemIcon sx={{ minWidth: { xs: '35px', xl: '56px' } }}>{props.icon}</ListItemIcon>
 			<ListItemText primary={props.text} />
 		</ListItemButton>
 	);
 
 	return (
-		<ListItem disablePadding>
-			{props.href ? (
+		<ListItem disablePadding sx={{ cursor: props.disabled ? 'not-allowed' : undefined }}>
+			{!!props.href && !props.disabled ? (
 				<OnyxLink blockElement style={{ width: '100%' }} href={props.href} fullwidth title='Перейти'>
 					{ItemButtonElement}
 				</OnyxLink>

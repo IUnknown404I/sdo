@@ -1,12 +1,12 @@
 import { Slider, styled } from '@mui/material';
 import { ComponentProps } from 'react';
 
-const colorsMap = {
+export const ONYX_RANGE_COLORS_MAP = {
 	success: '#52af77',
 	warn: '#ff8c00',
 	error: '#d63e3e',
 	primary: '#006fba',
-};
+} as const;
 
 interface OnyxSliderI extends ComponentProps<typeof Slider> {
 	thumbSize?: number;
@@ -29,14 +29,17 @@ interface OnyxSliderI extends ComponentProps<typeof Slider> {
 
 /**
  * @IUnknown404I Corporate Slider Element.
- * @param props as Basic MUI Slider props and custom attributes.
- * @returns slider-element as ReactNode.
+ * @param thumbSize: thumb width and height in px;
+ * @param trackHeight: track height in px;
+ * @param mode: color mode apllied to elements of the OnyxRange component;
+ * @param cursor: cursor mode for the hover events;
+ * @returns Slider element as ReactNode.
  */
 const OnyxRange = (props: OnyxSliderI) => {
 	const sliderColor = !props.mode
-		? colorsMap.primary
+		? ONYX_RANGE_COLORS_MAP.primary
 		: props.mode === 'success' || props.mode === 'warn' || props.mode === 'error' || props.mode === 'primary'
-		? colorsMap[props.mode]
+		? ONYX_RANGE_COLORS_MAP[props.mode]
 		: props.mode;
 
 	const CustomSlider = styled(Slider)({

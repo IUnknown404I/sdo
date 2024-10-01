@@ -11,9 +11,9 @@ import rootSaga from './sagas/rootSaga';
 import { accessTokenSlice } from './slices/accessToken';
 import { authSlice } from './slices/auth';
 import { axiosInstanceSlice } from './slices/axiosInstance';
+import { coursesSlice } from './slices/courses';
 import { messengerSlice } from './slices/messenger';
 import { userSlice } from './slices/user';
-import { coursesSlice } from './slices/courses';
 
 export const rootEndpoint = [rtkApi];
 
@@ -34,8 +34,9 @@ const rootReducer = combineReducers({
 	// }, {} as { [key: string]: typeof rtkApi.reducer }),
 });
 
-export type ExtraArgumentsOptions = { productionMode: boolean };
+export type ExtraArgumentsOptions = { loggingStatus: boolean; productionMode: boolean };
 const extraArgument: ExtraArgumentsOptions = {
+	loggingStatus: process.env.NEXT_PUBLIC_REDUX_LOGS === 'true',
 	productionMode: checkProductionMode(),
 };
 
@@ -59,7 +60,7 @@ export const store = configureStore({
 			.concat(sagaMiddleware)
 			.concat(rtkApi.middleware)
 			// .concat(rootEndpoint.map(endpoint => endpoint.middleware as ThunkMiddleware))
-			.concat(extraArgument.productionMode ? [] : [logger as ThunkMiddleware]),
+			.concat(!extraArgument.loggingStatus || extraArgument.productionMode ? [] : [logger as ThunkMiddleware]),
 });
 // optional, but required for refetchOnFocus/refetchOnReconnect behaviors
 setupListeners(store.dispatch);

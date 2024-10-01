@@ -6,7 +6,7 @@ import { checkProductionMode } from '../utils/utilityFunctions';
 
 /**
  * @IUnknown404I App Wrapper for sending meta data to the server.
- * @param param children.
+ * @param param children as inner components of the wrapper.
  * @returns App Wrapper with isolated logic (per-pages or router-object change logic).
  */
 const MetaWrapper = ({ children }: { children: ReactElement | ReactElement[] }): ReactElement => {
@@ -19,18 +19,23 @@ const MetaWrapper = ({ children }: { children: ReactElement | ReactElement[] }):
 	const sendMetaInformationToServer = () => {
 		if (!checkProductionMode() || !auth || accessTokenDTO?.access_token == null) return;
 		try {
-			setTimeout(() => {
-				logapp.log('[#MetaInfoWrapper]: sending metadata', router.asPath);
-				axiosInstance
-					.put('users/leave-meta', { lastPage: router.asPath })
-					.then(res => logapp.log('[# MetaInfoWrapper]: successfully sent data, got response = ', res))
-					.catch(e => logapp.log('[# MetaInfoWrapper]: cant send info, got the err: ', e));
-			}, 1000);
+			logapp.log('[#MetaInfoWrapper]: sending metadata', router.asPath);
+			axiosInstance
+				.put('users/leave-meta', { lastPage: router.asPath })
+				.then(res => logapp.log('[# MetaInfoWrapper]: successfully sent data, got response = ', res))
+				.catch(e => logapp.log('[# MetaInfoWrapper]: cant send info, got the err: ', e));
 		} catch (e) {}
 	};
 
 	React.useEffect(() => {
-		if (auth && sessionState === 'active' && accessTokenDTO.access_token != null) sendMetaInformationToServer();
+		if (
+			auth &&
+			sessionState === 'active' &&
+			accessTokenDTO.access_token != null &&
+			!!router?.asPath &&
+			!router?.asPath?.includes('/[')
+		)
+			sendMetaInformationToServer();
 	}, [router, router.asPath]);
 
 	return <>{children}</>;

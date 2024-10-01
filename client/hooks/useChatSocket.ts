@@ -1,6 +1,7 @@
 import React from 'react';
 import { rtkApi } from '../redux/api';
 import { useTypedSelector } from '../redux/hooks';
+import { SystemRolesOptions } from '../redux/slices/user';
 import chatSocket, { PUBLIC_WS_ROOMS } from '../sockets/chat.ws';
 
 /**
@@ -14,8 +15,10 @@ export function useChatSocket(passedRid?: string): [typeof chatSocket, boolean, 
 	const initialConnectionFlag = React.useRef<boolean>(true);
 	const auth = useTypedSelector(state => state.auth);
 	const userData = useTypedSelector(state => state.user);
-	const [isConnected, setIsConnected] = React.useState<boolean>(chatSocket.connected);
+
 	const [online, setOnline] = React.useState<number>(1);
+	const [isConnected, setIsConnected] = React.useState<boolean>(chatSocket.connected);
+
 	const { data, fulfilledTimeStamp: personalFulfilledTimeStamp } = rtkApi.usePersonalQuery('');
 
 	React.useEffect(() => {
@@ -27,11 +30,15 @@ export function useChatSocket(passedRid?: string): [typeof chatSocket, boolean, 
 		chatSocket.io.on('reconnect', attempt => {
 			setIsConnected(true);
 			chatSocket.emit('message:send', {
-				fio: 'rnadmin',
 				rid: 'system',
-				username: 'rnadmin',
-				message: 'Reconnected succesfully!',
 				timeSent: +new Date(),
+				username: userData.username || 'undefined',
+				role: SystemRolesOptions[userData._systemRole].translation,
+				fio:
+					`${userData?.personal?.surname}${
+						!!userData?.personal?.name ? ' ' + userData?.personal?.name : ''
+					}` || 'undefined',
+				message: 'Reconnected succesfully!',
 			});
 		});
 
@@ -63,6 +70,7 @@ export function useChatSocket(passedRid?: string): [typeof chatSocket, boolean, 
 		chatSocket.emit('user:introduce', {
 			rid: 'system',
 			username: userData.username || '',
+			role: userData._systemRole !== 'user' ? SystemRolesOptions[userData._systemRole].translation : undefined,
 			fio: data?.name && data?.surname ? `${data.surname} ${data.name}` : '',
 			timeSent: +new Date(),
 		});
@@ -70,7 +78,11 @@ export function useChatSocket(passedRid?: string): [typeof chatSocket, boolean, 
 		if (passedRid && !PUBLIC_WS_ROOMS.includes(passedRid as (typeof PUBLIC_WS_ROOMS)[number]))
 			chatSocket.emit('room:connect', {
 				rid: passedRid,
-				username: userData.username || '',
+				username: userData?.username || '',
+				role:
+					!!userData && userData._systemRole !== 'user'
+						? SystemRolesOptions[userData._systemRole].translation
+						: undefined,
 				fio: data?.name && data?.surname ? `${data.surname} ${data.name}` : '',
 				timeSent: +new Date(),
 			});

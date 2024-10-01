@@ -6,33 +6,25 @@ export interface AuthReduxSliceI {
 	state: boolean;
 	sessionState: SessionStateT;
 	lastPages?: string[];
+	isBusy: boolean;
 }
 
 export const initialAuthState: AuthReduxSliceI = {
 	state: false,
 	sessionState: 'closed',
 	lastPages: undefined,
+	isBusy: false,
 };
 
 export const authSlice = createSlice({
 	name: 'auth',
 	initialState: initialAuthState,
 	reducers: {
-		setAuthState: (state, action: PayloadAction<AuthReduxSliceI['state']>) => {
-			state.state = action.payload;
-		},
-		setSessionState: (state, action: PayloadAction<AuthReduxSliceI['sessionState']>) => {
-			state.sessionState = action.payload;
-		},
-		setLastPages: (state, action: PayloadAction<AuthReduxSliceI['lastPages']>) => {
-			state.lastPages = action.payload;
-		},
-		clearAll: state => {
-			state = initialAuthState;
-		},
+		*
 	},
 });
 
-export const { setAuthState, setSessionState, setLastPages, clearAll } = authSlice.actions;
+export const { setAuthState, setSessionState, setLastPages, setBusyState, clearAll } = authSlice.actions;
 export const selectAuth = (state: RootState) => state.auth;
+export const selectAuthBusy = (state: RootState) => state.auth.isBusy;
 export default authSlice.reducer;

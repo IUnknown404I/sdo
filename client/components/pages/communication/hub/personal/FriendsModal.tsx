@@ -163,7 +163,7 @@ const FriendsModal = (props: FriendsModalProps) => {
 								disabled={!!!friendsObject?.accepted.length}
 								size='medium'
 								type='submit'
-								variant='contained'
+								variant='outlined'
 								sx={{ paddingInline: '1.6rem', marginRight: '.4rem' }}
 							>
 								{isFetching && <ClassicLoader iconVariant />}

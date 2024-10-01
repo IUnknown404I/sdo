@@ -18,8 +18,8 @@ const CourseSectionLectureSecurityPage = () => {
 
 			<CoursesLayout
 				backButton
-				progressValue={30}
-				breadcrumbsCourseContent={[
+				
+				breadcrumbs={[
 					{
 						element: `Раздел программы`,
 						href: `/courses/${router.query.cid as string}/${router.query.csid as string}`,

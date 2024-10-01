@@ -31,4 +31,10 @@ export interface ScormI {
 	scname: string;
 	category?: string;
 	size: number;
+	meta: {
+		uploadedBy: string;
+		uploadTimestamp: number;
+		changedBy: string;
+		changeTimestamp: number;
+	};
 }

@@ -10,13 +10,7 @@ export const axiosInstanceSlice = createSlice({
 	name: 'axiosInstance',
 	initialState: initialInstanceState,
 	reducers: {
-		setBearer: (state, action: PayloadAction<string>) => {
-			if (action.payload.includes('Bearer '))
-				state.instance = generateAxiosInstance({ bearer: action.payload, setAccessToken, clearBearer });
-		},
-		clearBearer: state => {
-			state.instance = generateAxiosInstance({ setAccessToken, clearBearer });
-		},
+		*
 	},
 });
 

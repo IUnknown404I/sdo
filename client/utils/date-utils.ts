@@ -1,16 +1,28 @@
 /**
  * @IUnknown404I
  * @param date as Date object to be formatted;
- * @param options 
+ * @param options.errorHandling - will catch the error and return '-' string. By default throws an error;
+ * @param options.cutStartingZeroes - will left only one zero at the start if multiply presented (numeric time representation part of the output);
  * @param enableSeconds seconds-output is disabled by default;
  * @returns formatted data in string format.
  */
-export const formatData = (
+export const formatDate = (
 	date: Date,
 	options?: {
-		mode: 'full' | 'full_short' | 'only_date' | 'only_time' | 'week_date';
+		mode:
+			| 'full'
+			| 'full_short'
+			| 'date_short'
+			| 'only_month'
+			| 'only_month_short'
+			| 'only_date'
+			| 'only_date_with_day'
+			| 'only_time'
+			| 'week_date';
 		locale?: string;
 		options?: Intl.DateTimeFormatOptions;
+		cutStartingZeroes?: boolean;
+		errorHandling?: boolean;
 	},
 	enableSeconds?: boolean,
 ): string => {
@@ -27,7 +39,15 @@ export const formatData = (
 	const dateFormatter = new Intl.DateTimeFormat(
 		options?.locale || 'ru',
 		options?.options || (options && options.mode !== 'full')
-			? options.mode === 'only_date'
+			? options.mode === 'date_short'
+				? { year: 'numeric', month: '2-digit', day: '2-digit' }
+				: options.mode === 'only_month'
+				? { year: 'numeric', month: 'long' }
+				: options.mode === 'only_month_short'
+				? { year: '2-digit', month: 'long' }
+				: options.mode === 'only_date'
+				? { year: 'numeric', month: 'long', day: 'numeric' }
+				: options.mode === 'only_date_with_day'
 				? { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
 				: options.mode === 'only_time'
 				? { hour: 'numeric', minute: 'numeric', second: enableSeconds ? 'numeric' : undefined }
@@ -44,13 +64,79 @@ export const formatData = (
 			: fullModeOptions,
 	);
 
-	let formattedDate = dateFormatter.format(date);
-	const formattedDateArray = formattedDate.split(' ');
-	if (formattedDateArray.length > 1 && formattedDateArray[1].startsWith('0')) {
-		formattedDateArray[1] = formattedDateArray[1].slice(1);
-		formattedDate = formattedDateArray.join(' ');
-	} else if (formattedDate.startsWith('0')) formattedDate = formattedDate.slice(1);
-	return formattedDate;
+	try {
+		let formattedDateArray = dateFormatter.format(date).split(' ');
+		if (options?.mode !== 'full_short' && formattedDateArray.length > 1 && formattedDateArray[1].startsWith('0')) {
+			formattedDateArray[1] = formattedDateArray[1].slice(1);
+		}
+		if (!!options?.cutStartingZeroes)
+			formattedDateArray = formattedDateArray.map(part =>
+				part.startsWith('0') && !Number.isNaN(parseInt(part[1])) ? part.slice(1) : part,
+			);
+		return formattedDateArray.join(' ');
+	} catch (e) {
+		if (!!options?.errorHandling) {
+			console.error(e);
+			return '-';
+		} else throw e;
+	}
+};
+
+export type HoursMinsSecondsType = { hours: number; mins: number; seconds: number };
+export const getHoursMinutesSecsFromDate = (date: Date): HoursMinsSecondsType => {
+	if (!date)
+		return {
+			hours: 0,
+			mins: 0,
+			seconds: 0,
+		};
+	return {
+		hours: date.getHours(),
+		mins: date.getMinutes(),
+		seconds: date.getSeconds(),
+	};
+};
+
+export const parseHoursMinutesSecsObjectToDate = (timeObj: HoursMinsSecondsType): Date => {
+	const today = new Date();
+	if (!timeObj) return today;
+
+	today.setHours(timeObj.hours);
+	today.setMinutes(timeObj.mins);
+	today.setSeconds(timeObj.seconds);
+	return today;
+};
+
+export const parseSecondsToDate = (secondsToParse: number): Date => {
+	const today = new Date();
+	if (!secondsToParse) {
+		today.setHours(0);
+		today.setMinutes(0);
+		today.setSeconds(0);
+		return today;
+	}
+
+	let hours = 0;
+	let minutes = Math.floor(secondsToParse / 60);
+	if (minutes / 60 >= 1) {
+		const hoursCount = Math.floor(minutes / 60);
+		hours = hoursCount;
+		minutes -= hoursCount * 60;
+	}
+	const seconds = Math.floor(secondsToParse - hours * 3600 - minutes * 60);
+	today.setHours(hours);
+	today.setMinutes(minutes);
+	today.setSeconds(seconds);
+	return today;
+};
+
+export const parseDateToSeconds = (date?: Date | null): number => {
+	if (date === null || !date || -date === -new Date()) return 0;
+
+	const hours = date.getHours();
+	const minutes = date.getMinutes();
+	const seconds = date.getSeconds();
+	return hours * 3600 + minutes * 60 + seconds;
 };
 
 /**
@@ -389,55 +475,55 @@ export const toSeminarValidDateString = (month: string): string => {
 
 	switch (validMonth) {
 		case months.jan: {
-			date = new Date(new Date().getFullYear(), 1, 29);
+			date = new Date(new Date().getFullYear(), 0, 29);
 			break;
 		}
 		case months.feb: {
-			date = new Date(new Date().getFullYear(), 2, 28);
+			date = new Date(new Date().getFullYear(), 1, 28);
 			break;
 		}
 		case months.mar: {
-			date = new Date(new Date().getFullYear(), 3, 29);
+			date = new Date(new Date().getFullYear(), 2, 29);
 			break;
 		}
 		case months.apr: {
-			date = new Date(new Date().getFullYear(), 4, 29);
+			date = new Date(new Date().getFullYear(), 3, 29);
 			break;
 		}
 		case months.may: {
-			date = new Date(new Date().getFullYear(), 5, 29);
+			date = new Date(new Date().getFullYear(), 4, 29);
 			break;
 		}
 		case months.jun: {
-			date = new Date(new Date().getFullYear(), 6, 29);
+			date = new Date(new Date().getFullYear(), 5, 29);
 			break;
 		}
 		case months.jul: {
-			date = new Date(new Date().getFullYear(), 7, 29);
+			date = new Date(new Date().getFullYear(), 6, 29);
 			break;
 		}
 		case months.aug: {
-			date = new Date(new Date().getFullYear(), 8, 29);
+			date = new Date(new Date().getFullYear(), 7, 29);
 			break;
 		}
 		case months.sep: {
-			date = new Date(new Date().getFullYear(), 9, 29);
+			date = new Date(new Date().getFullYear(), 8, 29);
 			break;
 		}
 		case months.oct: {
-			date = new Date(new Date().getFullYear(), 10, 29);
+			date = new Date(new Date().getFullYear(), 9, 29);
 			break;
 		}
 		case months.nov: {
-			date = new Date(new Date().getFullYear(), 11, 29);
+			date = new Date(new Date().getFullYear(), 10, 29);
 			break;
 		}
 		case months.dec: {
-			date = new Date(new Date().getFullYear(), 12, 29);
+			date = new Date(new Date().getFullYear(), 11, 29);
 			break;
 		}
 	}
-	return `${date.getDate().toString().padStart(2, '0')}.${date.getMonth().toString().padStart(2, '0')}.${date
+	return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date
 		.getFullYear()
 		.toString()
 		.slice(2)}`;
@@ -451,29 +537,35 @@ export const toSeminarValidDateString = (month: string): string => {
  */
 export const getValidDateForMonthsDatePicker = (date: string | undefined, firstMonth?: boolean): string => {
 	if (!date) return '';
-	else if (date.split('.').length > 1) {
+
+	// for dd.mm.yyyy or dd.mm.yyyy formats
+	if (date.split('.').length > 1) {
 		const dateArr = date.split('.');
 		return `${
 			dateArr[2].length !== 4 ? new Date().getFullYear().toString().slice(0, 2) + dateArr[2] : dateArr[2]
-		}-${dateArr[1]}-${dateArr[0]}`;
-	} else if (date.split(' - ').length === 1) {
-		return `${new Date().getFullYear().toString()}-${getMonthNumberFromString(date).toString().padStart(2, '0')}`;
-	} else {
-		const dateMonths = date.split(' - ');
-		return firstMonth !== undefined
-			? firstMonth
-				? `${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[0])
-						.toString()
-						.padStart(2, '0')}`
-				: `${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[1])
-						.toString()
-						.padStart(2, '0')}`
-			: `${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[0])
-					.toString()
-					.padStart(2, '0')} ${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[1])
-					.toString()
-					.padStart(2, '0')}`;
+		}-${dateArr[1].padStart(2, '0')}-${dateArr[0]}`;
 	}
+
+	// for classic {month-name} format
+	if (date.split(' - ').length === 1) {
+		return `${new Date().getFullYear().toString()}-${getMonthNumberFromString(date).toString().padStart(2, '0')}`;
+	}
+
+	// for "{month-name} - {month-name}" format
+	const dateMonths = date.split(' - ');
+	return firstMonth !== undefined
+		? firstMonth
+			? `${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[0])
+					.toString()
+					.padStart(2, '0')}`
+			: `${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[1])
+					.toString()
+					.padStart(2, '0')}`
+		: `${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[0])
+				.toString()
+				.padStart(2, '0')} ${new Date().getFullYear().toString()}-${getMonthNumberFromString(dateMonths[1])
+				.toString()
+				.padStart(2, '0')}`;
 };
 
 /**
@@ -495,11 +587,12 @@ export const getDetailedInfoFromTimeString = (
 
 /**
  * @IUnknown404I allows to get the valid [Date] object from the OnyxDateString.
- * @param onyxDateString a complex OnyxDateString as "30.11.2023 -> 17:51.29".
+ * @param onyxDateString a complex OnyxDateString as "30.11.2023 17:51.29";
+ * @param separator is an optional parameters for splitting the dateString to [date, time]. By default is space (" ");
  * @returns valid [Date] object with hours, minutes and seconds counted.
  */
-const getDateFromOnyxDate = (onyxDateString: string): Date => {
-	const [date, time] = onyxDateString.trim().split(' ');
+export const getDateFromOnyxDate = (onyxDateString: string, separator: string = ' '): Date => {
+	const [date, time] = onyxDateString.trim().split(separator);
 	const validDate = getDateFromString(date);
 	const { hours, minutes, seconds } = getDetailedInfoFromTimeString(time);
 
@@ -509,12 +602,18 @@ const getDateFromOnyxDate = (onyxDateString: string): Date => {
 
 /**
  * @IUnknown404I You can pass only first dateString as onyx-date ("[date] [time]") for the compairing with the current Date and pass both dates for the bettwen-compairing.
- * @param date1 is a [string] as OnyxDateString.
- * @param date2 is a [string] as OnyxDateString.
+ * @param date1 is a [string] as OnyxDateString;
+ * @param date2 is a [string] as OnyxDateString;
+ * @param separator is an optional parameters for splitting the dateStrings to [date, time]. By default is space (" ");
  * @returns the difference in hours between passed dates.
  */
-export const twoOnyxDatesDifference = (date1: string, date2?: string): number => {
-	const validDate1 = getDateFromOnyxDate(date1);
-	const validDate2 = date2 ? getDateFromOnyxDate(date2) : new Date();
+export const twoOnyxDatesDifference = (date1: string, date2?: string, separator?: string): number => {
+	const validDate1 = getDateFromOnyxDate(date1, separator);
+	const validDate2 = date2 ? getDateFromOnyxDate(date2, separator) : new Date();
 	return (+validDate1 - +validDate2) / (1000 * 3600);
+};
+export const twoOnyxDatesDifferenceInMilSec = (date1: string, date2?: string, separator?: string): number => {
+	const validDate1 = getDateFromOnyxDate(date1, separator);
+	const validDate2 = date2 ? getDateFromOnyxDate(date2, separator) : new Date();
+	return +validDate1 - +validDate2;
 };

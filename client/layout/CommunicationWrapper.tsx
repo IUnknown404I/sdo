@@ -3,7 +3,12 @@ import { rtkApi } from '../redux/api';
 import { useTypedDispatch, useTypedSelector } from '../redux/hooks';
 import { setUserChats } from '../redux/slices/messenger';
 
-const CommunicationWrapper = (props: { children?: (string | JSX.Element) | (string | JSX.Element)[] }) => {
+/**
+ * @IUnknown404I This wrapper prefetching and updating the main chat-data information for the current user.
+ * @param children - optional object for inner components.
+ * @returns JSX.Element with inner isolated logic.
+ */
+const CommunicationWrapper = (props: { children?: React.ReactNode | React.ReactNode[] }): React.JSX.Element => {
 	const auth = useTypedSelector(state => state.auth);
 	const dispatcher = useTypedDispatch();
 

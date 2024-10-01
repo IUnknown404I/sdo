@@ -58,7 +58,7 @@ const AuthFormLayout = (props: {
 							borderRadius: '20px',
 						}}
 					>
-						{Array.isArray(props.children) ? props.children.map(el => el) : props.children}
+						{props.children}
 					</form>
 				</Paper>
 			</Box>

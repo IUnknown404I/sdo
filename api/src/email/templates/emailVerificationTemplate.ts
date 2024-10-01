@@ -37,7 +37,7 @@ export const EmailVerificationTemplate = (props: {
                                                                         <td align="center"
                                                                             style="padding:0;Margin:0;font-size:0px">
                                                                             <img
-                                                                                src="https://sdo.rnprog.ru/static/email-verification-image"
+                                                                                src=${process.env.SELF_CLIENT_DOMAIN}/static/email-verification-image"
                                                                                 alt="Emailing"
                                                                                 style="display:block;border:0;outline:none;text-decoration:none"
                                                                                 width="100" className="CToWUd"
@@ -80,7 +80,7 @@ export const EmailVerificationTemplate = (props: {
                                                                                 </a></strong></em>&nbsp;Вами была
                                                                                     зарегистрирована&nbsp;учётная<br>запись
                                                                                         на <em><strong><a title="Перейти к СДО"
-                                                                                            href="https://sdo.rnprog.ru"
+                                                                                            href="${process.env.SELF_CLIENT_DOMAIN}"
                                                                                             style="text-decoration:none;color:#134f5c;font-size:16px"
                                                                                             target="_blank">нашей
                                                                                             образовательной
@@ -89,9 +89,9 @@ export const EmailVerificationTemplate = (props: {
                                                                                             кнопку подтверждения или
                                                                                             перейдите по ссылке:&nbsp;
                                                                                             <br><u><a title="Активировать почту"
-                                                                                                href="https://api.sdo.rnprog.ru/users/validate/${props.verificationLink}?source=validation"
+                                                                                                href="${process.env.SELF_DOMAIN}/users/validate/${props.verificationLink}?source=validation"
                                                                                                 style="text-decoration:none;color:#134f5c;font-size:16px;word-break:break-all"
-                                                                                                target="_blank">https://api.sdo.rnprog.ru/users/validate/<wbr>${props.verificationLink}?source=validation
+                                                                                                target="_blank">${process.env.SELF_DOMAIN}/users/validate/<wbr>${props.verificationLink}?source=validation
                                                                                             </a></u><br>в течении <strong>72 часов</strong>.</p>
                                                                         </td>
                                                                     </tr>
@@ -115,7 +115,7 @@ export const EmailVerificationTemplate = (props: {
                                                                             style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px">
                                                                             <span
                                                                                 style="border-style:solid;border-color:#999999;background:#ffffff;border-width:1px;display:inline-block;border-radius:0px;width:auto"><a title="Подтвердить почту"
-                                                                                href="https://api.sdo.rnprog.ru/users/validate/${props.verificationLink}?source=validation"
+                                                                                href="${process.env.SELF_DOMAIN}/users/validate/${props.verificationLink}?source=validation"
                                                                                 style="text-decoration:none;color:#666666;font-size:16px;border-style:solid;border-color:#ffffff;border-width:10px 30px 10px 30px;display:inline-block;background:#ffffff;border-radius:0px;font-family:Montserrat,sans-serif;font-weight:normal;font-style:normal;line-height:19px;width:auto;text-align:center"
                                                                                 target="_blank">Подтвердить мою почту</a></span>
                                                                         </td>

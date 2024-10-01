@@ -1,27 +1,20 @@
 import DoNotDisturbIcon from '@mui/icons-material/DoNotDisturb';
 import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
 import SendAndArchiveOutlinedIcon from '@mui/icons-material/SendAndArchiveOutlined';
-import {
-	Box,
-	Button,
-	ClickAwayListener,
-	Divider,
-	Paper,
-	Stack,
-	TextField,
-	useMediaQuery,
-	useTheme,
-} from '@mui/material';
+import { Box, Divider, Stack, TextField, useMediaQuery } from '@mui/material';
 import React, { ReactNode } from 'react';
 import { rtkApi } from '../../redux/api';
 import { ChatMessageI } from '../../redux/endpoints/chatEnd';
 import { useTypedSelector } from '../../redux/hooks';
+import { SystemRolesOptions } from '../../redux/slices/user';
 import chatSocket from '../../sockets/chat.ws';
 import { ColorModeContext } from '../../theme/Theme';
-import { formatData } from '../../utils/date-utils';
+import { formatDate } from '../../utils/date-utils';
 import { copyTextToClipboard } from '../../utils/utilityFunctions';
 import { OnyxTypography } from '../basics/OnyxTypography';
 import ContactCard from '../pages/communication/hub/personal/ContactCard';
+import DialogMessageContextMenu from './DialogMessageContextMenu';
+import { getTpColor, relativeDateFormatter } from './chats-utility';
 
 export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => {
 	const lgBreakpoint = useMediaQuery('(min-width:1200px)');
@@ -206,7 +199,7 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 						sx={{ fontStyle: props.role === 'system' ? 'italic' : undefined }}
 						ttNode={
 							props.role === 'system'
-								? `Дата оповещения: ${formatData(new Date(props.timeSent), { mode: 'full' })}`
+								? `Дата оповещения: ${formatDate(new Date(props.timeSent), { mode: 'full' })}`
 								: undefined
 						}
 						ttPlacement='bottom'
@@ -214,10 +207,10 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 					>
 						{props.message.split('\n').map((line, index) =>
 							index === 0 ? (
-								parseMessageLine(line)
+								<ParsedMessageLine key={index} line={line} />
 							) : (
 								<>
-									{parseMessageLine(line)}
+									{<ParsedMessageLine key={index} line={line} />}
 									<br />
 								</>
 							),
@@ -238,7 +231,7 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 							text='было изменено'
 							tpSize='.85rem'
 							tpColor='secondary'
-							ttNode={`Изменено: ${props.modified?.by ? props.modified.by + ' ' : ''}${formatData(
+							ttNode={`Изменено: ${props.modified?.by ? props.modified.by + ' ' : ''}${formatDate(
 								new Date(props.modified.timestamp),
 								{ mode: 'full' },
 							)}`}
@@ -248,14 +241,20 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 				)}
 
 				{props.role !== 'system' && !modifyingState && (
-					<ContextMenu
+					// <ContextMenu
+					<DialogMessageContextMenu
 						timeSent={typeof props.timeSent === 'number' ? props.timeSent : undefined}
 						openSide={props.username === userData.username ? 'right' : 'left'}
 						state={contextMenuState}
 						updateState={setContextMenuState}
 						handleCopy={handleContextCopy}
 						handleModify={userData.username === props.username ? handleContextModifyClick : undefined}
-						handleDelete={userData.username === props.username ? handleContextDelete : undefined}
+						handleDelete={
+							SystemRolesOptions[userData._systemRole].accessLevel >= 4 ||
+							userData.username === props.username
+								? handleContextDelete
+								: undefined
+						}
 					/>
 				)}
 			</Box>
@@ -305,7 +304,7 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 		}
 	}
 
-	function parseMessageLine(line: string): ReactNode {
+	function ParsedMessageLine({ line }: { line: string }): ReactNode {
 		const words = line.split(' ');
 		return words.map((word, index) =>
 			word.startsWith('http://') || word.startsWith('https://') ? (
@@ -315,8 +314,7 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 					hoverStyles
 					text={word.concat(' ')}
 					lkHref={word}
-					// lkTitle='Перейты по ссылке'
-					ttNode='Перейты по ссылке'
+					ttNode='Перейти по ссылке'
 					lkProps={{ rel: 'norefferer', target: '_blank' }}
 				/>
 			) : (
@@ -325,172 +323,5 @@ export const DialogMessage = (props: ChatMessageI & { fullwidth?: boolean }) => 
 		);
 	}
 };
-
-export function relativeDateFormatter(date: number | string): string {
-	if (typeof date === 'string') return date;
-	const firedDate = new Date(date);
-	const differenceFromNow = (+new Date() - date) / 1000; // diff in seconds
-
-	// message_tomorrow and message_after_tomorrow days checks for 'tomorrow' and 'yesterday' options
-	const tomorrowForFiredDate = new Date(firedDate.getFullYear(), firedDate.getMonth(), firedDate.getDate() + 1);
-	const tomorrowCheck = +new Date() >= +tomorrowForFiredDate;
-	const afterTomorrowForFiredDate = new Date(firedDate.getFullYear(), firedDate.getMonth(), firedDate.getDate() + 2);
-	const afterTomorrowCheck = +new Date() >= +afterTomorrowForFiredDate;
-
-	if (differenceFromNow < 119) return 'Только что'; // up to minute
-	else if (differenceFromNow < 60 ** 2 - 1) return `${Math.floor(differenceFromNow / 60)} мин. назад`; // up to hour
-	else if (differenceFromNow < 3 * 60 ** 2 - 1) {
-		// up to 3 hours
-		const hoursAgo = Math.floor(differenceFromNow / 60 ** 2);
-		return `${hoursAgo} ${hoursAgo === 1 ? 'час' : 'часа'} назад`;
-	} else if (!tomorrowCheck && differenceFromNow < 24 * 60 ** 2 - 1)
-		return `сегодня в ${formatData(firedDate, { mode: 'only_time' })}`; // up to day
-	else if (!afterTomorrowCheck && differenceFromNow < 2 * 24 * 60 ** 2 - 1)
-		return `вчера в ${formatData(firedDate, { mode: 'only_time' })}`; // yesterday
-	else if (differenceFromNow <= 6 * 24 * 60 ** 2 - 1) return formatData(firedDate, { mode: 'week_date' }); // up to week
-	return formatData(firedDate, { mode: 'full_short' }); // all later
-}
-
-function getTpColor(roleAttribute: Pick<ChatMessageI, 'role'>, theme: 'light' | 'dark') {
-	return roleAttribute
-		? roleAttribute.role === 'Администратор'
-			? theme === 'light'
-				? '#cc00cc'
-				: '#f984e5'
-			: roleAttribute.role === 'Преподаватель'
-			? theme === 'light'
-				? '#5359fd'
-				: '#65E265'
-			: 'secondary'
-		: 'secondary';
-}
-
-function ContextMenu(props: {
-	state: boolean;
-	timeSent?: number;
-	openSide?: 'left' | 'right';
-	updateState: React.Dispatch<React.SetStateAction<boolean>>;
-	handleCopy: () => void;
-	handleModify?: () => void;
-	handleDelete?: () => void;
-}) {
-	const theme = useTheme();
-	const contextHeight =
-		!!props.handleModify && !!props.handleDelete
-			? '102px'
-			: !!props.handleModify || !!props.handleDelete
-			? '65px'
-			: '40px';
-	const contextBackgroundColor =
-		props.openSide === 'right'
-			? theme.palette.mode === 'light'
-				? '#d5f9ea'
-				: '#349e79'
-			: theme.palette.mode === 'light'
-			? '#e8f3ff'
-			: '#6464e1';
-
-	return (
-		<ClickAwayListener
-			mouseEvent='onMouseDown'
-			touchEvent='onTouchStart'
-			disableReactTree
-			onClickAway={() => props.updateState(false)}
-		>
-			<Paper
-				elevation={0}
-				sx={{
-					position: 'absolute',
-					width: 'fit-content',
-					top: '100%',
-					zIndex: '5',
-					left: props.openSide === 'left' ? 'unset' : '0',
-					right: props.openSide === 'right' ? 'unset' : '0',
-					overflow: props.state ? '' : 'hidden',
-					transition: 'height .2s ease-in, opacity .2s ease-in',
-					height: props.state ? contextHeight : '0',
-					opacity: props.state ? '1' : '0',
-					backgroundColor: contextBackgroundColor,
-					boxShadow:
-						'0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 2px 0px rgba(0,0,0,0.12)',
-					'&:before': {
-						content: '""',
-						top: '-10px',
-						width: '10px',
-						height: '14px',
-						position: 'absolute',
-						left: props.openSide === 'left' ? 'unset' : '0',
-						right: props.openSide === 'right' ? 'unset' : '0',
-						background: contextBackgroundColor,
-					},
-				}}
-			>
-				<Stack
-					direction='column'
-					justifyContent='center'
-					alignItems='center'
-					gap={0}
-					sx={{
-						gap: '.15rem',
-						padding: '5px',
-						borderRadius: '15px',
-						'> button': { color: theme => (theme.palette.mode === 'dark' ? 'white' : '') },
-					}}
-				>
-					<Button
-						fullWidth
-						size='small'
-						variant='outlined'
-						disabled={!props.state}
-						onClick={() => {
-							props.updateState(false);
-							props.handleCopy();
-						}}
-						sx={{ fontSize: '.75rem' }}
-					>
-						Копировать текст
-					</Button>
-					{typeof props.handleModify === 'function' && (
-						<Button
-							fullWidth
-							size='small'
-							variant='outlined'
-							disabled={!props.state || !timeAvaibleCheck()}
-							onClick={() => {
-								props.updateState(false);
-								(props.handleModify as Function)();
-							}}
-							sx={{ fontSize: '.75rem' }}
-							title={timeAvaibleCheck() ? undefined : 'Только в течении первых 10 минут.'}
-						>
-							Редактировать
-						</Button>
-					)}
-					{typeof props.handleDelete === 'function' && (
-						<Button
-							fullWidth
-							size='small'
-							variant='outlined'
-							disabled={!props.state || !timeAvaibleCheck()}
-							onClick={() => {
-								props.updateState(false);
-								(props.handleDelete as Function)();
-							}}
-							sx={{ fontSize: '.75rem' }}
-							title={timeAvaibleCheck() ? undefined : 'Только в течении первых 10 минут.'}
-						>
-							Удалить для всех
-						</Button>
-					)}
-				</Stack>
-			</Paper>
-		</ClickAwayListener>
-	);
-
-	function timeAvaibleCheck(): boolean {
-		if (!props.timeSent) return false;
-		return +new Date() - +new Date(props.timeSent) <= 15 * 60 * 1000; // 15 minutes check
-	}
-}
 
 export default DialogMessage;

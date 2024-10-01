@@ -39,6 +39,7 @@ const flexCenteredStyles: CSSProperties = {
 const ModernLoader = (payload: ModernLoaderI): JSX.Element | null => {
 	const [invisible, setInvisible] = React.useState<boolean>(payload.loading === undefined ? false : payload.loading);
 	const validSize = `${payload.size || DEFAULT_SIZE}${payload.sizeUnit || DEFAULT_UNIT}`;
+
 	const wrapperStyle: CSSProperties = {
 		position: 'relative',
 		...flexCenteredStyles,
@@ -48,6 +49,7 @@ const ModernLoader = (payload: ModernLoaderI): JSX.Element | null => {
 		opacity: invisible ? '0' : '1',
 		transition: 'all .35s ease-out',
 	};
+
 	const centeredModeStyles: CSSProperties = {
 		position: 'absolute',
 		...flexCenteredStyles,
@@ -103,7 +105,9 @@ const ModernLoader = (payload: ModernLoaderI): JSX.Element | null => {
 
 	if (payload.loading === false) return null;
 	if (payload.tripleLoadersMode === true) {
-		const subsPayload: Omit<ModernLoaderI, 'size' | 'tripleLoadersMode' | 'centered'> = JSON.parse(JSON.stringify(payload));
+		const subsPayload: Omit<ModernLoaderI, 'size' | 'tripleLoadersMode' | 'centered'> = JSON.parse(
+			JSON.stringify(payload),
+		);
 		if ('size' in subsPayload) delete subsPayload.size;
 		if ('tripleLoadersMode' in subsPayload) delete subsPayload.tripleLoadersMode;
 		if ('centered' in subsPayload) delete subsPayload.centered;

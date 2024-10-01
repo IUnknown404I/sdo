@@ -1,8 +1,9 @@
+import { notification } from '../components/utils/notifications/Notification';
+
 // TODO: proxing observable refactor!
 // export const makeObservable = (target: Object, handler: (property: string, newValue?: any) => void) => {
 // 	console.log(target);
 // 	console.log(handler);
-
 // 	const observe = Symbol('observe');
 // 	const handlers = Symbol('handlers');
 
@@ -24,6 +25,82 @@
 // 		},
 // 	});
 // };
+
+/**
+ * @IUnknown404I expected type of data is stream (StreamableFile) <===> blob
+ * @param data as Blob;
+ * @param filenameWithoutExtension optional name without extension;
+ * @param successMessageNotification optional notification message for success dowloading the data.
+ */
+export const dowloadRequestedExcelFile = (
+	data: any,
+	filenameWithoutExtension: string = 'Экспортированные данные',
+	successMessageNotification: string = 'Экпорт данных выполнен успешно!',
+) => {
+	try {
+		const href = URL.createObjectURL(new Blob([data], { type: 'application/vnd.ms -excel' }));
+		const _link = document.createElement('a');
+		_link.href = href;
+
+		_link.setAttribute('download', filenameWithoutExtension + '.xlsx');
+		document.body.appendChild(_link);
+		_link.click();
+
+		document.body.removeChild(_link);
+		URL.revokeObjectURL(href);
+
+		try {
+			notification({
+				message: successMessageNotification,
+				type: 'success',
+			});
+		} catch (e) {}
+	} catch (err: any) {
+		notification({
+			message: 'Не удалось выполнить экспорт данных!',
+			type: 'error',
+		});
+	}
+};
+
+export function descendingComparator<T>(a: T, b: T, orderBy: keyof T): number {
+	if (typeof a[orderBy] === 'boolean' && typeof b[orderBy] === 'boolean')
+		return b[orderBy] && !a[orderBy] ? -1 : !b[orderBy] && a[orderBy] ? 1 : 0;
+	else if (
+		(typeof a[orderBy] === 'string' && typeof b[orderBy] === 'string') ||
+		(typeof a[orderBy] === 'number' && typeof b[orderBy] === 'number')
+	)
+		return b[orderBy] < a[orderBy] ? -1 : b[orderBy] > a[orderBy] ? 1 : 0;
+
+	if (a[orderBy] !== undefined && b[orderBy] === undefined) return -1;
+	else if (a[orderBy] === undefined && b[orderBy] !== undefined) return 1;
+	else if (a[orderBy] === undefined && b[orderBy] === undefined) return 0;
+
+	return 0;
+}
+
+export function getComparator<Key extends keyof any>(
+	order: 'desc' | 'asc',
+	orderBy: Key,
+	customDescendingComparator?: typeof descendingComparator,
+): (
+	a: { [key in Key]: number | boolean | string | object | undefined },
+	b: { [key in Key]: number | boolean | string | object | undefined },
+) => number {
+	return order === 'desc'
+		? (a, b) =>
+				!!customDescendingComparator
+					? customDescendingComparator(a, b, orderBy)
+					: descendingComparator(a, b, orderBy)
+		: (a, b) =>
+				!!customDescendingComparator
+					? -customDescendingComparator(a, b, orderBy)
+					: -descendingComparator(a, b, orderBy);
+}
+
+export type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
 
 /**
  * @IUnknown404I Generic for type-checks of passed ?any value accroding passed Type.
@@ -107,6 +184,16 @@ export function scrollDocumentToTop() {
 	if (!!document.scrollingElement) document.scrollingElement.scrollTo(0, 0);
 }
 
+export function arrayShuffle<T>(array: Array<T>): T[] {
+	if (!array || array.length < 1) return [];
+	const shufled = array.toReversed();
+	shufled.forEach((_, index) => {
+		const j = Math.floor(Math.random() * (index + 1));
+		[shufled[index], shufled[j]] = [shufled[j], shufled[index]];
+	});
+	return shufled;
+}
+
 /**
  * @IUnknown404I Scrolling to the end of passed element throught Ref object.
  * @param element as Ref object.
@@ -151,4 +238,56 @@ export function convertToRomanNumeral(num: number): string {
 		}
 		return accum;
 	}, '');
+}
+
+/**
+ * @IUnknown404I Converts passed string to camelCaseString.
+ * @param text the string to be processed.
+ * @param separator the string to split passed text to words.
+ * @returns string in camelCase.
+ */
+export function textToCamelCase(text: string, separator: string = ' '): string {
+	const words = text.split(separator);
+	return words.reduce(
+		(acc, cur, index) => acc + (index === 0 ? cur.toLowerCase() : cur[0].toUpperCase() + cur.slice(1)),
+		'',
+	);
+}
+
+/**
+ * @deprecated use secondsToHourMinSecString function instead
+ * @IUnknown404I Converts passed seconds into string like '{minCount} мин {secCount} сек'
+ * @param totalSeconds total seconds
+ * @returns string
+ */
+export function secondsToMinSec(totalSeconds: number): string {
+	if (!totalSeconds) return '';
+	const timeLimit = totalSeconds;
+	const minutes = Math.floor(timeLimit / 60);
+	const seconds = Math.floor(timeLimit - minutes * 60);
+	return `${minutes > 0 ? `${minutes} мин` : ''}${seconds > 0 ? ` ${seconds} сек` : ''}`;
+}
+
+/**
+ * @IUnknown404I Converts passed seconds into string like '{hoursCount} ч. {minsCount} мин. {secsCount} сек.'
+ * @param passedSeconds passed seconds to convert to the string
+ * @param maxValuableSeconds optional number as limit for the converting. If passed seconds > maxValuableSeconds, maxValuableSeconds will be converted, not passedSeconds
+ * @returns string with hours, minutes and seconds from the passedSeconds number.
+ */
+export function secondsToHourMinSecString(passedSeconds?: number, maxValuableSeconds?: number): string | undefined {
+	if (!passedSeconds) return undefined;
+	const parsingTimeInSeconds =
+		passedSeconds < (maxValuableSeconds || Number.POSITIVE_INFINITY)
+			? passedSeconds
+			: (maxValuableSeconds as number);
+	let seconds = 0,
+		minutes = 0,
+		hours = 0;
+
+	hours = Math.floor(parsingTimeInSeconds / 60 ** 2);
+	minutes = Math.floor((parsingTimeInSeconds - hours * 60 ** 2) / 60);
+	seconds = Math.floor(parsingTimeInSeconds - hours * 60 ** 2 - minutes * 60);
+	return `${hours ? hours + ' ч.' : ''} ${minutes ? minutes + ' мин.' : ''} ${
+		seconds ? seconds + ' сек.' : ''
+	}`.trim();
 }

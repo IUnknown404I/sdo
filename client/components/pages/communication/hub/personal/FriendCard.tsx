@@ -16,12 +16,14 @@ import ClassicLoader from '../../../../utils/loaders/ClassicLoader';
 import ModernLoader from '../../../../utils/loaders/ModernLoader';
 import { notification } from '../../../../utils/notifications/Notification';
 
-function FriendCard(props: {
+interface IFriendCard {
 	mode: keyof UserFriendsI;
 	friendUsername: string;
 	friendsObject?: UserFriendsI;
 	privateParticipators?: string[];
-}) {
+}
+
+function FriendCard(props: IFriendCard) {
 	const router = useRouter();
 	const userData = useTypedSelector(store => store.user);
 	const {
@@ -102,6 +104,7 @@ function FriendCard(props: {
 									<Button
 										disabled={loading}
 										variant='contained'
+										color='success'
 										size='small'
 										sx={{ paddingInline: '1.25rem' }}
 										onClick={acceptFriendInit}
@@ -113,6 +116,7 @@ function FriendCard(props: {
 									<Button
 										disabled={loading}
 										variant='outlined'
+										color='error'
 										size='small'
 										sx={{ paddingInline: '1.25rem' }}
 										onClick={rejectFriendInit}
@@ -127,8 +131,9 @@ function FriendCard(props: {
 							{props.mode === 'requested' && (
 								<Button
 									disabled={loading}
-									variant='contained'
 									size='small'
+									color='error'
+									variant='outlined'
 									sx={{ paddingInline: '1.25rem' }}
 									onClick={rejectRequestInit}
 								>
@@ -184,8 +189,9 @@ function FriendCard(props: {
 							{props.mode === 'accepted' && (
 								<Button
 									disabled={loading}
-									variant='outlined'
 									size='small'
+									color='error'
+									variant='outlined'
 									sx={{ paddingInline: '1.25rem' }}
 									onClick={deleteFriendInit}
 								>

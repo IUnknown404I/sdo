@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Image from 'next/image';
 import Link from 'next/link';
 import { OnyxImageI } from '../../basics/OnyxImage';
 
@@ -10,25 +9,44 @@ export const LogoGMI = (props: Omit<OnyxImageI, 'src' | 'alt'> & { disableLink?:
 		height: props.height || '80px',
 		width: props.width || '150px',
 		display: 'flex',
-		justifyContent: props.align === 'center' ? 'center' : 
-			props.align === 'left' ? 'flex-start' :
-			props.align === 'right' ? 'flex-end' : 'center',
-		alignItems: props.align === 'center' ? 'center' : 
-			props.align === 'left' ? 'flex-start' :
-			props.align === 'right' ? 'flex-end' : 'center',
+		justifyContent:
+			props.align === 'center'
+				? 'center'
+				: props.align === 'left'
+				? 'flex-start'
+				: props.align === 'right'
+				? 'flex-end'
+				: 'center',
+		alignItems:
+			props.align === 'center'
+				? 'center'
+				: props.align === 'left'
+				? 'flex-start'
+				: props.align === 'right'
+				? 'flex-end'
+				: 'center',
 	};
+
+	function GMILogoElement() {
+		return (
+			<Box sx={wrapperStyles}>
+				<img
+					alt='НОЦ Инжиниринг'
+					// src='/logo/logo-holder.png'
+					src={`${process.env.NEXT_PUBLIC_SERVER}/system/logo`}
+					style={{ objectFit: 'contain', width: '100%', height: '100%' }}
+				/>
+			</Box>
+		);
+	}
 
 	return (
 		<>
 			{props.disableLink ? (
-				<Box sx={wrapperStyles}>
-					<Image priority src={'/logo/logo-gmi.svg'} alt='НОЦ Инжиниринг' fill style={{ objectFit: 'contain' }} />
-				</Box>
+				<GMILogoElement />
 			) : (
 				<Link href='/'>
-					<Box sx={wrapperStyles}>
-						<Image priority src={'/logo/logo-gmi.svg'} alt='НОЦ Инжиниринг' fill style={{ objectFit: 'contain' }} />
-					</Box>
+					<GMILogoElement />
 				</Link>
 			)}
 		</>

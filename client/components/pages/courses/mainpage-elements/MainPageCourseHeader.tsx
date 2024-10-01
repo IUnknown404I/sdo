@@ -1,5 +1,10 @@
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
-import { Box } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { Box, IconButton, Stack, Tooltip } from '@mui/material';
+import { useRouter } from 'next/router';
+import { useTypedSelector } from '../../../../redux/hooks';
+import { selectUser, SystemRolesOptions } from '../../../../redux/slices/user';
+import OnyxLink from '../../../basics/OnyxLink';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
 
 interface MainPageCourseHeader {
@@ -9,6 +14,9 @@ interface MainPageCourseHeader {
 }
 
 const MainPageCourseHeader = (props: MainPageCourseHeader) => {
+	const router = useRouter();
+	const userData = useTypedSelector(selectUser);
+
 	return (
 		<Box>
 			<OnyxTypography
@@ -27,6 +35,7 @@ const MainPageCourseHeader = (props: MainPageCourseHeader) => {
 					<OnyxTypography text='Длительность' tpSize='.85rem' sx={{ display: { xs: 'none', md: 'flex' } }} />
 				)}
 			</OnyxTypography>
+
 			<OnyxTypography
 				component='h1'
 				tpColor='primary'
@@ -39,7 +48,22 @@ const MainPageCourseHeader = (props: MainPageCourseHeader) => {
 					width: '100%',
 				}}
 			>
-				{props.title}
+				<Stack direction='row' alignItems='center' gap={0.5}>
+					{props.title}
+					{SystemRolesOptions[userData._systemRole].accessLevel > 1 && (
+						<OnyxLink
+							href={`/admin-courses/${(router.query.cid as string | undefined) || ''}`}
+							style={{ transform: 'translateY(-3px)' }}
+						>
+							<Tooltip arrow title='Параметры образовательной программы' placement='top'>
+								<IconButton size='small' color='warning'>
+									<SettingsIcon sx={{ fontSize: '1.5rem' }} />
+								</IconButton>
+							</Tooltip>
+						</OnyxLink>
+					)}
+				</Stack>
+
 				{!!props.duration && (
 					<OnyxTypography
 						tpSize='1.25rem'

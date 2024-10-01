@@ -14,6 +14,7 @@ export function useDebouncedState<T = any>(
 	options = { leading: false }
 ): readonly [T, React.Dispatch<React.SetStateAction<T>>] {
 	const [value, setValue] = React.useState<T>(stateValue);
+	
 	const timeoutRef = React.useRef<number>();
 	const leadingRef = React.useRef<boolean>(true);
 

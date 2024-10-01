@@ -57,14 +57,14 @@ const ContactsModal = (props: ContactsModalProps) => {
 			</Button>
 
 			<OnyxAlertModal
+				hideFooter
+				disableButton
 				id={contactsID}
+				width='fit-content'
+				keepMounted={false}
 				state={state}
 				setState={setState}
 				title='Контакты пользователей системы'
-				keepMounted={false}
-				width='fit-content'
-				disableButton
-				hideFooter
 			>
 				<OnyxTypography tpColor='secondary' tpSize='.85rem'>
 					Здесь Вы сможете найти пользователей платформы по логину или электронной почте.
@@ -87,14 +87,15 @@ const ContactsModal = (props: ContactsModalProps) => {
 					>
 						<TextField
 							disabled={fetching}
+							required
+							autoFocus
 							fullWidth
-							id='search-contacts'
-							label={emailMode ? 'Введите почту пользователя' : 'Введите логин пользователя'}
 							size='small'
+							variant='outlined'
+							id='search-contacts'
 							value={searchText}
 							onChange={e => setSearchText(e.target.value)}
-							variant='outlined'
-							required
+							label={emailMode ? 'Введите почту пользователя' : 'Введите логин пользователя'}
 						/>
 						<OnyxSelect
 							disabled={fetching}

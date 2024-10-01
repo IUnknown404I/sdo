@@ -6,7 +6,7 @@ import React from 'react';
 import { rtkApi } from '../../../redux/api';
 import { ChatI, ChatParticipatorI, UserFriendsI } from '../../../redux/endpoints/chatEnd';
 import { useTypedSelector } from '../../../redux/hooks';
-import { formatData } from '../../../utils/date-utils';
+import { formatDate } from '../../../utils/date-utils';
 import OnyxAlertModal from '../../basics/OnyxAlertModal';
 import { OnyxTypography } from '../../basics/OnyxTypography';
 import ContactCard from '../../pages/communication/hub/personal/ContactCard';
@@ -36,7 +36,7 @@ const ChatSettingsModal = (props: ChatSettingsModalI) => {
 			state={props.state}
 			setState={props.setState}
 			hideButtonOnOpen
-			disableCloseButton
+			// disableCloseButton
 		>
 			<Stack direction='row' flexWrap='wrap' justifyContent='center' alignItems='center' gap={1}>
 				{props.chatData?.status === 'group' && props.chatData?.meta.createdBy === userData.username ? (
@@ -67,7 +67,7 @@ const ChatSettingsModal = (props: ChatSettingsModalI) => {
 					<GroupIcon sx={{ marginRight: '.5rem' }} />
 					Участники
 				</Button>
-				<Button variant='outlined' size='medium' onClick={() => setExitState(true)}>
+				<Button color='error' variant='outlined' size='medium' onClick={() => setExitState(true)}>
 					<LogoutIcon sx={{ marginRight: '.5rem', transform: 'rotate(180deg)' }} />
 					Выйти из диалога
 				</Button>
@@ -114,7 +114,7 @@ const ChatSettingsModal = (props: ChatSettingsModalI) => {
 						<OnyxTypography
 							tpSize='.85rem'
 							tpColor='secondary'
-							text={`Дата создания комнаты: ${formatData(new Date(props.chatData.meta.createdAt), {
+							text={`Дата создания комнаты: ${formatDate(new Date(props.chatData.meta.createdAt), {
 								mode: 'full',
 							})}`}
 						/>
@@ -185,16 +185,16 @@ const ChatSettingsModal = (props: ChatSettingsModalI) => {
 					gap={1}
 					marginTop='.75rem'
 				>
+					<Button color='error' variant='outlined' size='small' onClick={handleChatLeave}>
+						Выйти из чата
+					</Button>
 					<Button
 						variant='contained'
 						size='small'
-						sx={{ paddingInline: '1.75rem' }}
+						sx={{ paddingInline: '2.5rem' }}
 						onClick={() => setExitState(false)}
 					>
 						Вернуться
-					</Button>
-					<Button variant='outlined' size='small' onClick={handleChatLeave}>
-						Выйти из чата
 					</Button>
 				</Stack>
 			</OnyxAlertModal>
@@ -229,7 +229,7 @@ function ParticipatorCard(
 	) : (
 		<OnyxTypography
 			ttFollow={false}
-			ttNode={`Присоединился к чату: ${formatData(new Date(participator.inTimestamp), { mode: 'full' })}`}
+			ttNode={`Присоединился к чату: ${formatDate(new Date(participator.inTimestamp), { mode: 'full' })}`}
 			ttPlacement='top'
 		>
 			<ContactCard

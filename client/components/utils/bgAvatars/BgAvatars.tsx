@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import Avatar from '@mui/material/Avatar';
 import React from 'react';
-import { rtkApi } from '../../../redux/api';
+import { OnyxApiErrorResponseType, rtkApi } from '../../../redux/api';
 import { useTypedSelector } from '../../../redux/hooks';
 import { checkProductionMode } from '../../../utils/utilityFunctions';
 import { OnyxTypography } from '../../basics/OnyxTypography';
@@ -10,26 +10,28 @@ import { notification } from '../notifications/Notification';
 
 interface BgAvatarsI {
 	avatar?: {
+		username?: string;
 		fio: string;
 		avatarUrl: string;
 	};
 	bg?: boolean;
 	widthAvatar?: string;
 	heightAvatar?: string;
-	uploadMode?: boolean;
+	uploadMode?: boolean | { callback?: () => void };
 	usernameOverride?: string;
 }
 
 export const BgAvatars = (payload: BgAvatarsI) => {
 	const username = useTypedSelector(store => store.user.username);
-	const { data, refetch } = rtkApi.usePersonalQuery('');
+	const [uploaderState, setUploaderState] = React.useState<boolean>(false);
+
+	const { data, refetch } = rtkApi.usePersonalQuery(payload.avatar?.username);
 	const avatarsQueryData = rtkApi.useAllAvatarsQuery('', {
 		refetchOnReconnect: true,
 		refetchOnMountOrArgChange: 30,
 		pollingInterval: 7 * 6e4,
 	});
 	const [personalDataUpdate] = rtkApi.usePutPersonalMutation();
-	const [uploaderState, setUploaderState] = React.useState<boolean>(false);
 	// const imageIdentifier = React.useMemo<number>(() => new Date().getTime(), []);
 
 	const name = payload.avatar
@@ -38,9 +40,42 @@ export const BgAvatars = (payload: BgAvatarsI) => {
 		? `${data.surname || ''} ${data.name || ''}}`.trim()
 		: 'Пользователь Системы';
 
+	React.useEffect(() => {
+		refetch();
+	}, [payload.avatar?.username]);
+
+	const handleAvatarUpload = React.useCallback(
+		(avatarUrl: string) => {
+			personalDataUpdate
+				.call('', {
+					...data,
+					username: payload.avatar?.username,
+					avatar: avatarUrl.split('avatars/')[1],
+				})
+				.then(response => {
+					if (typeof response === 'object' && 'error' in response)
+						avatarNotification(false, (response.error as OnyxApiErrorResponseType).data?.message);
+					else avatarNotification(true);
+				})
+				.catch(() => avatarNotification(false))
+				.finally(() => setUploaderState(false));
+		},
+		[data, payload.avatar?.username],
+	);
+
+	function avatarNotification(result: boolean, message?: string) {
+		if (result) notification({ message: message || 'Аватар успешно изменен!', type: 'success' });
+		else
+			notification({
+				message:
+					message || 'Не удалось изменить аватар! Попробуйте перезагрузить страницу и попробовать снова.',
+				type: 'error',
+			});
+	}
+
 	return (
 		<>
-			{!payload.avatar && payload.uploadMode ? (
+			{(!payload.avatar || !!payload.avatar.username) && !!payload.uploadMode ? (
 				<OnyxTypography
 					boxWrapper
 					boxWidth='fit-content'
@@ -53,44 +88,37 @@ export const BgAvatars = (payload: BgAvatarsI) => {
 			) : (
 				<AvatarElement />
 			)}
-			{!payload.avatar && payload.uploadMode != null && (
+
+			{(!payload.avatar || !!payload.avatar.username) && !!payload.uploadMode && (
 				<OnyxImgUploader
+					showFileNames
+					showFileSizes
+					disableControls
+					displayMode='small'
+					maxSizeKb={512}
+					fileTypes={['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']}
 					state={uploaderState}
 					setState={setUploaderState}
 					image={data?.avatar}
-					setImage={(localImage: string) =>
-						personalDataUpdate
-							.call('', {
-								...data,
-								avatar: localImage.split('avatars/')[1],
-							})
-							.then(() => notification({ message: 'Аватар успешно изменен!', type: 'success' }))
-							.catch(() =>
-								notification({
-									message:
-										'Не удалось изменить аватар! Попробуйте перезагрузить страницу и попробовать снова.',
-									type: 'error',
-								}),
-							)
-					}
+					setImage={handleAvatarUpload}
 					onUploadEnd={() => {
-						setUploaderState(false);
+						rtkApi.util.invalidateTags(['User', 'Avatars']);
 						refetch();
+						if (typeof payload.uploadMode !== 'boolean' && !!payload.uploadMode?.callback)
+							payload.uploadMode.callback();
+						setUploaderState(false);
 					}}
 					url={{
 						get: { ...avatarsQueryData, currentData: avatarsQueryData.data || undefined },
-						create: { uri: '/files/users/avatars/' + username, method: 'PUT' },
+						create: {
+							uri: '/files/users/avatars/' + (payload.avatar?.username || username),
+							method: 'PUT',
+						},
 					}}
 					urlSplitter='avatars/'
 					sortingAlgoritm={(a, b) =>
 						parseInt(a.split('_')[1].slice(0, 2)) - parseInt(b.split('_')[1].slice(0, 2))
 					}
-					maxSizeKb={512}
-					showFileNames
-					showFileSizes
-					disableControls
-					displayMode='small'
-					fileTypes={['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']}
 				/>
 			)}
 		</>
@@ -98,7 +126,9 @@ export const BgAvatars = (payload: BgAvatarsI) => {
 
 	function AvatarElement() {
 		const avatarSrc = payload.avatar
-			? avatarUrlParse(payload.avatar.avatarUrl)
+			? payload.avatar.username
+				? avatarUrlParse(data?.avatar)
+				: avatarUrlParse(payload.avatar.avatarUrl)
 			: data?.avatar != null
 			? avatarUrlParse(data.avatar)
 			: undefined;
@@ -113,7 +143,7 @@ export const BgAvatars = (payload: BgAvatarsI) => {
 					)})`,
 					transition: 'all .3s ease-in-out',
 					zIndex: 0,
-					...(payload.uploadMode != null && {
+					...(!!payload.uploadMode && {
 						cursor: 'pointer',
 						'&:hover > div': {
 							bgcolor: stringToColor(name.split(' ').reverse().join(' ')),
@@ -125,7 +155,7 @@ export const BgAvatars = (payload: BgAvatarsI) => {
 					src={avatarSrc}
 					alt='User avatar'
 					{...stringAvatar(name, payload.bg, payload.widthAvatar, payload.heightAvatar)}
-					onClick={payload.uploadMode ? () => setUploaderState(prev => !prev) : undefined}
+					onClick={!!payload.uploadMode ? () => setUploaderState(prev => !prev) : undefined}
 				/>
 			</Box>
 		);
@@ -165,7 +195,8 @@ export function stringToColor(string: string): string {
 	return color;
 }
 
-export function avatarUrlParse(url: string): string {
+export function avatarUrlParse(url?: string): string | undefined {
+	if (!url) return undefined;
 	let avatarUrl = url;
 	if (url.includes('files/users/avatars')) avatarUrl = avatarUrl.split('files/users/avatars')[1];
 	else if (url.includes('users/avatars')) avatarUrl = avatarUrl.split('users/avatars')[1];

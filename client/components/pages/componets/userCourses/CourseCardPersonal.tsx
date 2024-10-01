@@ -13,21 +13,31 @@ import {
 	Paper,
 	Stack,
 } from '@mui/material';
+import { ComponentProps } from 'react';
 import OnyxLink from '../../../basics/OnyxLink';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
 
+export type CourseCardPersonalStatusType = 'active' | 'upcoming' | 'completed' | 'administrative';
 export interface CourseCardPersonalI {
 	href: string;
 	date: string;
 	typeCourse: string;
 	title: string;
-	status: string;
-	colorBadge: string;
+	status: CourseCardPersonalStatusType;
+	colorBadge: ComponentProps<typeof Chip>['color'];
 	textBadge: string;
 	progress: number;
 	imagePath: string;
-	colorCourse: string;
+	colorCourse: keyof typeof COURSE_CARD_PERSONAL_COLORS;
 }
+
+export const COURSE_CARD_PERSONAL_COLORS = {
+	active: '#4caf50',
+	upcoming: '#ffca28',
+	completed: '#cecece',
+	administrative: '#006fba',
+	transparent: '',
+};
 
 const CourseCardPersonal = (props: CourseCardPersonalI) => {
 	return (
@@ -35,26 +45,16 @@ const CourseCardPersonal = (props: CourseCardPersonalI) => {
 			<OnyxLink href={props.href} blockElement>
 				<CardActionArea>
 					<Stack
-						direction={'row'}
-						justifyContent={'space-between'}
-						alignItems={'center'}
+						direction='row'
+						justifyContent='space-between'
+						alignItems='center'
 						sx={{ display: { xs: 'flex', md: 'none' }, padding: '30px' }}
 					>
 						<Box>
 							<Chip
-								component={'div'}
+								component='div'
 								variant='filled'
-								color={
-									props.colorBadge as
-										| 'default'
-										| 'success'
-										| 'primary'
-										| 'secondary'
-										| 'error'
-										| 'info'
-										| 'warning'
-										| undefined
-								}
+								color={props.colorBadge}
 								size='small'
 								label={props.textBadge}
 							/>
@@ -75,7 +75,7 @@ const CourseCardPersonal = (props: CourseCardPersonalI) => {
 							component='img'
 							sx={{
 								width: { xs: '40%', md: '15%', display: 'block' },
-								bgcolor: props.colorCourse,
+								bgcolor: COURSE_CARD_PERSONAL_COLORS[props.colorCourse],
 								margin: '20px',
 								padding: '30px',
 								borderRadius: '20px',
@@ -109,19 +109,21 @@ const CourseCardPersonal = (props: CourseCardPersonalI) => {
 										/>
 										<OnyxTypography text={props.title} tpVariant='h6' tpSize='1.25rem' />
 									</Box>
-									<Box>
-										<Button
-											size='small'
-											component='span'
-											sx={{
-												borderRadius: '30px',
-												width: { xs: '100%', md: '200px' },
-											}}
-											variant='contained'
-										>
-											Перейти
-										</Button>
-									</Box>
+									{props.status !== 'completed' && (
+										<Box>
+											<Button
+												size='small'
+												component='span'
+												sx={{
+													borderRadius: '30px',
+													width: { xs: '100%', md: '200px' },
+												}}
+												variant='contained'
+											>
+												Перейти
+											</Button>
+										</Box>
+									)}
 								</Stack>
 
 								<CardActions>
@@ -142,17 +144,7 @@ const CourseCardPersonal = (props: CourseCardPersonalI) => {
 										<Chip
 											component='div'
 											variant='filled'
-											color={
-												props.colorBadge as
-													| 'default'
-													| 'success'
-													| 'primary'
-													| 'secondary'
-													| 'error'
-													| 'info'
-													| 'warning'
-													| undefined
-											}
+											color={props.colorBadge}
 											size='small'
 											label={props.textBadge}
 											sx={{ width: '200px' }}

@@ -1,10 +1,14 @@
 import { Box, Grow, Paper, Stack, Tab, Tabs } from '@mui/material';
 import React from 'react';
 import { rtkApi } from '../../../../../redux/api';
+import { useTypedSelector } from '../../../../../redux/hooks';
+import { selectUser, SystemRolesOptions } from '../../../../../redux/slices/user';
 import { OnyxTypography } from '../../../../basics/OnyxTypography';
 import { ChatContainer } from '../../../../messenger/chatContainer/ChatContainer';
 
 const CommonTabCommunication = (props: { state: boolean }) => {
+	const userData = useTypedSelector(selectUser);
+
 	const [systemTab, setSystemTab] = React.useState<number>(0);
 
 	const { data: generalChatData } = rtkApi.useChatDataQuery('general', {});
@@ -133,7 +137,7 @@ const CommonTabCommunication = (props: { state: boolean }) => {
 							focused={systemTab === 2}
 							rid='notifications'
 							mode='full'
-							inputEnable
+							inputEnable={SystemRolesOptions[userData._systemRole].accessLevel > 3}
 							elevatedHeader
 							maxHeight='450px'
 						/>

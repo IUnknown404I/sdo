@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Theme } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { SxProps, styled } from '@mui/material/styles';
@@ -57,6 +57,7 @@ const OnyxSwitch = (props: OnyxSwitchI) => {
 
 	const SwitchForm = (
 		<FormControlLabel
+			id={props.id}
 			label={props.label}
 			labelPlacement={props.labelPlacement}
 			sx={{
@@ -89,16 +90,17 @@ const OnyxSwitch = (props: OnyxSwitchI) => {
 };
 
 export interface OnyxSwitchI {
+	id?: string;
 	disabled?: boolean;
 	state: boolean;
-	setState: Function;
-	label: string;
+	setState: (newState: boolean) => void;
+	label: string | React.ReactElement;
 	size?: 'small' | 'medium';
 	labelPlacement?: 'end' | 'start' | 'top' | 'bottom';
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	wrapped?: boolean;
-	wrapperSx?: SxProps;
-	sx?: SxProps;
+	wrapperSx?: SxProps<Theme>;
+	sx?: SxProps<Theme>;
 	// formProps?: FormControlLabelProps;
 }
 

@@ -2,7 +2,7 @@ import EmojiEmotionsOutlinedIcon from '@mui/icons-material/EmojiEmotionsOutlined
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import SendAndArchiveOutlinedIcon from '@mui/icons-material/SendAndArchiveOutlined';
 import { Box, Button, Divider, Paper, Stack, TextField } from '@mui/material';
-import { Categories, Theme as EmojiTheme } from 'emoji-picker-react';
+import { Categories as EmojiCategories, Theme as EmojiTheme } from 'emoji-picker-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React from 'react';
@@ -16,7 +16,7 @@ import ModernLoader from '../../utils/loaders/ModernLoader';
 import { MessengerAvatarElement } from '../BasicComponents';
 import DialogContainer from '../DialogContainer';
 import DialogMessage from '../DialogMessage';
-import { TOP_SPACING } from '../sidebarComponents/DialogDrawer';
+import { ChatNamingChip, TOP_SPACING } from '../sidebarComponents/DialogDrawer';
 import { ChatContainerProps } from './ChatContainer';
 
 const Picker = dynamic(
@@ -29,23 +29,23 @@ const Picker = dynamic(
 const EMOJI_CATEGORIES = [
 	{
 		name: 'Последние',
-		category: Categories.SUGGESTED,
+		category: EmojiCategories.SUGGESTED,
 	},
 	{
 		name: 'Смайлы',
-		category: Categories.SMILEYS_PEOPLE,
+		category: EmojiCategories.SMILEYS_PEOPLE,
 	},
-	{
-		name: 'Природа',
-		category: Categories.ANIMALS_NATURE,
-	},
+	// {
+	// 	name: 'Природа',
+	// 	category: EmojiCategories.ANIMALS_NATURE,
+	// },
 	{
 		name: 'Активности',
-		category: Categories.ACTIVITIES,
+		category: EmojiCategories.ACTIVITIES,
 	},
 	{
 		name: 'Символы',
-		category: Categories.SYMBOLS,
+		category: EmojiCategories.SYMBOLS,
 	},
 ];
 
@@ -65,7 +65,7 @@ interface ChatContainerComponentProps extends ChatContainerProps {
 		setState: React.Dispatch<React.SetStateAction<string>>;
 	};
 	handleSendMessage: () => void;
-	updateMessageText: (additionalText: string) => void;
+	updateMessageText: (additionalText: string, caretPosition?: number) => void;
 }
 
 function ChatContainerComponent(props: ChatContainerComponentProps) {
@@ -74,8 +74,8 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 	const firstRenderCheck = React.useRef<boolean>(false);
 	const userData = useTypedSelector(store => store.user);
 	const colorMode = React.useContext(ColorModeContext).mode;
-	const { data: chatData } = rtkApi.useChatDataQuery(props.rid || '');
 
+	const { data: chatData } = rtkApi.useChatDataQuery(props.rid || '');
 	const username = parseChatUsername(chatData, userData?.username);
 	const { data: userChatData } = rtkApi.useUserChatDataQuery({ username });
 	const currentDialogName = parseChatName(chatData, userChatData);
@@ -87,20 +87,60 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 		firstRenderCheck.current = true;
 	}, [chatData, props.messages]);
 
+	const MessagesContainer = React.useMemo(
+		() => (
+			<Box
+				height={
+					props.sidebarChat
+						? `calc(100vh - ${parseInt(TOP_SPACING.slice(0, TOP_SPACING.length - 2)) + 160}px)`
+						: undefined
+				}
+				overflow='hidden'
+				borderRadius='5px'
+				sx={{ display: { xs: props.isFullMode ? 'block' : 'none', sm: 'block' } }}
+			>
+				<DialogContainer
+					chatDomRef={props.chatDomRef}
+					mode={props.isFullMode ? 'full' : 'line'}
+					minHeight={props.mode === 'full' ? props.minHeight : 'fit-content'}
+					maxHeight={
+						props.mode === 'full' ? props.maxHeight : props.mode === 'line' ? '100px' : 'fit-content'
+					}
+				>
+					{firstRenderCheck.current && props.isSocketConnected ? (
+						!!props.messages?.length ? (
+							props.mode !== 'line' ? (
+								props.messages.map((message, index) => (
+									<DialogMessage key={index} {...message} fullwidth={props.mode === 'line'} />
+								))
+							) : (
+								<DialogMessage {...props.messages.slice(-1)[0]} fullwidth />
+							)
+						) : undefined
+					) : (
+						<ModernLoader tripleLoadersMode centered loading={true} containerSx={{ height: '100%' }} />
+					)}
+				</DialogContainer>
+			</Box>
+		),
+		[props.messages, props.mode, props.isFullMode, props.chatDomRef],
+	);
+
 	return (
-		// @ts-ignore
 		<Paper
 			id={props.chatID}
+			component='section'
 			elevation={props.transparent ? 0 : 3}
 			sx={{
-				height: '100%',
 				padding: '.75rem',
 				overflowY: 'auto',
-				maxHeight: '100%',
+				maxHeight: '1024px',
 				borderRadius: '14px',
 				backgroundColor: theme =>
 					props.transparent ? 'transparent' : theme.palette.mode === 'light' ? '#ffffff' : '',
-				display: props.mode !== 'full' ? 'flex' : '',
+				width: '100%',
+				display: 'flex',
+				flexGrow: 1,
 				flexDirection: { xs: 'column', lg: props.mode !== 'full' ? 'row' : '' },
 				alignItems: props.mode !== 'full' ? 'center' : '',
 				justifyContent: props.mode !== 'full' ? 'space-between' : '',
@@ -114,6 +154,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 				spacing={1}
 				alignItems='center'
 				justifyContent='space-between'
+				flexGrow={1}
 				sx={{ width: '100%' }}
 			>
 				{props.mode === 'line' && chatData?.status === 'private' && (
@@ -161,24 +202,58 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 										/>
 									)}
 								<OnyxTypography
-									tpColor='primary'
-									tpWeight='bold'
 									boxWrapper
+									tpWeight='bold'
+									tpColor='primary'
 									sx={{ fontSize: { sx: '1.15rem', lg: '1.25rem' } }}
 								>
 									{currentDialogName || chatData?.name || 'Заголовок диалога'}
+									&nbsp;&nbsp;
+									{chatData?.disabled && !chatData.name?.includes('до:') && (
+										<ChatNamingChip
+											color='warning'
+											variant='outlined'
+											label='только чтение'
+											sx={{ span: { fontSize: '.85rem', padding: '0 10px' } }}
+										/>
+									)}
+									{chatData?.disabled && chatData.name?.includes('до:') && (
+										<ChatNamingChip
+											color='warning'
+											variant='outlined'
+											label='архив чата'
+											sx={{ span: { fontSize: '.85rem', padding: '0 10px' } }}
+										/>
+									)}
 								</OnyxTypography>
 							</Stack>
 						</Paper>
 					) : (
 						!!!props.disableHeader && (
 							<OnyxTypography
-								tpColor='primary'
-								tpWeight='bold'
 								boxWrapper
+								tpWeight='bold'
+								tpColor='primary'
 								sx={{ fontSize: { sx: '1.15rem', lg: '1.25rem' } }}
 							>
 								{currentDialogName || chatData?.name || 'Заголовок диалога'}
+								&nbsp;&nbsp;
+								{chatData?.disabled && !chatData.name?.includes('до:') && (
+									<ChatNamingChip
+										color='warning'
+										variant='outlined'
+										label='только чтение'
+										sx={{ span: { fontSize: '.85rem', padding: '0 10px' } }}
+									/>
+								)}
+								{chatData?.disabled && chatData.name?.includes('до:') && (
+									<ChatNamingChip
+										color='warning'
+										variant='outlined'
+										label='архив чата'
+										sx={{ span: { fontSize: '.85rem', padding: '0 10px' } }}
+									/>
+								)}
 							</OnyxTypography>
 						)
 					)}
@@ -224,7 +299,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 											{props.publicChat
 												? 'общий чат'
 												: Array.isArray(props.participators)
-												? props.participators?.length || '1'
+												? props.participators?.length || '0'
 												: chatData?.participators.length}
 										</>
 									}
@@ -242,48 +317,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 						</Stack>
 					)}
 
-					<Box
-						height={
-							props.sidebarChat
-								? `calc(100vh - ${parseInt(TOP_SPACING.slice(0, TOP_SPACING.length - 2)) + 160}px)`
-								: undefined
-						}
-						overflow='hidden'
-						borderRadius='5px'
-						sx={{ display: { xs: props.isFullMode ? 'block' : 'none', sm: 'block' } }}
-					>
-						<DialogContainer
-							chatDomRef={props.chatDomRef}
-							mode={props.isFullMode ? 'full' : 'line'}
-							minHeight={props.mode === 'full' ? props.minHeight : 'fit-content'}
-							maxHeight={
-								props.mode === 'full'
-									? props.maxHeight
-									: props.mode === 'line'
-									? '100px'
-									: 'fit-content'
-							}
-						>
-							{firstRenderCheck.current && props.isSocketConnected ? (
-								!!props.messages?.length ? (
-									props.mode !== 'line' ? (
-										props.messages.map((message, index) => (
-											<DialogMessage key={index} {...message} fullwidth={props.mode === 'line'} />
-										))
-									) : (
-										<DialogMessage {...props.messages.slice(-1)[0]} fullwidth />
-									)
-								) : undefined
-							) : (
-								<ModernLoader
-									tripleLoadersMode
-									centered
-									loading={true}
-									containerSx={{ height: '100%' }}
-								/>
-							)}
-						</DialogContainer>
-					</Box>
+					{MessagesContainer}
 
 					{props.bottomDivider != null && <Divider sx={{ width: '100%' }} />}
 				</Stack>
@@ -320,7 +354,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 									{props.publicChat
 										? 'общий чат'
 										: Array.isArray(props.participators)
-										? props.participators?.length || '1'
+										? props.participators?.length || '0'
 										: chatData?.participators.length}
 								</>
 							}
@@ -337,7 +371,7 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 					</Stack>
 				)}
 
-				{props.inputEnable ? (
+				{props.inputEnable && (
 					<Stack width='100%' direction='column' alignItems='center' overflow='hidden' gap={0}>
 						<Divider sx={{ width: '100%', margin: '.25rem auto 0' }} />
 
@@ -433,20 +467,31 @@ function ChatContainerComponent(props: ChatContainerComponentProps) {
 						>
 							{props.emoji.state && (
 								<Picker
-									height={props.modalEmojis ? '300px' : props.emoji.state ? '350px' : '0px'}
-									width={props.modalEmojis ? 'min(320px, 98vw)' : '100%'}
-									searchDisabled
+									// searchDisabled
 									lazyLoadEmojis
+									autoFocusSearch
 									skinTonesDisabled
-									previewConfig={{ showPreview: false }}
-									onEmojiClick={(emoji, e) => props.updateMessageText(emoji.emoji)}
-									theme={colorMode as EmojiTheme | undefined}
+									searchPlaceHolder='Поиск эмодзи'
 									categories={EMOJI_CATEGORIES}
+									previewConfig={{ showPreview: false }}
+									theme={colorMode as EmojiTheme | undefined}
+									width={props.modalEmojis ? 'min(320px, 98vw)' : '100%'}
+									height={props.modalEmojis ? '300px' : props.emoji.state ? '350px' : '0px'}
+									onEmojiClick={(emoji, _) =>
+										props.updateMessageText(
+											emoji.emoji,
+											typeof inputRef.current?.selectionStart === 'number'
+												? inputRef.current?.selectionStart
+												: undefined,
+										)
+									}
 								/>
 							)}
 						</Box>
 					</Stack>
-				) : (
+				)}
+
+				{props.showEnterButton && (
 					<OnyxTypography lkHref={`/communication/rooms/${chatData?.rid}`} boxWrapper boxWidth='fit-content'>
 						<Button
 							variant={colorMode === 'light' ? 'outlined' : 'contained'}

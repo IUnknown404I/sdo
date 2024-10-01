@@ -15,7 +15,7 @@ import ProfileSecurityComponent from './tabs/ProfileSecurityComponent';
 
 const MY_COURSES_QUARY_CASES = ['cabinet', 'security', 'settings'];
 
-export const Profile = () => {
+const Profile = () => {
 	const router = useRouter();
 	const axiosInstance = useTypedSelector(store => store.axiosInstance.instance);
 
@@ -108,6 +108,8 @@ export const Profile = () => {
 		</>
 	);
 };
+
+export default Profile;
 
 interface TabPanelProps {
 	children?: React.ReactNode;

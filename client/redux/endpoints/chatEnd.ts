@@ -15,15 +15,25 @@ export interface ChatMessageI {
 	modified?: ModifiedChatMessageOption;
 }
 
+export interface GroupChatI extends ChatI {
+	status: 'group';
+	syncTo: {
+		cid: string;
+		lgid: string;
+	};
+}
 export interface ChatI {
 	rid: string;
 	name: string;
+	disabled: boolean;
 	status: 'public' | 'group' | 'private';
 	participators: ChatParticipatorI[];
 	messages: ChatMessageI[];
 	meta: ChatMetaI;
 	online: number;
 }
+export const isGroupChat = (chat: ChatI | GroupChatI): chat is GroupChatI =>
+	chat.status === 'group' && 'syncTo' in chat;
 
 export const getChatEndpoints = (
 	build: EndpointBuilder<
@@ -33,14 +43,19 @@ export const getChatEndpoints = (
 	>,
 ) => {
 	return {
-		chatData: build.query<Omit<ChatI, 'messages'>, string>({
+		chatData: build.query<Omit<ChatI | GroupChatI, 'messages'>, string>({
 			query: (rid: string) => ({ url: `chats/data/${rid}`, method: 'GET' }),
+			providesTags: () => [{ type: 'Chats' }],
+		}),
+		groupChatData: build.query<Omit<GroupChatI, 'messages'>, string>({
+			query: (rid: string) => ({ url: `chats/data/group/${rid}`, method: 'GET' }),
 			providesTags: () => [{ type: 'Chats' }],
 		}),
 		chatMessages: build.query<Pick<ChatI, 'messages'>['messages'], string>({
 			query: (rid: string) => ({ url: `chats/messages/${rid}` }),
 			providesTags: () => [{ type: 'Chats' }],
 		}),
+
 		createPrivateChat: build.mutation<string, { name: string; initialUsers?: string[] }>({
 			query: (props: { name: string; initialUsers?: string[] }) => ({
 				url: 'chats/private',

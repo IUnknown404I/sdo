@@ -10,8 +10,8 @@ import OnyxSpeedDial from '../../../../../../components/basics/OnyxSpeedDial';
 import ModernLoader from '../../../../../../components/utils/loaders/ModernLoader';
 import { notification } from '../../../../../../components/utils/notifications/Notification';
 import CoursesLayout from '../../../../../../layout/CoursesLayout';
-import { rtkApi } from '../../../../../../redux/api';
 import { useTypedSelector } from '../../../../../../redux/hooks';
+import { SystemRolesOptions, selectUser } from '../../../../../../redux/slices/user';
 
 /**
  * @IUnknown404I This is inner page for the SCORM-packages displaying.
@@ -19,11 +19,11 @@ import { useTypedSelector } from '../../../../../../redux/hooks';
  */
 const ScormPage = () => {
 	const router = useRouter();
-	const iframeRef = React.useRef<HTMLIFrameElement>();
+	const userData = useTypedSelector(selectUser);
 	const axiosInstance = useTypedSelector(store => store.axiosInstance.instance);
 
+	const iframeRef = React.useRef<HTMLIFrameElement>();
 	const [verified, setVerified] = React.useState<boolean>(false);
-	const { data: scormData, fulfilledTimeStamp } = rtkApi.useScormDataQuery((router.query.scid as string) || '');
 
 	// check for package existance & if package is unpacked --> unpack it before (can be unpacked on-hot also)
 	React.useMemo(
@@ -58,9 +58,7 @@ const ScormPage = () => {
 
 			<CoursesLayout
 				backButton
-				backButtonprops={{ href: `/courses/${router.query.cid}/${router.query.csid}` }}
-				progressValue={30}
-				breadcrumbsCourseContent={[
+				breadcrumbs={[
 					{
 						href: `/courses/${router.query.cid}/${router.query.csid}`,
 						element: 'Раздел',
@@ -99,21 +97,25 @@ const ScormPage = () => {
 					)}
 				</Stack>
 
-				<OnyxSpeedDial
-					ariaLabel='Modify Tools'
-					items={[
-						{
-							icon: <SettingsIcon />,
-							name: 'Настройки Scorm-пакета',
-							href: `/courses/${router.query.cid}/${router.query.csid}/scorm/${router.query.scid}/config`,
-						},
-						{
-							icon: <SecurityIcon />,
-							name: 'Ограничения Scorm-пакета',
-							href: `/courses/${router.query.cid}/${router.query.csid}/scorm/${router.query.scid}/config/security`,
-						},
-					]}
-				/>
+				{SystemRolesOptions[userData._systemRole].accessLevel > 1 ? (
+					<OnyxSpeedDial
+						ariaLabel='Modify Tools'
+						items={[
+							{
+								icon: <SettingsIcon />,
+								name: 'Настройки Scorm-пакета',
+								href: `/storage/scorms/${router.query.scid}`,
+							},
+							{
+								icon: <SecurityIcon />,
+								name: 'Ограничения Scorm-пакета',
+								href: `/courses/${router.query.cid}/${router.query.csid}/scorm/${router.query.scid}/config/security`,
+							},
+						]}
+					/>
+				) : (
+					<></>
+				)}
 			</CoursesLayout>
 		</>
 	);

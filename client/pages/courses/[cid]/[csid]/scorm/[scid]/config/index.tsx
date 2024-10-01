@@ -3,14 +3,11 @@ import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import SettingsIcon from '@mui/icons-material/Settings';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { OnyxTypography } from '../../../../../../../components/basics/OnyxTypography';
+import ScormConfigPageContent from '../../../../../../../components/pages/courses/scorm-elements/ScormConfigPage';
 import CoursesLayout from '../../../../../../../layout/CoursesLayout';
-import { rtkApi } from '../../../../../../../redux/api';
 
 const ScormConfigPage = () => {
 	const router = useRouter();
-	const { data: scormData, fulfilledTimeStamp } = rtkApi.useScormDataQuery((router.query.scid as string) || '');
-
 	return (
 		<>
 			<Head>
@@ -21,12 +18,12 @@ const ScormConfigPage = () => {
 
 			<CoursesLayout
 				backButton
-				backButtonprops={{
+				backButtonProps={{
 					text: 'К презентации',
 					href: `/courses/${router.query.cid}/${router.query.csid}/scorm/${router.query.scid}`,
 				}}
-				progressValue={30}
-				breadcrumbsCourseContent={[
+				
+				breadcrumbs={[
 					{
 						href: `/courses/${router.query.cid}/${router.query.csid}`,
 						element: 'Раздел',
@@ -43,15 +40,7 @@ const ScormConfigPage = () => {
 					},
 				]}
 			>
-				<OnyxTypography component='h1' tpWeight='bold' tpColor='primary' tpSize='1.5rem'>
-					Страница конфигурации Scorm-пакета
-				</OnyxTypography>
-
-				<OnyxTypography>Название пакета: {!!fulfilledTimeStamp && scormData?.title}</OnyxTypography>
-				<OnyxTypography>Тип Scorm-пакета: {!!fulfilledTimeStamp && scormData?.type}</OnyxTypography>
-				<OnyxTypography>
-					Категория: {(!!fulfilledTimeStamp && scormData?.category) || 'без категории'}
-				</OnyxTypography>
+				<ScormConfigPageContent />
 			</CoursesLayout>
 		</>
 	);

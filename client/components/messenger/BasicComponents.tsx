@@ -6,8 +6,9 @@ import { ChatMessageI } from '../../redux/endpoints/chatEnd';
 import { OnyxTypography } from '../basics/OnyxTypography';
 import ContactsModal from '../pages/communication/hub/personal/ContactsModal';
 import FriendsModal from '../pages/communication/hub/personal/FriendsModal';
-import { avatarUrlParse, stringToColor } from '../utils/bgAvatars/BgAvatars';
-import { relativeDateFormatter } from './DialogMessage';
+import { avatarUrlParse } from '../utils/bgAvatars/BgAvatars';
+import { relativeDateFormatter, stringAvatar } from './chats-utility';
+import { ChatNamingChip } from './sidebarComponents/DialogDrawer';
 import { DialogType } from './sidebarComponents/MessengerSidebar';
 
 export function MessengerSidebarTab(payload: {
@@ -17,11 +18,11 @@ export function MessengerSidebarTab(payload: {
 	iconPosition?: 'bottom' | 'top' | 'start' | 'end';
 	icon: JSX.Element;
 	sx?: SxProps;
-	badgeProps?: {
+	badgeProps?: Array<{
 		badgeContent: React.ReactNode;
 		badgeColor?: 'default' | 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning';
 		badgeSx?: SxProps;
-	};
+	}>;
 }) {
 	const sxProps: SxProps = {
 		...payload.sx,
@@ -46,13 +47,23 @@ export function MessengerSidebarTab(payload: {
 			label={
 				<>
 					{payload.label}
-					{payload.badgeProps !== undefined && (
-						<Badge
-							badgeContent={payload.badgeProps.badgeContent}
-							color={payload.badgeProps.badgeColor || 'success'}
-							sx={{ position: 'absolute', top: '15px', right: '15px', ...payload.badgeProps.badgeSx }}
-						/>
-					)}
+					{payload.badgeProps !== undefined &&
+						!!payload.badgeProps.length &&
+						payload.badgeProps.map((badgeOptions, index) => (
+							<Badge
+								key={index}
+								badgeContent={badgeOptions.badgeContent}
+								color={badgeOptions.badgeColor || 'success'}
+								sx={{
+									position: 'absolute',
+									top: `${(index + 1) * 15 * (index === 0 ? 1 : 1.25)}px`,
+									right: `15px`,
+									transition: 'all .35s linear',
+									opacity: payload.tab === payload.tabIndex ? '1' : '.5',
+									...badgeOptions.badgeSx,
+								}}
+							/>
+						))}
 				</>
 			}
 		/>
@@ -163,6 +174,7 @@ export function MessengerDialogBox(payload: {
 	dialogName?: string;
 	lastMessage?: ChatMessageI;
 	activeDialog?: DialogType | undefined;
+	disabledChat?: boolean;
 	onClick: Function;
 }) {
 	useRafRepaint(5e3);
@@ -196,7 +208,13 @@ export function MessengerDialogBox(payload: {
 			<Stack direction='column' justifyContent='flex-start' gap={0} width='100%' sx={{ gap: '.25rem' }}>
 				<Stack direction='row' justifyContent='space-between' alignItems='center' gap={1}>
 					<OnyxTypography tpWeight='bold'>{payload.dialogName || 'Чат системы'}</OnyxTypography>
-					{/* any badges or icons next */}
+
+					{payload.disabledChat && !payload.dialogName?.includes('до:') && (
+						<ChatNamingChip color='warning' variant='outlined' label='только чтение' />
+					)}
+					{payload.disabledChat && payload.dialogName?.includes('до:') && (
+						<ChatNamingChip color='warning' variant='outlined' label='архив чата' />
+					)}
 				</Stack>
 
 				{payload.lastMessage !== undefined ? (
@@ -262,52 +280,4 @@ export function MessengerAvatarElement(payload: {
 			/>
 		</Box>
 	);
-}
-
-function stringAvatar(
-	name: string,
-	bg = false,
-	widthAvatar = '51px',
-	heightAvatar = '51px',
-	fontSize?: string,
-): Object {
-	const splittedName = name.split(' ');
-	return {
-		sx: {
-			width: widthAvatar,
-			height: heightAvatar,
-			fontSize: fontSize || '1.15rem',
-		},
-		children: (
-			<Box
-				sx={{
-					overflow: 'hidden',
-					width: widthAvatar,
-					height: heightAvatar,
-					position: 'relative',
-					borderRadius: '50%',
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					zIndex: '0',
-
-					'&:before': {
-						content: '""',
-						position: 'absolute',
-						inset: '0 0',
-						// background: `radial-gradient(rgba(25, 126, 234,.75), rgba(101, 175, 243,.75)})`,
-						background: `radial-gradient(${stringToColor(name)}, ${stringToColor(
-							name.split('').reverse().join(''),
-						)})`,
-						opacity: '.75',
-						zIndex: '-1',
-					},
-				}}
-			>
-				{splittedName.length > 1
-					? `${splittedName[0][0]}${splittedName[splittedName.length - 1][0].toUpperCase()}`
-					: splittedName[0][0]}
-			</Box>
-		),
-	};
 }

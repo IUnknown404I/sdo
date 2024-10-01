@@ -4,6 +4,7 @@ import AlternateEmailRoundedIcon from '@mui/icons-material/AlternateEmailRounded
 import ContactsIcon from '@mui/icons-material/Contacts';
 import DangerousIcon from '@mui/icons-material/Dangerous';
 import DoneIcon from '@mui/icons-material/Done';
+import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import { FormHelperText, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -232,19 +233,6 @@ const LoginElement = (props: LoginElementI): JSX.Element => {
 							boxWidth='fit-content'
 							onClick={() => setBlockModalState(prev => !prev)}
 						/>
-						{props.attempts === 9999 && (
-							<OnyxTypography
-								text='Отправить новое письмо с активацией'
-								tpColor='secondary'
-								ttNode='Отправить ключ на почту'
-								tpAlign='left'
-								hoverStyles
-								boxWrapper
-								boxAlign='flex-start'
-								boxWidth='fit-content'
-								onClick={() => props.handleAdditionalRecoveryRequest()}
-							/>
-						)}
 
 						<OnyxTypography
 							tpColor='secondary'
@@ -257,6 +245,24 @@ const LoginElement = (props: LoginElementI): JSX.Element => {
 							boxWidth='fit-content'
 						/>
 					</Box>
+
+					{props.attempts === 9999 && (
+						<OnyxTypography
+							ttArrow
+							boxWrapper
+							hoverStyles
+							centeredFlex
+							tpAlign='left'
+							boxAlign='center'
+							boxWidth='center'
+							tpColor='secondary'
+							ttNode='Отправить новый ключ на почту'
+							ttPlacement='top'
+							onClick={() => props.handleAdditionalRecoveryRequest()}
+						>
+							<PrivacyTipOutlinedIcon sx={{ fontSize: '1.5rem' }} /> Отправить новое письмо с активацией
+						</OnyxTypography>
+					)}
 				</>
 			</AuthFormLayout>
 

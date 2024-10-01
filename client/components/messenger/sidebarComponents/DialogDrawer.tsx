@@ -1,10 +1,11 @@
 import SettingsIcon from '@mui/icons-material/Settings';
 import StartOutlinedIcon from '@mui/icons-material/StartOutlined';
-import { Divider, Stack, SwipeableDrawer, SxProps, useMediaQuery } from '@mui/material';
-import React from 'react';
+import { Chip, Divider, Stack, SwipeableDrawer, SxProps, useMediaQuery } from '@mui/material';
+import React, { ComponentProps } from 'react';
 import { rtkApi } from '../../../redux/api';
 import { ChatI } from '../../../redux/endpoints/chatEnd';
 import { useTypedSelector } from '../../../redux/hooks';
+import { SystemRolesOptions } from '../../../redux/slices/user';
 import { OnyxTypography } from '../../basics/OnyxTypography';
 import { ChatContainer } from '../chatContainer/ChatContainer';
 import { parseChatName, parseChatUsername } from '../chatContainer/ChatContainerComponent';
@@ -49,11 +50,12 @@ const DialogDrawer = (props: DialogDrawerProps) => {
 	return (
 		<SwipeableDrawer
 			id={drawerID}
+			elevation={4}
+			swipeAreaWidth={35}
 			// disableSwipeToOpen
-			hideBackdrop={!lgBreakpoint}
+			// hideBackdrop={!lgBreakpoint}
 			keepMounted={false}
 			anchor={props.side}
-			elevation={4}
 			open={props.state}
 			aria-label='chat-sidebar'
 			onClose={handleClose}
@@ -84,9 +86,39 @@ const DialogDrawer = (props: DialogDrawerProps) => {
 				}}
 			>
 				<Stack padding='.75rem .75rem' direction='row' justifyContent='space-between' alignItems='center'>
-					<OnyxTypography tpColor='primary' tpSize='1.15rem' tpWeight='bold'>
-						{currentDialogName}
-					</OnyxTypography>
+					{currentDialogName.length > 64 ? (
+						<OnyxTypography component='div' tpColor='primary' tpSize='1.15rem' tpWeight='bold'>
+							<OnyxTypography
+								tpColor='primary'
+								tpSize='1.15rem'
+								tpWeight='bold'
+								ttArrow
+								ttFollow={false}
+								ttPlacement='bottom'
+								ttNode={currentDialogName}
+								sx={{ cursor: 'help' }}
+							>
+								{currentDialogName.slice(0, 60).trimEnd() + '...'}&nbsp;&nbsp;
+							</OnyxTypography>
+
+							{props.chatData?.disabled && props.chatData?.status !== 'private' && (
+								<ChatNamingChip variant='outlined' color='warning' label='только чтение' />
+							)}
+							{props.chatData?.status === 'private' && props.chatData?.name.includes('до:') && (
+								<ChatNamingChip variant='outlined' color='warning' label='архив чата' />
+							)}
+						</OnyxTypography>
+					) : (
+						<OnyxTypography tpColor='primary' tpSize='1.15rem' tpWeight='bold'>
+							{currentDialogName}&nbsp;&nbsp;
+							{props.chatData?.disabled && props.chatData?.status !== 'private' && (
+								<ChatNamingChip variant='outlined' color='warning' label='только чтение' />
+							)}
+							{props.chatData?.status === 'private' && props.chatData?.name.includes('до:') && (
+								<ChatNamingChip variant='outlined' color='warning' label='архив чата' />
+							)}
+						</OnyxTypography>
+					)}
 
 					<Stack direction='row' alignItems='center' justifyContent='center' gap={1}>
 						<OnyxTypography
@@ -106,6 +138,7 @@ const DialogDrawer = (props: DialogDrawerProps) => {
 								}}
 							/>
 						</OnyxTypography>
+
 						{props.chatData?.status === 'private' && (
 							<OnyxTypography
 								tpColor='primary'
@@ -131,11 +164,15 @@ const DialogDrawer = (props: DialogDrawerProps) => {
 
 				<ChatContainer
 					mode='full'
+					sidebarChat
+					disableHeader
 					rid={props.rid}
 					publicChat={props.publicChat}
-					sidebarChat
-					inputEnable
-					disableHeader
+					inputEnable={
+						!props.chatData || (props.chatData.status === 'private' && props.chatData.name.includes('до:'))
+							? false
+							: !(props.chatData.disabled && SystemRolesOptions[userData._systemRole].accessLevel < 4)
+					}
 					sx={{ borderRadius: 'unset' }}
 				/>
 			</Stack>
@@ -149,6 +186,33 @@ const DialogDrawer = (props: DialogDrawerProps) => {
 		if (props.handleClose && props.chatData?.name) props.handleClose(currentDialogName, forced);
 	}
 };
+
+export function ChatNamingChip(payload: {
+	label: string;
+	variant: ComponentProps<typeof Chip>['variant'];
+	color: ComponentProps<typeof Chip>['color'];
+	sx?: SxProps;
+}) {
+	return (
+		<Chip
+			size='small'
+			color={payload.color}
+			variant={payload.variant}
+			label={payload.label}
+			sx={{
+				padding: 'unset',
+				height: 'unset',
+				minWidth: 'unset',
+				width: 'fit-content',
+				whiteSpace: 'nowrap',
+				fontWeight: 'normal',
+				alignSelf: 'flex-start',
+				span: { fontSize: '.75rem', paddingLeft: 'unset', paddingRight: 'unset', padding: '0 7px' },
+				...payload.sx,
+			}}
+		/>
+	);
+}
 
 function getSideProps(side: 'left' | 'right'): SxProps {
 	return {

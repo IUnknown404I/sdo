@@ -1,15 +1,21 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NotValidDataError } from 'errors/NotValidDataError';
 import { ErrorMessages } from 'guards';
-import logapp from 'utils/logapp';
+import { UsersAuthService } from 'src/users/users-auth-service';
 import { getToday } from '../../utils/date-utils';
 import { AccessTokenPayload, User } from '../users/users.schema';
 import { UserIdentWithEmailPayload, UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
-	constructor(private userService: UsersService, private jwtService: JwtService) {}
+	constructor(
+		private jwtService: JwtService,
+		@Inject(forwardRef(() => UsersService))
+		private usersService: UsersService,
+		@Inject(forwardRef(() => UsersAuthService))
+		private usersAuthService: UsersAuthService,
+	) {}
 
 	/**
 	 * @IUnknown404I Exec all login&auth logic for the passed request;
@@ -25,20 +31,23 @@ export class AuthService {
 		// search and check for the appropriate user in db
 		const user =
 			payload.username === 'DisabledValue*0' || payload.username === '' || !payload.username
-				? ((await this.userService.findUserByEmail(payload.email, true)) as User & { _id: string; __v: string })
-				: ((await this.userService.findUser({ username: payload.username, secret: true })) as User & {
+				? ((await this.usersService.findUserByEmail(payload.email, true)) as User & {
+						_id: string;
+						__v: string;
+				  })
+				: ((await this.usersService.findUser({ username: payload.username, secret: true })) as User & {
 						_id: string;
 						__v: string;
 				  });
 		if (!user) throw new UnauthorizedException();
 
 		// complex validating userData, exec fail-login-actions if something wrong
-		if ((await this.userService.validateUser({ user, password: payload.password })) === false)
+		if ((await this.usersAuthService.validateUser({ user, password: payload.password })) === false)
 			await this.loginFailedAction(user.username);
 		else {
 			// all OK. Getting auth data, updating logs and meta and return tokens.
 			if (payload.fingerprints !== undefined)
-				this.userService.updateUserFingerprints({
+				this.usersService.updateUserFingerprints({
 					ident: { username: user.username },
 					fingerprints: payload.fingerprints,
 				});
@@ -47,15 +56,20 @@ export class AuthService {
 			const today = getToday();
 			const newUserDate = `${today.today} ${today.time}`;
 
-			this.userService.updateUserRequestsLogs({
+			this.usersService.updateUserRequestsLogs({
 				username: user.username,
 				decision: '[logged-in]',
 				lastRequest: '/auth/login-in',
 			});
-			this.userService.clearFailedAttempts({ username: user.username });
-			this.userService.updateLastLoginInDate({ username: user.username, newValue: newUserDate });
+			this.usersAuthService.clearFailedAttempts({ username: user.username });
+			this.usersService.updateLastLoginInDate({ username: user.username, newValue: newUserDate });
 			if (!!user.recoveryToken && user.recoveryToken !== 'none')
-				this.userService.updateRecoveryTokenValue({ username: user.username, newToken: 'none' });
+				this.usersService.updateRecoveryTokenValue({ username: user.username, newToken: 'none' });
+
+			// do initial-activity incrementing
+			try {
+				await this.usersService.updateMyActivity(user, true);
+			} catch (error) {}
 			return newTokens;
 		}
 	}
@@ -65,8 +79,8 @@ export class AuthService {
 	 * @param username as string value.
 	 */
 	private async loginFailedAction(username: string): Promise<void> {
-		const { failedAttempts, lastLoginIn } = (await this.userService.findUser({ username, secret: true })) as User;
-		this.userService.updateUserRequestsLogs({
+		const { failedAttempts, lastLoginIn } = (await this.usersService.findUser({ username, secret: true })) as User;
+		this.usersService.updateUserRequestsLogs({
 			username,
 			decision: false,
 			lastRequest: '/auth/login-in',
@@ -78,15 +92,15 @@ export class AuthService {
 		// 5 attempts, after blocks the user. Returns error with available attempts count.
 		if (failedAttempts) {
 			if (failedAttempts === 4) {
-				this.userService.blockUser({ username });
-				this.userService.incFailedAttempts({ username });
+				this.usersAuthService.blockUser({ username });
+				this.usersAuthService.incFailedAttempts({ username });
 				throw new UnauthorizedException('Ваш аккаунт был заблокирован! Причина: подозрительная активность.');
 			}
 
-			this.userService.incFailedAttempts({ username });
+			this.usersAuthService.incFailedAttempts({ username });
 			throw new UnauthorizedException(`${ErrorMessages.AUTH_ERROR} Attempts left: ${4 - failedAttempts}`);
 		} else {
-			this.userService.incFailedAttempts({ username });
+			this.usersAuthService.incFailedAttempts({ username });
 			throw new UnauthorizedException(`${ErrorMessages.AUTH_ERROR} Attempts left: ${4 - failedAttempts}`);
 		}
 	}
@@ -101,6 +115,8 @@ export class AuthService {
 	): Promise<{ access_token: string; refresh_token: string; expires_in: Date }> {
 		// manually setting attributes to ignore over-extending attributes
 		const tokenPayload: AccessTokenPayload = {
+			_systemRole: userData._systemRole,
+			_permittedSystemRoles: userData._permittedSystemRoles,
 			username: userData.username,
 			email: userData.email,
 			isActive: userData.isActive,
@@ -130,9 +146,11 @@ export class AuthService {
 
 		// setting new tokens, expiration for 3 mins and update users' logs.
 		const today = getToday();
-		const newUserDate = `${today.today} ${today.time}`;
-		this.userService.updateActiveRefreshToken({ username: userData.username, newToken: refresh_token });
-		this.userService.updateLastModifiedDate({ username: userData.username, newValue: newUserDate });
+		this.usersService.updateActiveRefreshToken({ username: userData.username, newToken: refresh_token });
+		this.usersService.updateLastModifiedDate({
+			username: userData.username,
+			newValue: `${today.today} ${today.time}`,
+		});
 		return {
 			access_token,
 			refresh_token,
@@ -150,9 +168,9 @@ export class AuthService {
 		refreshToken: string,
 		fingerprints?: string,
 	): Promise<{ access_token: string; refresh_token: string; expires_in: Date }> {
-		const userData = await this.userService.findByRefreshToken(refreshToken);
+		const userData = await this.usersService.findByRefreshToken(refreshToken);
 		const updateLogs = async (urlPath: string, decision: boolean | string) =>
-			await this.userService.updateUserRequestsLogs({
+			await this.usersService.updateUserRequestsLogs({
 				username: userData.username,
 				decision: decision,
 				lastRequest: urlPath,
@@ -163,14 +181,19 @@ export class AuthService {
 		if (
 			userData.activeRefreshToken !== refreshToken ||
 			(await this.validateToken(refreshToken, true)) === false ||
-			(await this.userService.validateUser({ user: userData as User & { _id: string; __v: string } })) === false
+			(await this.usersAuthService.validateUser({ user: userData as User & { _id: string; __v: string } })) ===
+				false
 		) {
 			await updateLogs('/auth/refresh-token', false);
 			throw new NotValidDataError();
 		} else await updateLogs('/auth/refresh-token', true);
 
 		if (fingerprints !== undefined)
-			this.userService.updateUserFingerprints({ ident: { username: userData.username }, fingerprints });
+			this.usersService.updateUserFingerprints({ ident: { username: userData.username }, fingerprints });
+		// do initial-activity incrementing if needed
+		try {
+			this.usersService.updateMyActivity(userData, true);
+		} catch (error) {}
 		return await this.createTokens(userData);
 	}
 
@@ -228,15 +251,34 @@ export class AuthService {
 			company: payload.company || 'Не указано',
 			activatedUser: payload.activatedUser,
 		};
-		return await this.userService.createOne(userDTO);
+		return await this.usersService.createOne(userDTO);
 	}
 
 	async getUserByRefreshToken(refresh_token: string) {
 		if (!refresh_token) throw new NotValidDataError();
-		return await this.userService.findByRefreshToken(refresh_token);
+		return await this.usersService.findByRefreshToken(refresh_token);
 	}
 
 	async getUserLastPage(payload: UserIdentWithEmailPayload): Promise<string[]> {
-		return await this.userService.getUserLastPage(payload);
+		return await this.usersService.getUserLastPage(payload);
+	}
+
+	async changeUserCurrentRole(
+		user: string | (User & { _id: string }),
+		newRole: User['_systemRole'],
+	): Promise<{
+		access_token: string;
+		refresh_token: string;
+		expires_in: Date;
+	}> {
+		const today = getToday();
+		const userData =
+			typeof user === 'string' ? await this.usersService.findUser({ username: user, secret: true }) : user;
+		await this.usersService.updateUserDynamicRole(userData, newRole);
+		this.usersService.updateLastModifiedDate({
+			username: userData.username,
+			newValue: `${today.today} ${today.time}`,
+		});
+		return await this.createTokens(userData);
 	}
 }

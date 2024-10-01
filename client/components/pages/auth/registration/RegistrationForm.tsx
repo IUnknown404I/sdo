@@ -64,8 +64,10 @@ const registryValidationSchema = yup.object({
 const RegistrationForm = () => {
 	const theme = useTheme();
 	const axiosInstance = useTypedSelector(state => selectAxiosInstance(state));
+
 	const [state, setState] = React.useState<boolean>(false);
 	const [showPassword, setShowPassword] = React.useState(false);
+	
 	const { Loader, state: loadingState, setState: setLoadingState } = useLoading({ iconVariant: true });
 
 	const formik = useFormik({
@@ -79,7 +81,7 @@ const RegistrationForm = () => {
 		onSubmit: values => {
 			setLoadingState(true);
 			axiosInstance
-				.post(`${process.env.NEXT_PUBLIC_SERVER}/users`, { ...values })
+				.post(`${process.env.NEXT_PUBLIC_SERVER}/users/registration`, { ...values })
 				.then(res => {
 					notification({
 						message: 'Успешно! Вам на почту отправлено письмо для активации учётной записи.',

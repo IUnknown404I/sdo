@@ -5,7 +5,7 @@ import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import QuestionAnswerRoundedIcon from '@mui/icons-material/QuestionAnswerRounded';
 import SwipeOutlinedIcon from '@mui/icons-material/SwipeOutlined';
 import TextsmsOutlinedIcon from '@mui/icons-material/TextsmsOutlined';
-import { Stack, Tabs, useMediaQuery } from '@mui/material';
+import { Stack, SxProps, Tabs, Theme, useMediaQuery } from '@mui/material';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import { useRouter } from 'next/router';
 import React from 'react';
@@ -29,6 +29,7 @@ interface MessengerSidebarProps {
 		state: boolean;
 		setState: React.Dispatch<React.SetStateAction<boolean>>;
 	};
+	sx?: SxProps<Theme>;
 }
 
 const MessengerSidebar = (props: MessengerSidebarProps) => {
@@ -72,7 +73,7 @@ const MessengerSidebar = (props: MessengerSidebarProps) => {
 				id={drawerID}
 				anchor={side}
 				elevation={4}
-				swipeAreaWidth={lgBreakpoint ? 0 : 50}
+				swipeAreaWidth={lgBreakpoint ? 0 : 25}
 				draggable={lgBreakpoint}
 				open={props.controlled !== undefined ? props.controlled.state : sidebarState}
 				allowSwipeInChildren
@@ -105,6 +106,7 @@ const MessengerSidebar = (props: MessengerSidebarProps) => {
 					setDragging(false);
 				}}
 				onClick={e => e.stopPropagation()}
+				sx={props.sx}
 			>
 				<Stack
 					component='section'
@@ -158,7 +160,10 @@ const MessengerSidebar = (props: MessengerSidebarProps) => {
 							label='Личные'
 							iconPosition='top'
 							icon={<QuestionAnswerRoundedIcon />}
-							badgeProps={{ badgeContent: friendsObject?.pending.length }}
+							badgeProps={[
+								{ badgeContent: friendsObject?.pending.length, badgeColor: 'success' },
+								{ badgeContent: friendsObject?.requested.length, badgeColor: 'primary' },
+							]}
 						/>
 						<MessengerSidebarTab
 							tab={tab}

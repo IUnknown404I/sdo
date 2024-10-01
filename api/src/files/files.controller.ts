@@ -2,6 +2,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	Inject,
 	Param,
 	Post,
 	Put,
@@ -11,19 +12,18 @@ import {
 	StreamableFile,
 	UnauthorizedException,
 	UploadedFile,
-	UseGuards,
 	UseInterceptors,
+	forwardRef,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { NotValidDataError } from 'errors/NotValidDataError';
 import * as fs from 'fs';
 import { createReadStream, existsSync } from 'fs';
-import { AccessTokenGuard } from 'guards/AccessTokenGuard';
-import { RefreshOrAccessTokenGuard } from 'guards/RefreshOrAccessTokenGuard';
+import { AccessLevel, SystemRoles, UserData } from 'metadata/metadata-decorators';
 import { Error } from 'mongoose';
 import { diskStorage } from 'multer';
-import { AccessTokenPayload } from 'src/users/users.schema';
+import { SystemRolesOptions, User } from 'src/users/users.schema';
 import { UsersService } from 'src/users/users.service';
 import { getCurrentDomain } from 'utils/utilityFunctions';
 import { FilesService } from './files.service';
@@ -61,11 +61,11 @@ function fileValidation(file: Express.Multer.File): boolean {
 export class FilesController {
 	constructor(
 		private readonly fileService: FilesService,
+		@Inject(forwardRef(() => UsersService))
 		private readonly usersService: UsersService,
 	) {}
 
-	// @Privileges('superuser admin study')
-	@UseGuards(AccessTokenGuard)
+	@AccessLevel(2)
 	@Post('')
 	@ApiTags('Files')
 	@ApiConsumes('multipart/form-data')
@@ -104,11 +104,9 @@ export class FilesController {
 	async uploadFile(@UploadedFile() file: Express.Multer.File, @Query('path') path: string) {
 		if (!file || !path || path === '') throw new NotValidDataError('Переданы пустые параметры!');
 		//path attribute in file-object is a final path to the uploaded file with it's hashed filename (to save in bd)
-		// return await this.fileService.saveFile(file, path);
 		return file.filename;
 	}
 
-	@UseGuards(AccessTokenGuard)
 	@Get('')
 	@ApiTags('Files')
 	async getFile(@Query('path') pathString: string, @Response({ passthrough: true }) res) {
@@ -137,8 +135,7 @@ export class FilesController {
 		}
 	}
 
-	// @Privileges('superuser admin study')
-	@UseGuards(AccessTokenGuard)
+	@AccessLevel(2)
 	@Get('all')
 	@ApiTags('Files')
 	async getAllFilesInDirectory(@Query('path') path: string, @Query('extended') extended?: boolean) {
@@ -166,8 +163,7 @@ export class FilesController {
 		}
 	}
 
-	// @Privileges('superuser admin')
-	@UseGuards(AccessTokenGuard)
+	@AccessLevel(3)
 	@Delete('')
 	@ApiTags('Files')
 	async deleteFile(@Query('path') path: string) {
@@ -193,8 +189,10 @@ export class FilesController {
 		else return 'deleted';
 	}
 
-	// AVATARS// @Privileges('superuser admin study')
-	@UseGuards(AccessTokenGuard)
+	/**
+	 * @IUnknown404I Use this endpoint for uploading new public avatars as administrator or higher
+	 */
+	@SystemRoles(['developer', 'admin'])
 	@Post('/users/avatars')
 	@ApiTags('Files')
 	@ApiConsumes('multipart/form-data')
@@ -213,11 +211,15 @@ export class FilesController {
 			},
 			storage: diskStorage({
 				destination: (req, file, cb: any) => {
-					const uploadPath = 'public/users/avatars';
+					const uploadPath = 'public/users/avatars/defaults';
 					if (!existsSync(uploadPath)) throw new NotValidDataError();
 					cb(null, uploadPath);
 				},
 				filename(req, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) {
+					const requestedUserData = (req as typeof req & { guardUserData?: User & { _id: string } })
+						.guardUserData;
+					if (!requestedUserData) callback(new UnauthorizedException(), 'error');
+
 					const filename = file.originalname.slice(0, file.originalname.lastIndexOf('.'));
 					const fileExt = file.originalname.slice(file.originalname.lastIndexOf('.') + 1);
 					const fileRandomName = Array(32)
@@ -262,11 +264,9 @@ export class FilesController {
 		}
 
 		// if passed username --> search for him and return the image from db
-		if (!req.headers.authorization && !username) throw new NotValidDataError('Не найдены атрибуты идентификации!');
-		const requestedUsername = req.headers.authorization
-			? ((await this.usersService.decodeJWT(req.headers.authorization?.split(' ')[1])) as AccessTokenPayload)
-					.username
-			: username;
+		if (!req.guardUserData) throw new UnauthorizedException();
+		const requestedUsername = !!req.guardUserData?.username ? (req.guardUserData as User).username : username;
+		if (!requestedUsername) throw new NotValidDataError('Не найдены атрибуты идентификации!');
 
 		// path detecting
 		const avatarUrl = (await this.usersService.getUserAvatar({ username: requestedUsername }))?.trim();
@@ -295,7 +295,6 @@ export class FilesController {
 	 * @param username string value of the requested user's username;
 	 * @returns Notification of seccessfull upload and userData update or an Error if somithing goes wrong.
 	 */
-	@UseGuards(RefreshOrAccessTokenGuard)
 	@Put('users/avatars/:username')
 	@ApiTags('Files')
 	@ApiConsumes('multipart/form-data')
@@ -321,7 +320,6 @@ export class FilesController {
 				filename(req, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) {
 					if (!req.headers.authorization && !req.params.username)
 						throw new NotValidDataError('Не найдены атрибуты идентификации!');
-
 					const fileExt = file.originalname.slice(file.originalname.lastIndexOf('.') + 1);
 					const fileRandomName = Array(32)
 						.fill(null)
@@ -336,36 +334,45 @@ export class FilesController {
 	async updateUserAvatar(
 		@UploadedFile() file: Express.Multer.File,
 		@Request() req,
+		@UserData() UserData,
 		@Param('username') username: string,
 	) {
-		let requestedUsername = '';
-		if (req.headers.authorization?.split(' ')[1])
-			requestedUsername = (
-				(await this.usersService.decodeJWT(req.headers.authorization?.split(' ')[1])) as AccessTokenPayload
-			).username;
-		else if (!!req.cookies.refreshToken) {
-			requestedUsername = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username || '';
+		if (!UserData) throw new UnauthorizedException('Не предоставлены атрибуты идентификации!');
+		const requestedUsername = (UserData as User).username;
+		const userToChangeData = await this.usersService.findUser({ username, secret: true });
+		if (!userToChangeData)
+			throw new NotValidDataError('Предоставлены невалидные идентификации запрошенного пользователя! ');
+		if (requestedUsername !== username) {
+			try {
+				if (
+					SystemRolesOptions[(UserData as User)._systemRole].accessLevel <
+					SystemRolesOptions[userToChangeData._systemRole].accessLevel
+				)
+					throw new UnauthorizedException(
+						'Недостаточно прав доступа для изменения персональной информации запрошенного пользователя!',
+					);
+			} catch (e) {
+				fs.unlink('public/users/avatars/' + file.filename, err => console.log(err));
+				throw e;
+			}
 		}
-		if (!requestedUsername) throw new UnauthorizedException('Не найдены атрибуты идентификации!');
-		if (requestedUsername !== username) throw new UnauthorizedException('Недостаточно прав доступа!');
 
 		// edge case fs validation
 		if (!existsSync(file.path) || fs.lstatSync(file.path).isDirectory()) throw new NotValidDataError();
-
 		// delete previous dowloaded user's avatars
 		const uploadedAvatars = fs
 			.readdirSync('public/users/avatars')
 			.filter(
 				el =>
 					!fs.lstatSync('public/users/avatars/' + el).isDirectory() &&
-					el.split('__')[0] === requestedUsername,
+					el.split('__')[0] === userToChangeData.username,
 			);
 		if (uploadedAvatars.length > 0)
 			for (const filename of uploadedAvatars)
 				fs.unlink('public/users/avatars/' + filename, err => console.log(err));
 
 		// rename uploaded file
-		const userAvatarFilename = requestedUsername + '__' + file.filename;
+		const userAvatarFilename = userToChangeData.username + '__' + file.filename;
 		await fs.rename(file.destination + '/' + file.filename, file.destination + '/' + userAvatarFilename, err =>
 			console.log(err),
 		);
@@ -373,11 +380,10 @@ export class FilesController {
 		// updating user's personal data
 		return await this.usersService.updateUserAvatar({
 			avatarUrl: userAvatarFilename,
-			ident: { username: requestedUsername },
+			ident: { username: userToChangeData.username },
 		});
 	}
 
-	@UseGuards(AccessTokenGuard)
 	@Get('users/avatars/defaults/all')
 	@ApiTags('Files')
 	async getDefaultAvatars(@Query('extended') extended?: boolean) {

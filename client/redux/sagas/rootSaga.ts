@@ -3,6 +3,6 @@ import { userWatcherSagas } from './userSaga';
 
 export default function* rootSaga() {
 	yield all([
-        ...userWatcherSagas,
+        *
     ]);
 }

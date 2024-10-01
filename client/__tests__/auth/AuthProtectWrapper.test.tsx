@@ -17,7 +17,16 @@ import { initialUserState } from '../../redux/slices/user';
 import { store } from '../../redux/store';
 import ToggleColorMode from '../../theme/Theme';
 
+jest.mock('next/router', () => ({
+	useRouter: jest.fn(() => ({
+		query: {},
+		route: '/login',
+		asPath: 'login',
+		push: () => new Promise(() => true),
+	})),
+}));
 const mockStore = configureMockStore([thunk]);
+
 const expectedElement = (
 	<span
 		aria-label=''
@@ -37,6 +46,15 @@ const expectedElement = (
 		</svg>
 	</span>
 );
+
+beforeEach(() => {
+	jest.mock('next/router', () => ({
+		useRouter: jest.fn(() => ({
+			query: {},
+			asPath: 'login',
+		})),
+	}));
+});
 
 describe('AuthProtectWrapper ->', () => {
 	it('correct renders AuthProtectWrapper:', () => {

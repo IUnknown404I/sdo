@@ -5,8 +5,8 @@ import { OnyxTypography } from './OnyxTypography';
 
 export interface BreadcrumbItem {
 	href?: string;
-	element: string | React.ReactElement;
-	icon?: string | React.ReactElement;
+	element: string | React.ReactNode;
+	icon?: string | React.ReactNode;
 	iconPosition?: 'start' | 'end';
 	linkProps?: { target?: HTMLAttributeAnchorTarget; rel?: 'norefferer' | string };
 }
@@ -51,7 +51,7 @@ const OnyxBreacrumbs = (props: {
 			});
 		}
 		return [breadcrumbs, innerBreadcrumbs];
-	}, [windowDimensions]);
+	}, [windowDimensions, props.itemList]);
 
 	return (
 		<Box component='nav' width='100%' sx={props.sx} aria-label='breadcrumbs'>
@@ -69,6 +69,7 @@ const OnyxBreacrumbs = (props: {
 					<>
 						<CrumbContent
 							{...crumb}
+							key={index + Math.random() * 100}
 							href={index !== breadcrumbsItems.length - 1 ? crumb.href : undefined}
 							lkProps={crumb.linkProps}
 							tpColor={props.color || 'secondary'}
@@ -82,6 +83,7 @@ const OnyxBreacrumbs = (props: {
 						{index !== breadcrumbsItems.length - 1 && (
 							<li style={{ width: 'fit-content' }} aria-hidden={true}>
 								<OnyxTypography
+									key={index + Math.random() * 100}
 									tpColor={props.color || 'secondary'}
 									tpSize={
 										!!windowDimensions && windowDimensions.clientWidth <= 800
@@ -97,6 +99,7 @@ const OnyxBreacrumbs = (props: {
 						{index === 0 && !!innerBreadcrumbsItems.length && (
 							<>
 								<Button
+									key={index + Math.random() * 100}
 									size='small'
 									variant='text'
 									sx={{ position: 'relative', minWidth: '25px' }}
@@ -122,6 +125,7 @@ const OnyxBreacrumbs = (props: {
 											border: '1px solid lightgray',
 											borderRadius: '8px',
 											gap: '.25rem',
+											zIndex: '1',
 										}}
 									>
 										{innerBreadcrumbsItems.map((crumb, index) => (
@@ -157,6 +161,7 @@ const OnyxBreacrumbs = (props: {
 
 								<li style={{ width: 'fit-content' }} aria-hidden={true}>
 									<OnyxTypography
+										key={index + Math.random() * 100}
 										tpColor={props.color || 'secondary'}
 										tpSize={
 											!!windowDimensions && windowDimensions.clientWidth <= 800

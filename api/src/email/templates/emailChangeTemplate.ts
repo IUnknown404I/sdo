@@ -74,7 +74,7 @@ const EmailChangeTemplate = (props: { date: string; oldEmail: string; newEmail: 
                                                                                             target="_blank">нашей
                                                                                             образовательной
                                                                                             платформе</a></strong></em>.&nbsp;
-                                                                                        <br><br>Для подтверждения изменения нажмите на кнопку или перейдите по ссылке:&nbsp;<br><u><a title="Активировать почту" href="https://api.sdo.rnprog.ru/users/validate/${props.verificationLink}" style="text-decoration:none;color:#134f5c;font-size:16px;word-break:break-all" target="_blank">https://api.sdo.rnprog.ru/users/validate/<wbr>${props.verificationLink}
+                                                                                        <br><br>Для подтверждения изменения нажмите на кнопку или перейдите по ссылке:&nbsp;<br><u><a title="Активировать почту" href="${process.env.SELF_DOMAIN}/users/validate/${props.verificationLink}" style="text-decoration:none;color:#134f5c;font-size:16px;word-break:break-all" target="_blank">${process.env.SELF_DOMAIN}/users/validate/<wbr>${props.verificationLink}
                                                                                             </a></u><br>в течении <strong>1 часа</strong>.</p>
                                                                         </td>
                                                                     </tr>
@@ -98,7 +98,7 @@ const EmailChangeTemplate = (props: { date: string; oldEmail: string; newEmail: 
                                                                             style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px">
                                                                             <span
                                                                                 style="border-style:solid;border-color:#999999;background:#ffffff;border-width:1px;display:inline-block;border-radius:0px;width:auto"><a title="Подтвердить почту"
-                                                                                href="https://api.sdo.rnprog.ru/users/validate/${props.verificationLink}"
+                                                                                href="${process.env.SELF_DOMAIN}/users/validate/${props.verificationLink}"
                                                                                 style="text-decoration:none;color:#666666;font-size:16px;border-style:solid;border-color:#ffffff;border-width:10px 30px 10px 30px;display:inline-block;background:#ffffff;border-radius:0px;font-family:Montserrat,sans-serif;font-weight:normal;font-style:normal;line-height:19px;width:auto;text-align:center"
                                                                                 target="_blank">Изменить электронную почту</a></span>
                                                                         </td>

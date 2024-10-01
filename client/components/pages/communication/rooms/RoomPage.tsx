@@ -2,20 +2,32 @@ import ForumIcon from '@mui/icons-material/Forum';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Button, Stack, useMediaQuery } from '@mui/material';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import React from 'react';
-import { Layout } from '../../../../layout/Layout';
+import Layout from '../../../../layout/Layout';
 import { rtkApi } from '../../../../redux/api';
 import { useTypedSelector } from '../../../../redux/hooks';
+import { SystemRolesOptions } from '../../../../redux/slices/user';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
 import { ChatContainer } from '../../../messenger/chatContainer/ChatContainer';
 import ChatSettingsModal from '../../../messenger/sidebarComponents/ChatSettingsModal';
 import ModernLoader from '../../../utils/loaders/ModernLoader';
+import { notification } from '../../../utils/notifications/Notification';
 
 const RoomPage = (props: { rid: string }) => {
+	const router = useRouter();
 	const userData = useTypedSelector(store => store.user);
 	const lgBreakpoint = useMediaQuery('(min-width:1200px)');
+
 	const [settingsState, setSettingsState] = React.useState<boolean>(false);
-	const { data: chatData, fulfilledTimeStamp, isLoading } = rtkApi.useChatDataQuery(props.rid);
+	const { data: chatData, fulfilledTimeStamp, isLoading, isFetching } = rtkApi.useChatDataQuery(props.rid);
+
+	React.useEffect(() => {
+		if (!chatData && !!fulfilledTimeStamp && !isFetching) {
+			router.push('/communication/hub');
+			notification({ message: 'Запрошенного чата не существует!', autoClose: 7500, type: 'error' });
+		}
+	}, [chatData, fulfilledTimeStamp]);
 
 	return (
 		<>
@@ -94,7 +106,18 @@ const RoomPage = (props: { rid: string }) => {
 				{isLoading || !fulfilledTimeStamp || !chatData ? (
 					<ModernLoader tripleLoadersMode centered />
 				) : (
-					<ChatContainer {...chatData} mode='full' inputEnable elevatedHeader />
+					<ChatContainer
+						{...chatData}
+						mode='full'
+						elevatedHeader
+						inputEnable={
+							chatData.name.includes('до:')
+								? false
+								: chatData.disabled
+								? SystemRolesOptions[userData._systemRole].accessLevel > 3
+								: true
+						}
+					/>
 				)}
 
 				<ChatSettingsModal chatData={chatData} state={settingsState} setState={setSettingsState} />

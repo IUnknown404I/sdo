@@ -15,7 +15,12 @@ const ProfileSecurityComponent = () => {
 	const { brands, mobile, platform } = !!(navigator as NavigatorWithUserAgentDataT).userAgentData
 		? (navigator as NavigatorWithUserAgentDataT).userAgentData
 		: { brands: undefined, mobile: undefined, platform: undefined };
-	const browser = !!brands && brands.length > 0 ? brands[brands.length - 1] : undefined;
+	const browser =
+		!!brands && !!brands.length
+			? brands.filter(el => el.brand !== 'Not_A Brand')[1] || brands.filter(el => el.brand !== 'Not_A Brand')[0]
+			: undefined;
+
+	console.log(brands);
 
 	return (
 		<Paper sx={{ padding: '20px  30px', borderRadius: '20px' }}>
@@ -47,7 +52,8 @@ const ProfileSecurityComponent = () => {
 						}`}
 						color={
 							!!browser
-								? browser.brand.toLowerCase().includes('yabrowser') ||
+								? browser.brand.toLowerCase().includes('chromium') ||
+								  browser.brand.toLowerCase().includes('yabrowser') ||
 								  browser.brand.toLowerCase().includes('chrome')
 									? 'green'
 									: 'red'

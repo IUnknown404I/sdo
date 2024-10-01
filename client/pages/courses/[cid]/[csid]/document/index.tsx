@@ -1,8 +1,8 @@
 import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
-import { Stack } from '@mui/material';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import DocumentPreviewPageContent from '../../../../../components/pages/courses/section-elements/SectionContentDocumentItem/DocumentPreviewPageContent';
 import CoursesLayout from '../../../../../layout/CoursesLayout';
 
 const CourseSectionDocumentPage = () => {
@@ -10,46 +10,26 @@ const CourseSectionDocumentPage = () => {
 	return (
 		<>
 			<Head>
-				<title>Документ программы</title>
-				<meta name='description' content='Документ программы' />
+				<title>Просмотр: Документ</title>
+				<meta name='description' content='Просмотр: Файл' />
 				<meta name='robots' content='noindex, nofollow' />
 			</Head>
 
 			<CoursesLayout
 				backButton
-				progressValue={30}
-				breadcrumbsCourseContent={[
+				breadcrumbs={[
 					{
 						href: `/courses/${router.query.cid}/${router.query.csid}`,
 						element: 'Раздел',
 						icon: <LightbulbIcon />,
 					},
 					{
-						element: 'Документ',
+						element: 'Файл',
 						icon: <DocumentScannerIcon />,
 					},
 				]}
 			>
-				<Stack
-					component='section'
-					direction='column'
-					alignItems='center'
-					justifyContent='center'
-					sx={{
-						'> iframe': {
-							width: '100%',
-							minHeight: '87vh',
-							borderRadius: '10px',
-						},
-					}}
-					gap={1}
-				>
-					<iframe
-						// src='/documents/ppt.pptx'
-						src='/documents/document.pdf'
-						// style={{ border: 'unset', backgroundColor: '#eceff1' }}
-					/>
-				</Stack>
+				<DocumentPreviewPageContent />
 			</CoursesLayout>
 		</>
 	);

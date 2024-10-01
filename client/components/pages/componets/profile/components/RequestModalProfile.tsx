@@ -104,9 +104,10 @@ const RequestModalProfile = (props: PasswordModalProfileI) => {
 			sx={{ maxWidth: 'min(98%, 600px)' }}
 		>
 			<form
+				autoComplete='none'
 				name={props.emailField ? 'email-change-form' : 'password-change-form'}
-				onSubmit={formik.handleSubmit}
 				style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.75rem' }}
+				onSubmit={formik.handleSubmit}
 			>
 				<OnyxTypography
 					tpSize='1rem'

@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import CommunicationHub from '../../components/pages/communication/hub/CommunicationHub';
-import { Layout } from '../../layout/Layout';
+import Layout from '../../layout/Layout';
 
 const CommunicationHubPage = () => {
 	return (

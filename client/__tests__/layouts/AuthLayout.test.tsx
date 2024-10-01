@@ -6,6 +6,12 @@ import { getByTitle, render, waitFor } from '@testing-library/react';
 import React from 'react';
 import AuthLayout from '../../components/pages/auth/components/AuthLayout';
 
+jest.mock('next/router', () => ({
+	useRouter: jest.fn(() => ({
+		query: {},
+	})),
+}));
+
 describe('AuthLayout ->', () => {
 	const { container } = render(
 		<AuthLayout sideImgUrl='/images/utility/loginImg.svg'>

@@ -9,6 +9,7 @@
   scroll-behavior: smooth;
 
   &::-webkit-scrollbar {
+    height: 5px;
     width: 5px;
   }
 
@@ -38,6 +39,10 @@
 html,
 body,
 main {
+  img {
+    -webkit-user-drag: none;
+  }
+
   &::-webkit-scrollbar {
     width: 8px;
   }

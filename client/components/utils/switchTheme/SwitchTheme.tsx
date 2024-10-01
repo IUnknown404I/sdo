@@ -6,12 +6,12 @@ import { useTheme } from '@mui/material/styles';
 import { useContext } from 'react';
 import { ColorModeContext } from '../../../theme/Theme';
 
-export const SwitchTheme = () => {
+export const SwitchTheme = (props: { arrow?: boolean }) => {
 	const theme = useTheme();
 	const colorMode = useContext(ColorModeContext);
 
 	return (
-		<Tooltip title={theme.palette.mode === 'light' ? 'Тёмная тема' : 'Светлая тема'}>
+		<Tooltip arrow={props.arrow} title={theme.palette.mode === 'light' ? 'Тёмная тема' : 'Светлая тема'}>
 			<IconButton sx={{ ml: 1, height: 'fit-content' }} onClick={colorMode.toggleColorMode} color='inherit'>
 				{theme.palette.mode === 'light' ? <NightsStayOutlinedIcon /> : <LightModeOutlinedIcon />}
 			</IconButton>

@@ -14,7 +14,6 @@ import { TagTypesRTK } from '../api';
 import { AccessTokenI, setAccessToken } from '../slices/accessToken';
 import { setSessionState } from '../slices/auth';
 import { RootStoreState } from '../store';
-import AuthThunks from '../thunks/auth';
 
 export type EndpointQueryGen<T, U> = QueryDefinition<
 	T,

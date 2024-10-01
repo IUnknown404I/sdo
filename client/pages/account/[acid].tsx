@@ -1,6 +1,5 @@
 import DonutLargeOutlinedIcon from '@mui/icons-material/DonutLargeOutlined';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
-import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import LocalLibraryOutlinedIcon from '@mui/icons-material/LocalLibraryOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
@@ -8,9 +7,13 @@ import { Grid, Grow, Paper, Tab, Tabs } from '@mui/material';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import React, { useEffect } from 'react';
-import { Dashboard, Education, Profile, UserCourses } from '../../components';
+import Awards from '../../components/pages/componets/awards/Awards';
+import Dashboard from '../../components/pages/componets/dashboard/Dashboard';
+import Education from '../../components/pages/componets/education/Education';
+import Profile from '../../components/pages/componets/profile/Profile';
+import UserCourses from '../../components/pages/componets/userCourses/UserCourses';
 import useModernLoading from '../../hooks/useModernLoading';
-import { Layout } from '../../layout/Layout';
+import Layout from '../../layout/Layout';
 
 /**
  * @IUnknown404I Dynamic Content Element acording to the requested /account/[acid] acid path.
@@ -45,6 +48,7 @@ const AccountSubPage = (props: { acid: string }) => {
 			<Head>
 				<title>{getPageTitle(props.acid)}</title>
 			</Head>
+
 			<Layout
 				contentContainerSx={{
 					padding: '15px',
@@ -66,39 +70,33 @@ const AccountSubPage = (props: { acid: string }) => {
 								aria-label='Меню личного кабинета'
 							>
 								<Tab
+									label='Дашборд'
 									icon={<DonutLargeOutlinedIcon />}
 									iconPosition='start'
-									label='Дашборд'
 									value='dashboard'
 								/>
 								<Tab
+									label='Обучение'
 									icon={<LocalLibraryOutlinedIcon />}
 									iconPosition='start'
-									label='Обучение'
 									value='study'
 								/>
 								<Tab
+									label='Мои курсы'
 									icon={<SchoolOutlinedIcon />}
 									iconPosition='start'
-									label='Мои курсы'
 									value='courses'
 								/>
 								<Tab
-									icon={<FolderOutlinedIcon />}
-									iconPosition='start'
-									label='Документы'
-									value='documents'
-								/>
-								<Tab
+									label='Профиль'
 									icon={<PersonOutlineOutlinedIcon />}
 									iconPosition='start'
-									label='Профиль'
 									value='profile'
 								/>
 								<Tab
+									label='Награды'
 									icon={<EmojiEventsOutlinedIcon />}
 									iconPosition='start'
-									label='Награды'
 									value='awards'
 								/>
 							</Tabs>
@@ -153,12 +151,10 @@ function getPageContent(acid?: string): JSX.Element {
 			return <Education />;
 		case 'courses':
 			return <UserCourses />;
-		case 'documents':
-			return <span>Документы</span>;
 		case 'profile':
 			return <Profile />;
 		case 'awards':
-			return <span>Награды</span>;
+			return <Awards />;
 		default:
 			return <Dashboard />;
 	}
@@ -173,8 +169,6 @@ function getPageTitle(acid?: string): string {
 			return 'Обучение';
 		case 'courses':
 			return 'Мои курсы';
-		case 'documents':
-			return 'Документы';
 		case 'profile':
 			return 'Профиль';
 		case 'awards':

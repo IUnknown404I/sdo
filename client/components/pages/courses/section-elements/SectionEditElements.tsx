@@ -13,10 +13,12 @@ export const configSxProps = (orderNumber: number = 1, configState: boolean = fa
 	'&:hover': { zIndex: 2 },
 });
 
-export const SectionEditCofigButton = (props: {
+interface ISectionEditCofigButton {
 	configState: boolean;
 	setConfigState: React.Dispatch<React.SetStateAction<boolean>>;
-}) => {
+}
+
+export const SectionEditCofigButton = (props: ISectionEditCofigButton) => {
 	return (
 		<OnyxTypography
 			component='div'
@@ -45,13 +47,15 @@ export const SectionEditCofigButton = (props: {
 	);
 };
 
-export const SectionEditConfigSubDial = (props: {
+export interface ISectionEditConfigSubDial {
 	configState: boolean;
 	items: ComponentProps<typeof OnyxSpeedDial>['items'];
 	ariaLabel?: string;
 	orderNumber?: number;
 	icon?: ComponentProps<typeof OnyxSpeedDial>['icon'];
-}) => {
+}
+
+export const SectionEditConfigSubDial = (props: ISectionEditConfigSubDial) => {
 	return (
 		<OnyxSpeedDial
 			icon={props.icon || <SettingsIcon />}
@@ -112,30 +116,44 @@ export const LINK_ITEM_MAP = {
 		hrefTitle: 'Заполнить анкету',
 		fileType: 'Опросный лист',
 	},
+	webinar: {
+		href: '/images/courses/sections/webinar.png',
+		width: '50px',
+		hrefTitle: 'Перейти к вебинару',
+		fileType: 'Вебинар',
+		target: '_blank',
+	},
 };
 
-export function EditFieldset(props: { children: ReactNode | ReactNode[]; styles?: SxProps }) {
+export function EditFieldset(props: { children: ReactNode | ReactNode[]; styles?: SxProps; onClick?: Function }) {
 	return (
 		<Box
 			component='fieldset'
 			sx={{
 				width: '100%',
 				position: 'relative',
-				// padding: '10px 4px',
 				padding: '.75rem',
 				border: '1px dashed #c7c7c7',
 				borderRadius: '7px',
 				zIndex: 0,
-				'&:hover': { zIndex: 1 },
+				'&:hover': { zIndex: '2 !important' },
 				...props.styles,
 			}}
+			onClick={
+				!!props.onClick
+					? e => {
+							e.stopPropagation();
+							props.onClick!();
+					  }
+					: undefined
+			}
 		>
 			{props.children}
 		</Box>
 	);
 }
 
-export function EditFieldsetLegend(props: { children: ReactNode; styles?: SxProps }) {
+export function EditFieldsetLegend(props: { children: ReactNode; styles?: SxProps; onClick?: Function }) {
 	return (
 		<Box
 			component='legend'
@@ -151,6 +169,7 @@ export function EditFieldsetLegend(props: { children: ReactNode; styles?: SxProp
 				zIndex: 1,
 				...props.styles,
 			}}
+			onClick={!!props.onClick ? () => props.onClick!() : undefined}
 		>
 			{props.children}
 		</Box>

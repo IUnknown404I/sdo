@@ -31,7 +31,7 @@ export const PasswordRecoveryTemplate = (props: { datetime: string; recoveryLink
                                                                         <td align="center"
                                                                             style="padding:0;Margin:0;font-size:0px">
                                                                             <img
-                                                                                src="https://sdo.rnprog.ru/static/pass-recovery-image"
+                                                                                src="${process.env.SELF_CLIENT_DOMAIN}/static/pass-recovery-image"
                                                                                 alt="Emailing"
                                                                                 style="display:block;border:0;outline:none;text-decoration:none"
                                                                                 width="100" className="CToWUd"
@@ -74,9 +74,9 @@ export const PasswordRecoveryTemplate = (props: { datetime: string; recoveryLink
                                                                                             кнопку подтверждения или
                                                                                             перейдите по ссылке:&nbsp;
                                                                                             <br><u><a title="Восстановить доступ"
-                                                                                                href="https://api.sdo.rnprog.ru/users/recovery/${props.recoveryLink}?source=replacement"
+                                                                                                href="${process.env.SELF_DOMAIN}/users/recovery/${props.recoveryLink}?source=replacement"
                                                                                                 style="text-decoration:none;color:#134f5c;font-size:16px;word-break:break-all"
-                                                                                                target="_blank">https://api.sdo.rnprog.ru/users/recovery/<wbr>${props.recoveryLink}?source=replacement
+                                                                                                target="_blank">${process.env.SELF_DOMAIN}/users/recovery/<wbr>${props.recoveryLink}?source=replacement
                                                                                             </a></u>
                                                                         </td>
                                                                     </tr>
@@ -100,7 +100,7 @@ export const PasswordRecoveryTemplate = (props: { datetime: string; recoveryLink
                                                                             style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px">
                                                                             <span
                                                                                 style="border-style:solid;border-color:#999999;background:#ffffff;border-width:1px;display:inline-block;border-radius:0px;width:auto"><a title="Перейти к восстановлению"
-                                                                                href="https://api.sdo.rnprog.ru/users/recovery/${props.recoveryLink}?source=replacement"
+                                                                                href="${process.env.SELF_DOMAIN}/users/recovery/${props.recoveryLink}?source=replacement"
                                                                                 style="text-decoration:none;color:#666666;font-size:16px;border-style:solid;border-color:#ffffff;border-width:10px 30px 10px 30px;display:inline-block;background:#ffffff;border-radius:0px;font-family:Montserrat,sans-serif;font-weight:normal;font-style:normal;line-height:19px;width:auto;text-align:center"
                                                                                 target="_blank">Восстановить доступ</a></span>
                                                                         </td>

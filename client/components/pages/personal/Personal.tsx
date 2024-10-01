@@ -4,16 +4,13 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import LocalLibraryOutlinedIcon from '@mui/icons-material/LocalLibraryOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
-import { Box, Paper, Tab, Tabs, Typography } from '@mui/material';
+import { Paper, Tab, Tabs } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import React from 'react';
-import { Dashboard, Education, Profile, UserCourses } from '../..';
-
-interface TabPanelProps {
-	children?: React.ReactNode;
-	index: number;
-	value: number;
-}
+import { Education } from '../..';
+import Dashboard from '../componets/dashboard/Dashboard';
+import Profile from '../componets/profile/Profile';
+import UserCourses from '../componets/userCourses/UserCourses';
 
 export const Personal = (props: { tabPosition?: number }) => {
 	const [panelNum, setPanelNum] = React.useState<number>(props.tabPosition || 0);
@@ -67,26 +64,6 @@ export const Personal = (props: { tabPosition?: number }) => {
 	);
 };
 
-function TabPanel(props: TabPanelProps) {
-	const { children, value, index, ...other } = props;
-
-	return (
-		<Box
-			role='tabpanel'
-			hidden={value !== index}
-			id={`vertical-tabpanel-${index}`}
-			aria-labelledby={`vertical-tab-${index}`}
-			{...other}
-		>
-			{value === index && (
-				<Box>
-					<Typography component={'span'}>{children}</Typography>
-				</Box>
-			)}
-		</Box>
-	);
-}
-
 function tabsProps(index: number) {
 	return {
 		id: `vertical-tab-${index}`,
@@ -112,4 +89,4 @@ function getPageContent(tabPosition?: number) {
 		default:
 			return <Dashboard />;
 	}
-};
+}

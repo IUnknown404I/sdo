@@ -22,8 +22,13 @@ export const PUBLIC_CHATS_RID = ['general', 'help', 'notifications'];
 	path: '/chat/',
 	cors: {
 		origin: isProductionMode()
-			? ['https://sdo.rnprog.ru', 'http://188.225.10.127:4040']
-			: ['https://sdo.rnprog.ru', 'http://188.225.10.127:4040', 'http://localhost:4040', 'http://localhost'],
+			? [process.env.SELF_CLIENT_DOMAIN, 'http://188.225.10.127:4040']
+			: [
+					process.env.SELF_CLIENT_DOMAIN,
+					'http://188.225.10.127:4040',
+					'http://localhost:4040',
+					'http://localhost',
+			  ],
 		credentials: true,
 		exposedHeaders: ['set-cookie'],
 		allowEIO3: true,

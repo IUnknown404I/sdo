@@ -95,7 +95,7 @@ function DialogHubBox(payload: DialogHubBoxI) {
 									Участников:&nbsp;
 									{payload.publicChat
 										? 'Для всех пользователей'
-										: payload.participators?.length || '1'}
+										: payload.participators?.length || '0'}
 								</>
 							}
 						</OnyxTypography>

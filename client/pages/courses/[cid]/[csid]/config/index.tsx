@@ -18,7 +18,7 @@ const SectionConfigPage = () => {
 
 			<CoursesLayout
 				backButton
-				breadcrumbsCourseContent={[
+				breadcrumbs={[
 					{
 						href: `/courses/${router.query.cid}/${router.query.csid}`,
 						element: 'Раздел',

@@ -4,8 +4,12 @@ import { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/qu
 import { AuthLogindataI } from '../../components/pages/auth/login/LoginForm';
 import { RegistrationDataI } from '../../components/pages/auth/registration/RegistrationForm';
 import logapp from '../../utils/logapp';
-import { AccessTokenI, TagTypesRTK } from '../api';
-import AuthThunks from '../thunks/auth';
+import { AccessTokenI, LoginFullObjI, TagTypesRTK } from '../api';
+import { setAccessToken } from '../slices/accessToken';
+import { setLastPages } from '../slices/auth';
+import { setBearer } from '../slices/axiosInstance';
+import { UserSliceI, setUserDataFromPayload } from '../slices/user';
+import AuthThunks, { getUserPayload } from '../thunks/auth';
 
 export const getAuthEndpoints = (
 	build: EndpointBuilder<
@@ -13,7 +17,7 @@ export const getAuthEndpoints = (
 		TagTypesRTK,
 		'OnyxApi'
 	>,
-)=> {
+) => {
 	return {
 		login: build.mutation({
 			query: (loginData: AuthLogindataI) => ({
@@ -31,10 +35,11 @@ export const getAuthEndpoints = (
 						return tokendata;
 					});
 			},
+			invalidatesTags: ['User', 'User-Meta', 'GlobalGroups', 'Avatars'],
 		}),
 		register: build.mutation<string, RegistrationDataI>({
 			query: (registryData: RegistrationDataI) => ({
-				url: '/users',
+				url: '/users/registration',
 				method: 'POST',
 				body: registryData,
 				responseHandler: 'text',
@@ -53,6 +58,29 @@ export const getAuthEndpoints = (
 					return data.data as string;
 				});
 			},
+		}),
+		changeMyRole: build.mutation({
+			query: (newRole: UserSliceI['_systemRole']) => ({
+				url: '/auth/my-role',
+				method: 'PUT',
+				body: { newRole },
+			}),
+			onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
+				logapp.info('[#] AuthApi_my-role -> started.', arg);
+				queryFulfilled
+					.then(res => res.data as LoginFullObjI)
+					.then(tokendata => {
+						logapp.info('[#] AuthApi_my-role -> got:', tokendata);
+						// dispatch(AuthThunks.authorize(tokendata));
+						if (tokendata.lastPages) dispatch(setLastPages(tokendata.lastPages));
+
+						dispatch(setUserDataFromPayload(getUserPayload(tokendata)));
+						dispatch(setAccessToken(tokendata));
+						dispatch(setBearer(`Bearer ${tokendata.access_token}`));
+						return tokendata;
+					});
+			},
+			invalidatesTags: ['User', 'User-Meta'],
 		}),
 	};
 };

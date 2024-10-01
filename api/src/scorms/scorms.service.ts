@@ -1,35 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { NotValidDataError } from 'errors/NotValidDataError';
-import { existsSync, lstatSync, mkdir, mkdirSync, unlink } from 'fs';
+import { existsSync, lstatSync, mkdir, mkdirSync, readdirSync, unlink } from 'fs';
 import { Model } from 'mongoose';
+import { FilesReadType, getResponseContentTypeOptions } from 'utils/mimeTypes';
 import { Scorm, ScormsDocument } from './scorms.schema';
 import StreamZip = require('node-stream-zip');
 
 const SCORMS_DIRECTORY = 'public/scorms/' as const;
-export const SCROM_MIME = {
-	txt: 'text/plain',
-	gif: 'image/gif',
-	jpg: 'image/jpeg',
-	jpeg: 'image/jpeg',
-	png: 'image/png',
-	svg: 'image/svg+xml',
-	css: 'text/css',
-	csv: 'text/csv',
-	html: 'text/html',
-	woff: 'font/woff',
-	woff2: 'font/woff2',
-	xml: 'text/xml',
-	mp4: 'video/mp4',
-	mpeg: 'video/mpeg',
-	webm: 'video/webm',
-	js: 'application/javascript',
-	stream: 'application/octet-stream',
-	pdf: 'application/pdf',
-	wav: 'audio/x-wav',
-	json: 'application/json',
-	zip: 'application/zip',
-} as const;
 
 @Injectable()
 export class ScormsService {
@@ -169,6 +147,45 @@ export class ScormsService {
 		}
 	}
 
+	async getScormStructure(category?: string): Promise<Array<FilesReadType | (FilesReadType & Scorm)>> {
+		const initialPath = !category || category === '/' ? SCORMS_DIRECTORY : SCORMS_DIRECTORY + `${category}/`;
+		if (!existsSync(initialPath)) throw new NotValidDataError('Запрашиваемого пути не существует!');
+
+		const filesFromPath: FilesReadType[] = readdirSync(initialPath, { withFileTypes: true }).map(file => ({
+			filename: file.name,
+			filepath: file.path,
+			filetype: file.isDirectory ? 'dir' : 'file',
+		}));
+
+		const allFilesData = filesFromPath.reduce((accum, current) => {
+			if (current.filename === 'packages')
+				return accum.concat(
+					readdirSync(current.filepath + current.filename, { withFileTypes: true }).map(file => ({
+						filename: file.name,
+						filepath: file.path,
+						filetype: 'scorm',
+					})),
+				);
+			else return accum.concat([current]);
+		}, [] as FilesReadType[]);
+		return await this.accumulateScormDataAndFileReadData(allFilesData);
+	}
+
+	async accumulateScormDataAndFileReadData(
+		filesReadData: FilesReadType[],
+	): Promise<Array<FilesReadType | (FilesReadType & Scorm)>> {
+		let data: Array<FilesReadType | (FilesReadType & Scorm)> = [];
+		for (const file of filesReadData) {
+			if (file.filetype === 'dir') {
+				data.push(file);
+			} else {
+				const scormData = await this.scormsModel.findOne({ scname: file.filename }, { _id: 0 });
+				data.push({ ...file, ...scormData['_doc'] });
+			}
+		}
+		return data;
+	}
+
 	async findPackageBySCName(scname: string): Promise<Scorm> {
 		if (!scname) throw new NotValidDataError('Не указано имя запрашиваемого пакета!');
 		return await this.scormsModel.findOne({ scname }, { _id: 0 });
@@ -224,9 +241,3 @@ export class ScormsService {
 	}
 }
 
-export function getResponseContentTypeOptions(requestedExtension: keyof typeof SCROM_MIME) {
-	return {
-		'Content-Type': SCROM_MIME[requestedExtension],
-		'Cache-Control': 'private, no-cache, must-revalidate',
-	};
-}

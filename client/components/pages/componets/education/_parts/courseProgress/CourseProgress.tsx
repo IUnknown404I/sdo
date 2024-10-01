@@ -1,21 +1,17 @@
-import dynamic from 'next/dynamic';
+import { Paper, Stack, useTheme } from '@mui/material';
 import ru from 'apexcharts/dist/locales/ru.json';
-const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
-import { Divider, Paper, Stack, Typography, useTheme } from '@mui/material';
-import React from 'react';
+import dynamic from 'next/dynamic';
 import { EducationElementsProgress } from '../../../../..';
+import { ProgressStatsOptions, UserStatsByProgressType } from '../../../../../../redux/endpoints/courseProgressEnd';
+import ClassicLoader from '../../../../../utils/loaders/ClassicLoader';
 
-const educationSectionProgressData = [
-	{ id: '1', title: 'Теория', progress: 40, color: '#006fba' },
-	{ id: '2', title: 'Тесты', progress: 20, color: '#4ee6a4' },
-	{ id: '3', title: 'Практика', progress: 70, color: '#fab945' },
-];
+const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
-export const CourseProgress = () => {
+export const CourseProgress = (props: { summaryStats?: UserStatsByProgressType['summary'] }) => {
 	const theme = useTheme();
-	const educationFullProgressData = {
-		series: [49],
 
+	const educationFullProgressData = {
+		// series: [49],
 		options: {
 			chart: {
 				id: 'education-progress',
@@ -35,58 +31,6 @@ export const CourseProgress = () => {
 					enabled: true,
 				},
 			},
-			// plotOptions: {
-			// 	radialBar: {
-			// 		startAngle: -135,
-			// 		endAngle: 225,
-			// 		hollow: {
-			// 			margin: 0,
-			// 			size: '60%',
-			// 			background: theme.palette.background.paper,
-			// 			image: undefined,
-			// 			imageOffsetX: 0,
-			// 			imageOffsetY: 0,
-			// 			position: 'front',
-			// 			dropShadow: {
-			// 				enabled: true,
-			// 				top: 3,
-			// 				left: 0,
-			// 				blur: 4,
-			// 				opacity: 0.24,
-			// 			},
-			// 		},
-			// 		track: {
-			// 			background: '#fff',
-			// 			strokeWidth: '47%',
-			// 			margin: 0, // margin is in pixels
-			// 			dropShadow: {
-			// 				enabled: true,
-			// 				top: -3,
-			// 				left: 0,
-			// 				blur: 4,
-			// 				opacity: 0.35,
-			// 			},
-			// 		},
-
-			// 		dataLabels: {
-			// 			show: true,
-			// 			name: {
-			// 				offsetY: -10,
-			// 				show: true,
-			// 				color: theme.palette.primary.sub,
-			// 				fontSize: '14px',
-			// 			},
-			// 			value: {
-			// 				formatter: function (val) {
-			// 					return `${parseInt(val)}%`;
-			// 				},
-			// 				color: theme.palette.primary.main,
-			// 				fontSize: '24px',
-			// 				show: true,
-			// 			},
-			// 		},
-			// 	},
-			// },
 			plotOptions: {
 				radialBar: {
 					startAngle: -135,
@@ -101,30 +45,14 @@ export const CourseProgress = () => {
 							offsetY: 76,
 							fontSize: '22px',
 							color: undefined,
-							formatter: function (val) {
+							formatter: function (val: string | number) {
 								return val + '%';
 							},
 						},
 					},
 				},
 			},
-			// fill: {
-			// 	type: 'gradient',
-			// 	gradient: {
-			// 		shade: 'dark',
-			// 		type: 'horizontal',
-			// 		shadeIntensity: 0.5,
-			// 		gradientToColors: ['#ABE5A1'],
-			// 		inverseColors: true,
-			// 		opacityFrom: 1,
-			// 		opacityTo: 1,
-			// 		stops: [0, 100],
-			// 	},
-			// },
-			// stroke: {
-			// 	lineCap: 'round',
-			// },
-			labels: ['Завершено'],
+			labels: ['Изучение программы'],
 
 			tooltip: {
 				theme: theme.palette.mode,
@@ -132,7 +60,8 @@ export const CourseProgress = () => {
 			xaxis: {
 				labels: {
 					style: {
-						colors: theme.palette.primary.sub,
+						colors: theme.palette.primary.main,
+						// colors: theme.palette.primary.sub,
 					},
 				},
 			},
@@ -140,7 +69,8 @@ export const CourseProgress = () => {
 				max: 100,
 				labels: {
 					style: {
-						colors: theme.palette.primary.sub,
+						colors: theme.palette.primary.main,
+						// colors: theme.palette.primary.sub,
 					},
 				},
 			},
@@ -149,27 +79,44 @@ export const CourseProgress = () => {
 			},
 		},
 	};
+
 	return (
-		<>
-			<Paper sx={{ padding: '20px', borderRadius: '20px' }}>
-				<Chart
-					options={educationFullProgressData.options}
-					series={educationFullProgressData.series}
-					type='radialBar'
-					width={'100%'}
-					height={'250px'}
-				/>
-				{/* <Divider /> */}
-				<Stack direction={'column'} spacing={3} sx={{ width: '100%', padding: '20px' }}>
-					{educationSectionProgressData.map(el => {
-						return (
-							<React.Fragment key={el.id}>
-								<EducationElementsProgress title={el.title} progress={el.progress} color={el.color} />
-							</React.Fragment>
-						);
-					})}
+		<Paper sx={{ padding: '10px 20px 20px 20px', borderRadius: '20px' }}>
+			{!!props.summaryStats ? (
+				<>
+					<Chart
+						options={educationFullProgressData.options}
+						series={[props.summaryStats.total]}
+						type='radialBar'
+						width='100%'
+						height='250px'
+					/>
+
+					<Stack direction='column' spacing={3} sx={{ width: '100%', padding: '20px 0' }}>
+						{Object.keys(props.summaryStats).map((attribute, index) =>
+							attribute === 'total' ? (
+								<></>
+							) : (
+								<EducationElementsProgress
+									key={index}
+									color={ProgressStatsOptions[attribute as keyof typeof ProgressStatsOptions].color}
+									progress={props.summaryStats![attribute as keyof typeof props.summaryStats] || 0}
+									title={
+										ProgressStatsOptions[attribute as keyof typeof ProgressStatsOptions]
+											.translation_short
+									}
+								/>
+							),
+						)}
+					</Stack>
+				</>
+			) : (
+				<Stack alignItems='center' justifyContent='center' gap={5}>
+					<ClassicLoader size={65} />
+					<ClassicLoader size={65} />
+					<ClassicLoader size={65} />
 				</Stack>
-			</Paper>
-		</>
+			)}
+		</Paper>
 	);
 };

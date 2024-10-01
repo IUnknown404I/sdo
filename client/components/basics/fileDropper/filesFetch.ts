@@ -1,4 +1,5 @@
 import { AxiosInstance, AxiosResponse } from 'axios';
+import { OnyxApiErrorResponseType } from '../../../redux/api';
 import { notification } from '../../utils/notifications/Notification';
 import { UploadURIType } from './OnyxFileDropper';
 
@@ -61,17 +62,24 @@ export class FilesFetch {
 		let result: false | string = false;
 
 		await sendRequest()
-			.then(res => {
-				result = res.data as string;
-				if (props.disableNotifications != null)
+			.then(response => {
+				if (typeof response === 'object' && 'error' in response)
 					notification({
-						type: 'success',
-						message: 'Файл успешно загружен на сервер!',
-						autoClose: 5000,
+						message: (response.error as OnyxApiErrorResponseType).data?.message,
+						type: 'error',
 					});
+				else {
+					result = response.data as string;
+					if (!props.disableNotifications)
+						notification({
+							type: 'success',
+							message: 'Файл успешно загружен на сервер!',
+							autoClose: 5000,
+						});
+				}
 			})
 			.catch(err => {
-				if (props.disableNotifications != null)
+				if (!props.disableNotifications)
 					notification({
 						type: 'error',
 						message:
@@ -79,36 +87,25 @@ export class FilesFetch {
 								? 'Неверный тип передаваемых данных!'
 								: err?.response.data?.message === 'File too large'
 								? 'Размер передаваемых данных превышает ограничения!'
-								: 'Не удалось выгрузить файл! Проверьте вводные!',
+								: (err?.response.data?.message && !err.response.data.message.includes('Cannot')
+										? err.response.data.message
+										: undefined) ?? 'Не удалось выгрузить файл! Проверьте вводные!',
 					});
 			});
 		return result;
 
 		async function sendRequest(): Promise<AxiosResponse<any, any>> {
-			if (props.uploadUri.method === 'POST')
-				return props.axiosInstance.post(
-					`${process.env.NEXT_PUBLIC_SERVER}/${
-						props.uploadUri.uri.startsWith('/') ? props.uploadUri.uri.slice(1) : props.uploadUri.uri
-					}`,
-					{ file: props.file },
-					{
-						headers: {
-							'Content-type': 'multipart/form-data',
-						},
+			return props.axiosInstance[props.uploadUri.method === 'POST' ? 'post' : 'put'](
+				`${process.env.NEXT_PUBLIC_SERVER}/${
+					props.uploadUri.uri.startsWith('/') ? props.uploadUri.uri.slice(1) : props.uploadUri.uri
+				}`,
+				{ file: props.file },
+				{
+					headers: {
+						'Content-type': 'multipart/form-data',
 					},
-				);
-			else
-				return props.axiosInstance.put(
-					`${process.env.NEXT_PUBLIC_SERVER}/${
-						props.uploadUri.uri.startsWith('/') ? props.uploadUri.uri.slice(1) : props.uploadUri.uri
-					}`,
-					{ file: props.file },
-					{
-						headers: {
-							'Content-type': 'multipart/form-data',
-						},
-					},
-				);
+				},
+			);
 		}
 	};
 

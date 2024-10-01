@@ -1,4 +1,4 @@
-import { Box, ClickAwayListener, SxProps, Theme, Tooltip, Typography, Zoom } from '@mui/material';
+import { Box, ClickAwayListener, SxProps, Theme, Tooltip, Typography, Zoom, useTheme } from '@mui/material';
 import Link from 'next/link';
 import React, { AriaAttributes, ElementType, HTMLAttributeAnchorTarget, ReactNode } from 'react';
 
@@ -13,6 +13,7 @@ import React, { AriaAttributes, ElementType, HTMLAttributeAnchorTarget, ReactNod
  * @returns MUI Typography wrapped with the Link \ tooltip or box components.
  */
 export const OnyxTypography = (props: OnyxTypographyI) => {
+	const theme = useTheme();
 	const [tooltipState, setTooltipState] = React.useState<boolean>(false);
 
 	let component = (
@@ -20,13 +21,29 @@ export const OnyxTypography = (props: OnyxTypographyI) => {
 			id={props.id}
 			{...props.ariaProps}
 			component={props.component || (props.boxWrapper ? 'div' : 'p')}
-			color={props.tpColor || (props.lkHref ? 'primary' : undefined)}
+			color={
+				props.tpColor === 'warning'
+					? theme.palette.warning.main
+					: props.tpColor === 'error'
+					? theme.palette.error.main
+					: props.tpColor === 'success'
+					? theme.palette.success.main
+					: props.tpColor || (props.lkHref ? 'primary' : undefined)
+			}
 			fontSize={props.tpSize}
 			fontWeight={props.tpWeight}
 			variant={props.tpVariant || 'body2'}
 			align={props.tpAlign || 'left'}
 			sx={{
 				...(props.tpSize ? {} : { fontSize: 'initial' }),
+				...(props.centeredFlex
+					? {
+							display: 'flex',
+							flexDirection: 'row',
+							alignItems: 'center',
+							gap: '.5rem',
+					  }
+					: {}),
 				...(props.lkHref || props.hoverStyles
 					? props.sx && !props.boxWrapper
 						? mixSxProps(props.sx, !!props.lkHref || props.hoverStyles)
@@ -42,7 +59,7 @@ export const OnyxTypography = (props: OnyxTypographyI) => {
 
 	if (props.lkHref)
 		component = (
-			<Link href={props.lkHref} title={props.lkTitle} {...props.lkProps}>
+			<Link role='link' href={props.lkHref} title={props.lkTitle} {...props.lkProps}>
 				{component}
 			</Link>
 		);
@@ -55,16 +72,22 @@ export const OnyxTypography = (props: OnyxTypographyI) => {
 				mouseEvent='onMouseDown'
 				touchEvent='onTouchStart'
 			>
-				<div>
+				<Box sx={{ width: props.boxWidth || 'fit-content' }}>
 					<Tooltip
-						sx={{ width: 'fit-content' }}
+						role='tooltip'
+						sx={{ width: props.boxWidth || 'fit-content' }}
 						title={props.ttNode}
 						placement={props.ttPlacement}
-						followCursor={props.ttFollow === undefined ? true : props.ttFollow}
+						followCursor={false}
 						TransitionComponent={Zoom}
 						PopperProps={{
 							disablePortal: true,
-							sx: { '> div': { backgroundColor: 'unset', maxWidth: '98vw' } },
+							sx: {
+								'> div': {
+									backgroundColor: typeof props.ttNode !== 'string' ? 'transparent' : undefined,
+									maxWidth: '98vw',
+								},
+							},
 						}}
 						open={tooltipState}
 						onClose={() => setTooltipState(false)}
@@ -78,10 +101,12 @@ export const OnyxTypography = (props: OnyxTypographyI) => {
 							<div onClick={() => setTooltipState(prev => !prev)}>{component}</div>
 						)}
 					</Tooltip>
-				</div>
+				</Box>
 			</ClickAwayListener>
 		) : (
 			<Tooltip
+				role='tooltip'
+				arrow={props.ttArrow}
 				title={props.ttNode}
 				placement={props.ttPlacement}
 				followCursor={props.ttFollow === undefined ? true : props.ttFollow}
@@ -122,9 +147,10 @@ export interface OnyxTypographyI {
 	ariaProps?: AriaAttributes;
 	component?: ElementType<any>;
 	children?: ReactNode | ReactNode[];
-	text?: string;
+	text?: string | number;
 	sx?: SxProps<Theme>;
 	onClick?: (() => void) | ((e: any) => void);
+	centeredFlex?: boolean;
 	hoverStyles?: boolean;
 	lkHref?: string;
 	lkTitle?: string;
@@ -151,11 +177,12 @@ export interface OnyxTypographyI {
 	tpWeight?: 'normal' | 'bold' | 'initial' | 'inherit' | 'unset';
 	tpAlign?: 'right' | 'left' | 'inherit' | 'center' | 'justify';
 	//tpColor -> can't find valid ColorsType from MUI|React cores -> string :\
-	tpColor?: 'primary' | 'secondary' | 'inherit' | 'initial' | string;
+	tpColor?: 'primary' | 'secondary' | 'warning' | 'error' | 'inherit' | 'initial' | string;
 	boxWrapper?: boolean;
 	boxWidth?: string;
 	boxAlign?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around';
 	boxVerticalAlign?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around';
+	ttArrow?: boolean;
 	ttNode?: ReactNode;
 	ttFollow?: boolean;
 	ttOnClickMode?: boolean;
@@ -177,17 +204,15 @@ export interface OnyxTypographyI {
 function hoverSxProps(colorChange: boolean = false) {
 	return colorChange
 		? {
+				cursor: 'pointer',
 				transition: 'all .2s ease-out',
 				'&:hover': {
-					cursor: 'pointer',
 					color: '#416df1',
 				},
 		  }
 		: {
+				cursor: 'pointer',
 				transition: 'all .2s ease-out',
-				'&:hover': {
-					cursor: 'pointer',
-				},
 		  };
 }
 

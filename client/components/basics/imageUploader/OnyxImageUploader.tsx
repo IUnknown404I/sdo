@@ -1,10 +1,8 @@
 import DownloadDoneIcon from '@mui/icons-material/DownloadDone';
-import SimCardAlertIcon from '@mui/icons-material/SimCardAlert';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import { Box, Typography } from '@mui/material';
 import Button from '@mui/material/Button';
 import Pagination from '@mui/material/Pagination';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import React from 'react';
 import ModernLoader from '../../utils/loaders/ModernLoader';
@@ -12,43 +10,15 @@ import { notification } from '../../utils/notifications/Notification';
 import OnyxAlertConfirmDialog from '../OnyxAlertConfirmDialog';
 import OnyxAlertModal from '../OnyxAlertModal';
 import { OnyxTypography } from '../OnyxTypography';
-import OnyxFileDropper, { OnyxFileTypes, UploadURIType } from '../fileDropper/OnyxFileDropper';
+import OnyxImageUploaderUploadModal from './OnyxImageUploaderUploadModal';
 import { default as modal } from './imageUploader.module.scss';
-
-export type FileUploadBaseType = {
-	url: string;
-	size?: number;
-};
-type QueryEndpointDataT<T extends FileUploadBaseType> = {
-	currentData: T[] | undefined;
-	isLoading: boolean;
-	isError: boolean;
-	refetch: () => void;
-};
-interface OnyxImgUploaderI<T extends FileUploadBaseType> {
-	url: {
-		get: QueryEndpointDataT<T>;
-		create: UploadURIType;
-	};
-	image?: string;
-	setImage: (localImage: string) => void;
-	state: boolean;
-	setState: React.Dispatch<React.SetStateAction<boolean>>;
-	showFileNames?: boolean;
-	showFileSizes?: boolean;
-	urlSplitter?: string;
-	sortingAlgoritm?: (url1: string, url2: string) => number;
-	displayMode?: 'big' | 'small';
-	fileTypes?: OnyxFileTypes | OnyxFileTypes[];
-	maxSizeKb?: number;
-	modalClassName?: string;
-	downloadModalInitialState?: boolean;
-	dropZoneClassName?: string;
-	disableControls?: boolean;
-	callback?: Function;
-	onUploadEndMerge?: Function;
-	onUploadEnd?: Function;
-}
+import {
+	FileUploadBaseType,
+	OnyxImageUploaderFileNameSideText,
+	OnyxImageUploaderFileSizeSideText,
+	OnyxImgUploaderI,
+	onyxImageUploaderCompareFileNames,
+} from './onyxImageUploaderUtils';
 
 /**
  * @IUnknown404I
@@ -76,8 +46,9 @@ interface OnyxImgUploaderI<T extends FileUploadBaseType> {
  */
 const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T>): JSX.Element => {
 	const { currentData, isLoading: isFetching, isError, refetch } = props.url.get;
-	const [avatars, setAvatars] = React.useState<T[]>(currentData || []);
 	const elementsOnPageCount = props.displayMode === undefined ? 10 : props.displayMode === 'big' ? 8 : 20;
+
+	const [avatars, setAvatars] = React.useState<T[]>(currentData || []);
 	const [previewImg, setPreviewImg] = React.useState<string>('');
 	const [currentPage, setCurrentPage] = React.useState<number>(1);
 	const [localImg, setLocalImg] = React.useState<string>(props.image || '');
@@ -103,7 +74,11 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 		if (!localImg || !props.state) return;
 		const indexOfLocalImg = avatars.reduce(
 			(flag, cur, index) =>
-				compareFileNames(cur.url, localImg, props.urlSplitter) ? index + 1 : flag !== -1 ? flag : -1,
+				onyxImageUploaderCompareFileNames(cur.url, localImg, props.urlSplitter)
+					? index + 1
+					: flag !== -1
+					? flag
+					: -1,
 			-1,
 		);
 		setCurrentPage(indexOfLocalImg && indexOfLocalImg > 0 ? Math.ceil(indexOfLocalImg / elementsOnPageCount) : 1);
@@ -168,18 +143,18 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 								<Box key={element.url + index} className={modal.imgContainer}>
 									{props.showFileNames && props.showFileSizes && (
 										<Box className={modal.fileDescriptionContainer}>
-											<FileNameSideText url={element.url} />
-											<FileSizeSideText size={element.size} />
+											<OnyxImageUploaderFileNameSideText url={element.url} />
+											<OnyxImageUploaderFileSizeSideText size={element.size} />
 										</Box>
 									)}
 									{props.showFileNames && !props.showFileSizes && (
-										<FileNameSideText
+										<OnyxImageUploaderFileNameSideText
 											url={element.url}
 											styles={{ width: '100%', textAlign: 'left', paddingLeft: '.5rem' }}
 										/>
 									)}
 									{props.showFileSizes && !props.showFileNames && (
-										<FileSizeSideText
+										<OnyxImageUploaderFileSizeSideText
 											size={element.size}
 											styles={{ width: '100%', textAlign: 'right', paddingRight: '.5rem' }}
 										/>
@@ -187,7 +162,7 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 
 									<img
 										className={
-											compareFileNames(localImg, element.url, props.urlSplitter)
+											onyxImageUploaderCompareFileNames(localImg, element.url, props.urlSplitter)
 												? modal.currentPickImage
 												: ''
 										}
@@ -196,7 +171,13 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 										onClick={
 											props.disableControls != null
 												? () => {
-														if (!compareFileNames(localImg, element.url, props.urlSplitter))
+														if (
+															!onyxImageUploaderCompareFileNames(
+																localImg,
+																element.url,
+																props.urlSplitter,
+															)
+														)
 															setLocalImg(element.url);
 												  }
 												: undefined
@@ -216,12 +197,22 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 											<Box
 												title={element.url !== localImg ? 'Выбрать' : 'Уже выбрано'}
 												className={
-													compareFileNames(localImg, element.url, props.urlSplitter)
+													onyxImageUploaderCompareFileNames(
+														localImg,
+														element.url,
+														props.urlSplitter,
+													)
 														? modal.disabledImage
 														: ''
 												}
 												onClick={() => {
-													if (!compareFileNames(localImg, element.url, props.urlSplitter))
+													if (
+														!onyxImageUploaderCompareFileNames(
+															localImg,
+															element.url,
+															props.urlSplitter,
+														)
+													)
 														setLocalImg(element.url);
 												}}
 											>
@@ -229,10 +220,10 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 											</Box>
 											{/* {(authData.userPrivileges === 'admin' || authData.userPrivileges === 'superuser') &&
                                             <Box
-                                                className={compareFileNames(props.image, url) ? modal.disabledImage : ''} 
-                                                title={compareFileNames(props.image, url) ? 'Привязанное изображение' : 'Удалить'}
+                                                className={onyxImageUploaderCompareFileNames(props.image, url) ? modal.disabledImage : ''} 
+                                                title={onyxImageUploaderCompareFileNames(props.image, url) ? 'Привязанное изображение' : 'Удалить'}
                                                 onClick={() => {
-                                                    if (!compareFileNames(props.image, url)) setDialogState({state: true, url: url})
+                                                    if (!onyxImageUploaderCompareFileNames(props.image, url)) setDialogState({state: true, url: url})
                                                 }}
                                             >
                                                 <DeleteForeverIcon/>
@@ -271,11 +262,15 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 						</Stack>
 					)}
 
-					<Stack direction='row' width='100%' gap={2}>
+					<Stack width='100%' gap={2} sx={{ flexDirection: { xs: 'column', md: 'row' } }}>
 						<Button
 							fullWidth
 							variant='contained'
-							disabled={compareFileNames(props.image || 'x_q_z', localImg, props.urlSplitter)}
+							disabled={onyxImageUploaderCompareFileNames(
+								props.image || 'x_q_z',
+								localImg,
+								props.urlSplitter,
+							)}
 							title={
 								props.image === localImg
 									? 'Выбранное изображение уже привязано.'
@@ -301,90 +296,17 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 				</>
 			)}
 
-			<OnyxAlertModal
-				title='Загрузить изображение'
-				state={uploadModal}
-				setState={setUploadModal}
-				hideFooter
-			>
-				<OnyxFileDropper
-					fullwidth
-					containerClassName={props.dropZoneClassName}
-					uploadUri={props.url.create}
-					fileType={props.fileTypes || ['image/webp', 'image/svg+xml']}
-					maxSizeKb={props.maxSizeKb ? props.maxSizeKb : 5 * 1024}
-					callback={() => {
-						if (props.onUploadEnd) props.onUploadEnd();
-						setUploadModal(false);
-					}}
-					onUploadEndMerge={(uploadedUrl: string) => {
-						refetch();
-					}}
-				/>
-				<Paper
-					sx={{
-						textAlign: 'center',
-						padding: '.5rem 1rem',
-						display: 'flex',
-						flexDirection: 'row',
-						width: '100%',
-						gap: '.5rem',
-						alignItems: 'center',
-						justifyContent: 'center',
-						border: '1px solid darkorange',
-						svg: {
-							color: 'darkorange',
-							fontSize: '1.75rem',
-						},
-					}}
-				>
-					<SimCardAlertIcon />
-					<OnyxTypography component='span' tpSize='1.1rem' tpAlign='center'>
-						Вы можете загрузить изображения&nbsp;
-						<OnyxTypography component='b' tpWeight='bold'>
-							в формате&nbsp;
-							{props.fileTypes
-								? props.fileTypes instanceof Array
-									? props.fileTypes.length === 2
-										? `.${props.fileTypes[0].slice(
-												props.fileTypes[0].indexOf('/') + 1,
-										  )} и ${props.fileTypes[1].slice(props.fileTypes[1].indexOf('/') + 1)}`
-										: props.fileTypes.reduce(
-												(accum, type, index) =>
-													accum +
-													(index === 0
-														? `.${type.slice(type.indexOf('/') + 1)}`
-														: index !== props.fileTypes!.length - 1
-														? `, .${type.slice(type.indexOf('/') + 1)}`
-														: ` или .${type.slice(type.indexOf('/') + 1)}`),
-												'',
-										  )
-									: props.fileTypes
-								: '.webp и .svg'}
-						</OnyxTypography>
-						,&nbsp;
-						<OnyxTypography component='b' tpWeight='bold'>
-							не превышающие&nbsp;
-							{props.maxSizeKb
-								? props.maxSizeKb / 1024 > 1
-									? `${props.maxSizeKb / 1024}Мб`
-									: `${props.maxSizeKb}Кб`
-								: '5Мб'}
-						</OnyxTypography>
-						!
-					</OnyxTypography>
-				</Paper>
-			</OnyxAlertModal>
+			<OnyxImageUploaderUploadModal {...props} state={uploadModal} setState={setUploadModal} refetch={refetch} />
 
 			<OnyxAlertConfirmDialog
 				open={dialogState.state}
-				onClose={(res: true | undefined) => {
+				onClose={(res: boolean) => {
 					// deleteDialogConfirmation(res, dialogState.url);
 					setDialogState({ state: false, url: '' });
 				}}
 				text={
 					<Typography component='span'>
-						Вы собираетесь удалить изображение из базы данных!
+						Вы собираетесь удалить изображение из базы данных!?&nbsp;
 						<b>Результат данной операции будет невозможно восстановить.</b> Выполнить удаление?
 					</Typography>
 				}
@@ -424,58 +346,5 @@ const OnyxImgUploader = <T extends FileUploadBaseType>(props: OnyxImgUploaderI<T
 	// 	});
 	// }
 };
-
-export function FileNameSideText(props: { url: string; styles?: React.CSSProperties }) {
-	return (
-		<span className={modal.imgContainerName} style={props.styles}>
-			файл:&nbsp;
-			<strong>
-				{props.url.slice(
-					props.url.lastIndexOf('/') + 1,
-					props.url.lastIndexOf('-') < props.url.lastIndexOf('/')
-						? props.url.lastIndexOf('.')
-						: props.url.lastIndexOf('-'),
-				)}
-			</strong>
-		</span>
-	);
-}
-
-export function FileSizeSideText(props: { size?: number; styles?: React.CSSProperties }) {
-	return (
-		<span className={modal.imgContainerName} style={props.styles}>
-			размер:&nbsp;
-			<strong>
-				{props.size == null
-					? 'NaN'
-					: props.size / 1024 ** 2 > 1
-					? (props.size / 1024 ** 2).toFixed(2) + ' Мб'
-					: props.size / 1024 > 1
-					? `${Math.round(props.size / 1024)} Кб`
-					: `${Math.round(props.size)} байт`}
-			</strong>
-		</span>
-	);
-}
-
-function compareFileNames(name1: string, name2: string, urlSplitter?: string): boolean {
-	if (typeof name1 === 'undefined' || typeof name2 === 'undefined') return false;
-
-	const validName1 =
-		name1.lastIndexOf(urlSplitter || '/') === -1
-			? name1
-			: name1.slice(
-					name1.lastIndexOf(urlSplitter || '/') +
-						(name1.indexOf(urlSplitter || '/') ? urlSplitter?.length || 1 : 1),
-			  );
-	const validName2 =
-		name2.lastIndexOf(urlSplitter || '/') === -1
-			? name2
-			: name2.slice(
-					name2.lastIndexOf(urlSplitter || '/') +
-						(name2.indexOf(urlSplitter || '/') ? urlSplitter?.length || 1 : 1),
-			  );
-	return validName1 === validName2;
-}
 
 export default OnyxImgUploader;

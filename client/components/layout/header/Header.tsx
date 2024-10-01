@@ -1,14 +1,14 @@
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import MarkUnreadChatAltOutlinedIcon from '@mui/icons-material/MarkUnreadChatAltOutlined';
-import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
-import { Divider, Drawer, IconButton, SxProps, Tooltip, Typography } from '@mui/material';
+import { SxProps, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import { useRouter } from 'next/router';
+import { NextRouter, useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AccountMenu, Footer, LogoGMI, NotificationMenu, Search, Sidebar, SwitchTheme } from '../..';
+import { LogoGMI } from '../..';
+import { rtkApi } from '../../../redux/api';
 import MessengerSidebar from '../../messenger/sidebarComponents/MessengerSidebar';
+import HeaderInnerStack from './HeaderInnerStack';
+import HeaderOuterStack from './HeaderOuterStack';
 
 interface HeaderI {
 	publicMode?: boolean;
@@ -28,6 +28,8 @@ interface HeaderI {
  */
 export const Header = (props: HeaderI) => {
 	const router = useRouter();
+	const { data: titleCopyrightVersion } = rtkApi.useSystemTitleCopyrightQuery();
+
 	const [sidebarDrawer, setSidebarDrawer] = useState<boolean>(false);
 	const [messangerState, setMessangerState] = React.useState<boolean>(false);
 
@@ -36,7 +38,7 @@ export const Header = (props: HeaderI) => {
 			direction='row'
 			justifyContent='space-between'
 			alignItems='center'
-			component={'header'}
+			component='header'
 			sx={{
 				width: '100%',
 				height: '100px',
@@ -99,14 +101,16 @@ export const Header = (props: HeaderI) => {
 				}}
 			>
 				<Typography component='h1' variant='body1' fontWeight='bold' paddingLeft='.5rem'>
-					{getPageTitle().toUpperCase()}
+					{getPageHeaderTitle(router) === 'default'
+						? (titleCopyrightVersion?.system_title ?? 'Система дистанционного образования').toUpperCase()
+						: getPageHeaderTitle(router).toUpperCase()}
 				</Typography>
 			</Box>
 
 			{props.publicMode ? (
-				<OuterStack />
+				<HeaderOuterStack />
 			) : (
-				<InnerStack
+				<HeaderInnerStack
 					chatIcon={props.chatIcon}
 					chatIconClick={props.chatIcon ? () => setMessangerState(prev => !prev) : undefined}
 					drawerState={sidebarDrawer}
@@ -135,187 +139,19 @@ export const Header = (props: HeaderI) => {
 		}
 		setSidebarDrawer(sidebarDrawer => !sidebarDrawer);
 	}
-
-	function getPageTitle() {
-		const pathString = router.asPath;
-		return pathString.includes('/account/') || pathString === '/'
-			? 'Личный кабинет'
-			: pathString.includes('/events')
-			? 'События'
-			: pathString.includes('/communication')
-			? 'Сообщения'
-			: pathString.includes('/courses/')
-			? 'Образовательная программа'
-			: pathString.includes('/courses')
-			? 'Список образовательных программ'
-			: 'Система дистанционного образования';
-	}
 };
 
-function OuterStack() {
-	return (
-		<Stack
-			sx={{
-				marginRight: '30px',
-				marginLeft: {
-					md: '0',
-					lg: 'auto',
-				},
-			}}
-			direction='row'
-			alignItems='center'
-		>
-			<Stack
-				spacing={2}
-				direction='row'
-				alignItems='center'
-				justifyContent='center'
-				sx={{
-					display: {
-						xs: 'flex',
-					},
-				}}
-			>
-				<SwitchTheme />
-			</Stack>
-		</Stack>
-	);
-}
-
-function InnerStack(payload: {
-	chatIcon?: boolean;
-	chatIconClick?: Function;
-	toggleDrawer: (e: any) => void;
-	drawerState: boolean;
-}) {
-	return (
-		<Stack
-			sx={{
-				marginRight: '30px',
-				marginLeft: {
-					md: '0',
-					lg: 'auto',
-				},
-			}}
-			direction='row'
-			alignItems='center'
-		>
-			<Stack
-				spacing={2}
-				direction='row'
-				alignItems='center'
-				justifyContent='center'
-				sx={{
-					display: {
-						xs: 'none',
-						md: 'none',
-						lg: 'flex',
-						xl: 'flex',
-					},
-				}}
-			>
-				{payload.chatIcon && (
-					<Box>
-						<Tooltip title='Открыть мессенджер'>
-							<IconButton
-								sx={{ color: 'blackText.main' }}
-								aria-label='search'
-								onClick={
-									!!payload.chatIconClick ? () => (payload.chatIconClick as Function)() : () => {}
-								}
-							>
-								<MarkUnreadChatAltOutlinedIcon
-									sx={{ fontSize: '1.5rem', transform: 'rotateY(180deg)' }}
-								/>
-							</IconButton>
-						</Tooltip>
-					</Box>
-				)}
-				<Search />
-				<NotificationMenu />
-				<SwitchTheme />
-			</Stack>
-
-			<Divider
-				flexItem
-				sx={{
-					padding: '15px',
-					display: {
-						xs: 'none',
-						md: 'none',
-						lg: 'block',
-						xl: 'block',
-					},
-				}}
-				orientation='vertical'
-			/>
-
-			<Box
-				sx={{
-					marginX: '10px',
-					display: {
-						xs: 'block',
-						md: 'block',
-						lg: 'none',
-						xl: 'none',
-					},
-				}}
-			>
-				<IconButton sx={{ color: 'blackText.main' }} onClick={event => payload.toggleDrawer(event)}>
-					<MenuOutlinedIcon />
-				</IconButton>
-
-				<Drawer
-					keepMounted
-					variant='temporary'
-					anchor='right'
-					open={payload.drawerState}
-					onClose={event => payload.toggleDrawer(event)}
-				>
-					<Stack
-						sx={{
-							marginTop: '30px',
-							paddingX: '10px',
-						}}
-						direction='row'
-						justifyContent='space-around'
-					>
-						<Search />
-						<NotificationMenu />
-						<SwitchTheme />
-
-						<Divider orientation='vertical' />
-						<IconButton sx={{ color: 'blackText.main' }} onClick={event => payload.toggleDrawer(event)}>
-							<CloseOutlinedIcon />
-						</IconButton>
-					</Stack>
-
-					<Divider sx={{ marginY: '20px' }} />
-					<Box
-						onClick={event => payload.toggleDrawer(event)}
-						onKeyDown={event => payload.toggleDrawer(event)}
-					>
-						<Stack
-							sx={{
-								padding: '20px 20px',
-								width: 260,
-								height: '100%',
-							}}
-							direction='column'
-							justifyContent='space-around'
-						>
-							<Stack sx={{ marginBottom: 'auto' }}>
-								<Sidebar />
-							</Stack>
-							<Stack justifyContent='center'>
-								<Footer />
-							</Stack>
-						</Stack>
-					</Box>
-				</Drawer>
-			</Box>
-
-			<AccountMenu />
-		</Stack>
-	);
+export function getPageHeaderTitle(router: NextRouter) {
+	const pathString = router.asPath;
+	return pathString.includes('/account/') || pathString === '/'
+		? 'Личный кабинет'
+		: pathString.includes('/events')
+		? 'События'
+		: pathString.includes('/communication')
+		? 'Сообщения'
+		: pathString.includes('/courses/')
+		? 'Образовательная программа'
+		: pathString.includes('/courses')
+		? 'Список образовательных программ'
+		: 'default';
 }

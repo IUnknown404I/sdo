@@ -1,8 +1,3 @@
-/**
- * THE TESTING WILL LOGS THE ERRORS DUO PARSING STRINGS VIA "startsWith()".
- * THIS IS CAUSE THE AXIOS INSTANCE JEST-IMPORT ERROR IN NESTED ELEMENTS.
- */
-
 import nextJest from 'next/jest.js';
 // import { defaults as tsjPreset } from 'ts-jest/presets/index.js';
 
@@ -17,17 +12,57 @@ const config = {
 	// preset: '@shelf/jest-mongodb',
 	// transform: { ...tsjPreset.transform },
 	preset: 'ts-jest',
+	rootDir: './',
 	setupFilesAfterEnv: ['<rootDir>/jest.setup.ts', '<rootDir>/jest-preload.ts'],
-	testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+	testPathIgnorePatterns: [
+		'/.next/',
+		'/node_modules/',
+		'/pw-tests/',
+		'/pw-tests-examples/',
+		'/coverage/',
+		'./jest.setup.ts',
+		'./jest-preload.ts',
+	],
 	moduleNameMapper: {
 		'\\.(scss|sass|css)$': 'identity-obj-proxy',
+		// axios: 'axios/dist/node/axios.cjs',
 	},
+
 	verbose: true,
 	testEnvironment: 'node',
 	collectCoverage: true,
-	moduleNameMapper: {
-		axios: 'axios/dist/node/axios.cjs',
-	},
+	collectCoverageFrom: ['<rootDir>/**/*.{js,jsx,ts,tsx}'],
+	coveragePathIgnorePatterns: [
+		'<rootDir>/node_modules/',
+		'<rootDir>/__mocks__/',
+		'<rootDir>/__tests__/',
+		'<rootDir>/.github/',
+		'<rootDir>/.idea/',
+		'<rootDir>/.next/',
+		'<rootDir>/.storybook/',
+		'<rootDir>/.swc/',
+		'<rootDir>/.vscode/',
+
+		'<rootDir>/pages/',
+		'<rootDir>/gitHooks/',
+		'<rootDir>/dist/',
+		'<rootDir>/docker/',
+		'<rootDir>/coverage/',
+		'<rootDir>/playwright-report/',
+		'<rootDir>/public/',
+		'<rootDir>/pw-tests/',
+		'<rootDir>/pw-tests-examples/',
+		'<rootDir>/stories/',
+		'<rootDir>/storybook-static/',
+		'<rootDir>/textEditor/',
+	],
+	// coverageThreshold: {
+	// 	global: {
+	// 		lines: 90,
+	// 		statements: 90,
+	// 	},
+	// },
+
 	testEnvironment: 'jest-environment-jsdom',
 	transformIgnorePatterns: ['/node-modules/axios'],
 };

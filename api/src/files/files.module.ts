@@ -4,8 +4,23 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { FileValidationMiddleware } from 'globalPipes/FileValidationPipes';
 import { AuthService } from 'src/auth/auth.service';
-import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
-import { LocalStrategy } from 'src/auth/strategies/local.strategy';
+import { Chat, chatSchema } from 'src/chat/chat.schema';
+import { ChatService } from 'src/chat/chat.service';
+import { CourseProgress, courseProgressSchema } from 'src/course-progress/course-progress.schema';
+import { CourseProgressService } from 'src/course-progress/course-progress.service';
+import { CoursesGroupsService } from 'src/courses/courses-groups.service';
+import { Course, coursesSchema } from 'src/courses/courses.schema';
+import { CoursesService } from 'src/courses/courses.service';
+import { GlobalGroup, globalGroupSchema } from 'src/global-groups/global-groups.schema';
+import { GlobalGroupsService } from 'src/global-groups/global-groups.service';
+import { Question, QuestionsSchema } from 'src/questions/questions.schema';
+import { QuestionsService } from 'src/questions/questions.service';
+import { TestRun, testRunsSchema } from 'src/test-runs/test-runs.schema';
+import { TestRunsService } from 'src/test-runs/test-runs.service';
+import { Test, testsSchema } from 'src/tests/tests.schema';
+import { TestsService } from 'src/tests/tests.service';
+import { UsersAuthService } from 'src/users/users-auth-service';
+import { UsersFriendsService } from 'src/users/users-friends.service';
 import { User, userSchema } from 'src/users/users.schema';
 import { UsersService } from 'src/users/users.service';
 import { FilesController } from './files.controller';
@@ -25,12 +40,55 @@ import { FilesService } from './files.service';
 					name: User.name,
 					schema: userSchema,
 				},
+				{
+					name: Course.name,
+					schema: coursesSchema,
+				},
+				{
+					name: CourseProgress.name,
+					schema: courseProgressSchema,
+				},
+				{
+					name: Test.name,
+					schema: testsSchema,
+				},
+				{
+					name: TestRun.name,
+					schema: testRunsSchema,
+				},
+				{
+					name: Question.name,
+					schema: QuestionsSchema,
+				},
+				{
+					name: GlobalGroup.name,
+					schema: globalGroupSchema,
+				},
+				{
+					name: Chat.name,
+					schema: chatSchema,
+				},
 			],
 			'onyxDB',
 		),
 	],
 	controllers: [FilesController],
-	providers: [FilesService, UsersService, AuthService, UsersService],
+	providers: [
+		FilesService,
+		UsersService,
+		UsersFriendsService,
+		AuthService,
+		UsersService,
+		UsersAuthService,
+		GlobalGroupsService,
+		CoursesService,
+		CoursesGroupsService,
+		CourseProgressService,
+		TestsService,
+		TestRunsService,
+		QuestionsService,
+		ChatService,
+	],
 })
 export class FilesModule implements NestModule {
 	configure(consumer: MiddlewareConsumer): any {

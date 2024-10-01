@@ -1,65 +1,19 @@
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import StarsOutlinedIcon from '@mui/icons-material/StarsOutlined';
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
-import { Box, Grid, Tab, Tabs } from '@mui/material';
+import { Badge, Box, Grid, Tab, Tabs } from '@mui/material';
 import { useRouter } from 'next/router';
 import * as React from 'react';
-import { SetStateAction, useState } from 'react';
+import { SetStateAction } from 'react';
+import { rtkApi } from '../../../../redux/api';
+import { CourseProgressI } from '../../../../redux/endpoints/courseProgressEnd';
+import { useTypedSelector } from '../../../../redux/hooks';
+import { SystemRolesOptions, selectUser } from '../../../../redux/slices/user';
 import { querySwitcher } from '../../../../utils/http';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
-import CourseCardPersonal from './CourseCardPersonal';
-
-const coursesData = [
-	{
-		date: '01.09.2022 - 14.09.2022',
-		typeCourse: 'Повышение квалификации',
-		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		href: '/courses/personal-protective-equipment',
-		status: 'active',
-		colorBadge: 'success',
-		textBadge: 'идет обучение',
-		progress: 49,
-		imagePath: '/images/courses/coursesCard/sizPreview.svg',
-		colorCourse: '#ffca28',
-	},
-
-	{
-		date: '01.09.2022 - 14.09.2022',
-		typeCourse: 'Повышение квалификации',
-		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		href: '/courses/personal-protective-equipment',
-		status: 'completed',
-		colorBadge: 'secondary',
-		textBadge: 'обучение завершено',
-		progress: 100,
-		imagePath: '/images/courses/coursesCard/sizPreview.svg',
-		colorCourse: '#cecece',
-	},
-	{
-		date: '01.09.2022 - 14.09.2022',
-		typeCourse: 'Повышение квалификации',
-		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		href: '/courses/personal-protective-equipment',
-		status: 'completed',
-		colorBadge: 'secondary',
-		textBadge: 'обучение завершено',
-		progress: 100,
-		imagePath: '/images/courses/coursesCard/sizPreview.svg',
-		colorCourse: '#cecece',
-	},
-	{
-		date: '01.09.2022 - 14.09.2022',
-		typeCourse: 'Повышение квалификации',
-		title: 'Правила проведения входного контроля средств индивидуальной защиты',
-		href: '/courses/personal-protective-equipment',
-		status: 'upcoming',
-		colorBadge: 'warning',
-		textBadge: 'ожидается зачисление',
-		progress: 0,
-		imagePath: '/images/courses/coursesCard/sizPreview.svg',
-		colorCourse: '#006fba',
-	},
-];
+import UserAdminCoursesTabContent from './UserAdminCoursesTabContent';
+import UserCoursesTabContent from './UserCoursesTabContent';
 
 interface TabPanelProps {
 	children?: (string | JSX.Element) | (string | JSX.Element)[];
@@ -80,11 +34,40 @@ function TabPanel(props: TabPanelProps) {
 	);
 }
 
-const MY_COURSES_QUARY_CASES = ['in-progress', 'upcoming-courses', 'completed-courses'];
+const MY_COURSES_QUARY_CASES = ['in-progress', 'upcoming-courses', 'completed-courses', 'administrative-courses'];
 
-export const UserCourses = () => {
+const UserCourses = () => {
 	const router = useRouter();
-	const [position, setPosition] = useState(0);
+	const userData = useTypedSelector(selectUser);
+
+	const [position, setPosition] = React.useState(0);
+
+	const { data: activeProgresses, isFetching: isActiveProgressesFetching } = rtkApi.useActiveProgressesQuery('');
+	const { data: finishedProgresses, isFetching: isFinishedProgressesFetching } =
+		rtkApi.useFinishedProgressesQuery('');
+	const { data: adminProgresses, isFetching: isAdminProgressesFetching } =
+		rtkApi.useAdministrativeProgressesQuery('');
+
+	const currentStudy = React.useMemo<CourseProgressI[]>(
+		() =>
+			!!activeProgresses
+				? activeProgresses.reduce(
+						(acc, course) => (course.from! <= +new Date() ? [...acc, course] : acc),
+						[] as CourseProgressI[],
+				  )
+				: [],
+		[activeProgresses],
+	);
+	const upcomingStudy = React.useMemo<CourseProgressI[]>(
+		() =>
+			!!activeProgresses
+				? activeProgresses.reduce(
+						(acc, course) => (course.from! > +new Date() ? [...acc, course] : acc),
+						[] as CourseProgressI[],
+				  )
+				: [],
+		[activeProgresses],
+	);
 
 	const handleChange = (event: any, newPosition: SetStateAction<number>) => {
 		router.replace(`courses?current=${MY_COURSES_QUARY_CASES[newPosition as number]}`);
@@ -101,64 +84,121 @@ export const UserCourses = () => {
 			<Grid container>
 				<Grid item xs={12} md={12} lg={12}>
 					<Tabs
-						orientation='horizontal'
 						variant='scrollable'
-						scrollButtons
-						allowScrollButtonsMobile
+						orientation='horizontal'
+						aria-label='меню личного кабинета'
 						value={position}
 						onChange={handleChange}
-						aria-label='меню личного кабинета'
+						scrollButtons
+						allowScrollButtonsMobile
 					>
-						<Tab iconPosition='start' icon={<TaskAltOutlinedIcon />} label='Идет обучение' />
-						<Tab iconPosition='start' icon={<CalendarMonthOutlinedIcon />} label='Предстоящие курсы' />
-						<Tab iconPosition='start' icon={<Inventory2OutlinedIcon />} label='Пройденный курсы' />
+						<Tab
+							iconPosition='start'
+							icon={<TaskAltOutlinedIcon />}
+							label={
+								<TabBadgeItem color='success' badgeContent={currentStudy?.length || 0}>
+									Идет обучение
+								</TabBadgeItem>
+							}
+						/>
+						<Tab
+							iconPosition='start'
+							icon={<CalendarMonthOutlinedIcon />}
+							label={
+								<TabBadgeItem color='warning' badgeContent={upcomingStudy?.length || 0}>
+									Предстоящие курсы
+								</TabBadgeItem>
+							}
+						/>
+						<Tab
+							iconPosition='start'
+							icon={<Inventory2OutlinedIcon />}
+							label={
+								<TabBadgeItem color='secondary' badgeContent={finishedProgresses?.length || 0}>
+									Пройденные курсы
+								</TabBadgeItem>
+							}
+						/>
+						{SystemRolesOptions[userData._systemRole].accessLevel > 0 && (
+							<Tab
+								iconPosition='start'
+								icon={<StarsOutlinedIcon />}
+								label={
+									<Badge
+										color='primary'
+										badgeContent={adminProgresses?.length || 0}
+										sx={{ '.MuiBadge-badge': { right: '-5px', top: '-10px' } }}
+									>
+										<strong>Администрируемые мной</strong>
+									</Badge>
+								}
+							/>
+						)}
 					</Tabs>
 				</Grid>
 
 				<Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
 					<TabPanel value={position} index={0}>
-						<Grid container sx={{ marginTop: '20px' }} spacing={2}>
-							{coursesData
-								.filter(el => el.status === 'active')
-								.map((course, index) => {
-									return (
-										<Grid item xs={12} lg={12} key={index}>
-											<CourseCardPersonal {...course} />
-										</Grid>
-									);
-								})}
-						</Grid>
+						<UserCoursesTabContent
+							isFetching={isActiveProgressesFetching}
+							coursesProgresses={currentStudy}
+							cardsProps={{
+								colorBadge: 'success',
+								colorCourse: 'active',
+								textBadge: 'идет обучение',
+							}}
+						/>
 					</TabPanel>
-
 					<TabPanel value={position} index={1}>
-						<Grid item sx={{ marginTop: '20px' }} spacing={2} container>
-							{coursesData
-								.filter(el => el.status === 'upcoming')
-								.map((course, index) => {
-									return (
-										<Grid item xs={12} lg={12} key={index}>
-											<CourseCardPersonal {...course} />
-										</Grid>
-									);
-								})}
-						</Grid>
+						<UserCoursesTabContent
+							isFetching={isActiveProgressesFetching}
+							coursesProgresses={upcomingStudy}
+							cardsProps={{
+								disableLink: true,
+								colorBadge: 'warning',
+								colorCourse: 'upcoming',
+								textBadge: 'ожидается зачисление',
+							}}
+							emptyErrorText='Список предстоящих курсов, на которые вы записаны, пуст!'
+						/>
 					</TabPanel>
-
 					<TabPanel value={position} index={2}>
-						<Grid container sx={{ marginTop: '20px' }} spacing={2}>
-							{coursesData
-								.filter(el => el.status === 'completed')
-								.map((course, index) => {
-									return (
-										<Grid item xs={12} lg={12} key={index}>
-											<CourseCardPersonal {...course} />
-										</Grid>
-									);
-								})}
-						</Grid>
+						<UserCoursesTabContent
+							isFetching={isFinishedProgressesFetching}
+							coursesProgresses={finishedProgresses}
+							cardsProps={{
+								disableLink: true,
+								colorBadge: 'secondary',
+								colorCourse: 'completed',
+								textBadge: 'обучение завершено',
+							}}
+							emptyErrorText='Пока что вы не проходили обучение на нашей платформе!'
+						/>
+					</TabPanel>
+					<TabPanel value={position} index={3}>
+						<UserAdminCoursesTabContent
+							isFetching={isAdminProgressesFetching}
+							coursesProgresses={adminProgresses}
+							cardsProps={{
+								colorBadge: 'primary',
+								colorCourse: 'administrative',
+								textBadge: 'администрирование',
+							}}
+							emptyErrorText='Пока что вы не администрируете ни одной программы!'
+						/>
 					</TabPanel>
 				</Grid>
 			</Grid>
 		</>
 	);
 };
+
+function TabBadgeItem(props: Pick<React.ComponentProps<typeof Badge>, 'children' | 'badgeContent' | 'color'>) {
+	return (
+		<Badge color='primary' badgeContent={0} sx={{ '.MuiBadge-badge': { right: '-5px', top: '-12px' } }} {...props}>
+			{props.children}
+		</Badge>
+	);
+}
+
+export default UserCourses;

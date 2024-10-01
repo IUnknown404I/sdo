@@ -9,7 +9,7 @@ export interface AuthModalI {
 	state: boolean;
 	setState: Function;
 	title: string;
-	children: JSX.Element | JSX.Element[];
+	children: React.ReactElement | React.ReactElement[];
 	uncontrolled?: boolean;
 	disableButton?: undefined | true | { buttonText: string };
 	hideButtonOnOpen?: boolean;
@@ -139,7 +139,7 @@ const AuthModal = (props: AuthModalI) => {
 								color: theme => (theme.palette.mode === 'light' ? '' : 'white'),
 							}}
 						>
-							{Array.isArray(props.children) ? props.children.map(el => <>{el}</>) : props.children}
+							{props.children}
 						</Typography>
 
 						<Box

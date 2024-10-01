@@ -13,6 +13,7 @@ const Error404Page = () => {
 			<Head>
 				<title>Не найдено</title>
 				<meta name='description' content='Страницы не существует' />
+				<meta name='robots' content='noindex, nofollow' />
 			</Head>
 
 			<main>

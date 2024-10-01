@@ -1,5 +1,6 @@
 import { ruRU } from '@mui/material/locale';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ruRU as dateRU } from '@mui/x-date-pickers/locales';
 import { useRouter } from 'next/router';
 import React, { createContext } from 'react';
 import { notification } from '../components/utils/notifications/Notification';
@@ -24,10 +25,11 @@ export default function ToggleColorMode({ children }: IThemeProps) {
 	const router = useRouter();
 	const loadState = React.useRef<boolean>(false);
 	const serverSyncFlag = React.useRef<boolean>(false);
+	const authState = useTypedSelector(store => store.auth.state);
+
+	const [metaInfoUpdate] = rtkApi.usePutMetaMutation();
 	const [mode, setMode] = React.useState<'light' | 'dark'>('light');
 	const { data, isLoading: isFetching, isError, refetch } = rtkApi.useMetaQuery();
-	const [metaInfoUpdate] = rtkApi.usePutMetaMutation();
-	const authState = useTypedSelector(store => store.auth.state);
 
 	const colorMode = React.useMemo(
 		() => ({
@@ -57,6 +59,7 @@ export default function ToggleColorMode({ children }: IThemeProps) {
 					},
 				},
 				ruRU,
+				dateRU,
 			),
 		// {}),
 		[mode, themeOptions],

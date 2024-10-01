@@ -1,107 +1,41 @@
 import { Grid } from '@mui/material';
-import { EvaluationTable } from '../evaluationsTable/EvaluationsTable';
+import React from 'react';
+import { rtkApi } from '../../../../../../redux/api';
+import { ProgressTestStatsItemType } from '../../../../../../redux/endpoints/courseProgressEnd';
+import { EvaluationTable } from './EvaluationsTable';
 
-const evaluationData = [
-	{
-		id: 1,
-		nameProp: 'Тема 1. Общие сведения о средствах индивидуальной защиты',
-		typeProp: 'тестирование',
-		statusProp: 'завершено',
-		currTryProp: 2,
-		maxTryProp: 2,
-		gradeProp: 5,
-		linkProp: '/events',
-	},
-	{
-		id: 2,
-		nameProp: 'Тема 2. Входной контроль при поставках средств индивидуальной защиты',
-		typeProp: 'тестирование',
-		statusProp: 'завершено',
-		currTryProp: 1,
-		maxTryProp: 2,
-		gradeProp: 4,
-		linkProp: '/events',
-	},
-	{
-		id: 3,
-		nameProp: 'Тема 3. Требования к составу сопроводительной документации, упаковке и маркировке СИЗ',
-		typeProp: 'тестирование',
-		statusProp: 'требуется пересдача',
-		currTryProp: 1,
-		maxTryProp: 2,
-		gradeProp: 2,
-		linkProp: '/events',
-	},
-	{
-		id: 4,
-		nameProp: 'Тема 4. Выявление нарушений при входном контроле СИЗ',
-		typeProp: 'тестирование',
-		statusProp: 'нет попыток',
-		currTryProp: 0,
-		maxTryProp: 2,
-		gradeProp: 0,
-		linkProp: '/events',
-	},
-	{
-		id: 5,
-		nameProp: 'Тема 5. Списание и утилизация средств индивидуальной защиты',
-		typeProp: 'тестирование',
-		statusProp: 'нет попыток',
-		currTryProp: 0,
-		maxTryProp: 2,
-		gradeProp: 0,
-		linkProp: '/events',
-	},
-	{
-		id: 6,
-		nameProp: 'Практическое занятие №1',
-		typeProp: 'практическое занятие',
-		statusProp: 'на проверке',
-		currTryProp: 1,
-		maxTryProp: 1,
-		gradeProp: 0,
-		linkProp: '/events',
-	},
-	{
-		id: 7,
-		nameProp: 'Практическое занятие №2',
-		typeProp: 'практическое занятие',
-		statusProp: 'на проверке',
-		currTryProp: 1,
-		maxTryProp: 1,
-		gradeProp: 0,
-		linkProp: '/events',
-	},
-	{
-		id: 8,
-		nameProp: 'Практическое занятие №3',
-		typeProp: 'практическое занятие',
-		statusProp: 'нет попыток',
-		currTryProp: 0,
-		maxTryProp: 1,
-		gradeProp: 0,
-		linkProp: '/events',
-	},
-	{
-		id: 9,
-		nameProp: 'Итоговая аттестация. Теоретическая часть',
-		typeProp: 'тестирование',
-		statusProp: 'нет попыток',
-		currTryProp: 0,
-		maxTryProp: 2,
-		gradeProp: 0,
-		linkProp: '/events',
-	},
-];
+export const EducationEvaluations = (props: { cpid?: string }) => {
+	const [countAdminRuns, setCountAdminRuns] = React.useState<boolean>(false);
 
-export const EducationEvaluations = () => {
+	const {
+		data: examsStats,
+		refetch,
+		isFetching,
+	} = rtkApi.useProgressExamsStatsQuery({ cpid: props.cpid || 'not-found', countAdminRuns });
+	const parsedStats: undefined | (ProgressTestStatsItemType & { cid: string })[] = React.useMemo(
+		() =>
+			!!examsStats
+				? examsStats.stats.map(stat => ({
+						...stat,
+						cid: examsStats.cid,
+				  }))
+				: undefined,
+		[examsStats],
+	);
+
+	React.useEffect(() => {
+		refetch();
+	}, [props.cpid, countAdminRuns]);
+
 	return (
-		<>
-			<Grid container>
-				<Grid item xs={12} md={12} lg={12}>
-					<EvaluationTable dataRows={evaluationData} />
-				</Grid>
+		<Grid container>
+			<Grid item xs={12} md={12} lg={12}>
+				<EvaluationTable
+					refreshStats={refetch}
+					stats={isFetching ? undefined : parsedStats}
+					adminRuns={{ state: countAdminRuns, setState: setCountAdminRuns }}
+				/>
 			</Grid>
-		</>
+		</Grid>
 	);
 };

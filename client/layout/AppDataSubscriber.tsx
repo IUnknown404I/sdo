@@ -2,7 +2,7 @@ import React from 'react';
 import { rtkApi } from '../redux/api';
 import { useTypedSelector } from '../redux/hooks';
 
-export default (props: { children: JSX.Element | JSX.Element[] }) => {
+export default (props: { children: JSX.Element | JSX.Element[] }): JSX.Element | JSX.Element[] => {
 	const auth = useTypedSelector(state => state.auth.state);
 	const { refetch: personalDataRefetch } = rtkApi.usePersonalQuery('', {
 		refetchOnMountOrArgChange: true,
@@ -20,5 +20,5 @@ export default (props: { children: JSX.Element | JSX.Element[] }) => {
 		}
 	}, [auth]);
 
-	return <>{Array.isArray(props.children) ? props.children.map(el => el) : props.children}</>;
+	return props.children;
 };

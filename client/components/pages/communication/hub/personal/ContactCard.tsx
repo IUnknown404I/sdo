@@ -14,37 +14,40 @@ import { BgAvatars } from '../../../../utils/bgAvatars/BgAvatars';
 import ClassicLoader from '../../../../utils/loaders/ClassicLoader';
 import { notification } from '../../../../utils/notifications/Notification';
 
+interface IContactCard extends ChatContactsI {
+	disableControls?: boolean;
+	friend?: boolean;
+	friendsObject?: UserFriendsI;
+	participator?: boolean;
+	participators?: string[];
+	excludeContact?: Function;
+}
+
 /**
  * @IUnknown404I
  * @param contact as ChatContactT object with public user chat-data;
  * @returns Chat contact card of passed user.
  */
-function ContactCard(
-	contact: ChatContactsI & {
-		disableControls?: boolean;
-		friend?: boolean;
-		friendsObject?: UserFriendsI;
-		participator?: boolean;
-		participators?: string[];
-		excludeContact?: Function;
-	},
-) {
+function ContactCard(contact: IContactCard) {
 	const router = useRouter();
 	const userData = useTypedSelector(store => store.user);
-	const [requestFriendMutation] = rtkApi.useFriendsRequestMutation();
-	const [createPrivateChatMutation] = rtkApi.useCreatePrivateChatMutation();
-	const { data: privateRid, refetch: privateRidRefetch } = rtkApi.usePrivateChatRidQuery(contact.username);
 
 	const [adding, setAdding] = React.useState<boolean>(false);
 	const [creating, setCreating] = React.useState<boolean>(false);
 	const [excludeState, setExcludeState] = React.useState<boolean>(false);
+
+	const { data: privateRid, refetch: privateRidRefetch } = rtkApi.usePrivateChatRidQuery(contact.username);
+	const { data: userFriends } = rtkApi.useFriendsQuery('');
+
+	const [requestFriendMutation] = rtkApi.useFriendsRequestMutation();
+	const [createPrivateChatMutation] = rtkApi.useCreatePrivateChatMutation();
 
 	return (
 		<Paper
 			elevation={3}
 			sx={{
 				width: '100%',
-				minWidth: 'fit-content',
+				minWidth: contact.username === userData.username ? 'min(98vw, 300px)' : 'fit-content',
 				borderRadius: '15px',
 				padding: '.5rem',
 				border: theme => `1px inset ${theme.palette.primary.light}`,
@@ -88,7 +91,7 @@ function ContactCard(
 					)}
 				</Stack>
 
-				{!contact.disableControls && (
+				{contact.username !== userData.username && !contact.disableControls && (
 					<Stack
 						minWidth='175px'
 						sx={{
@@ -162,15 +165,22 @@ function ContactCard(
 									router.asPath.includes(`/rooms/${privateRid.rid}`) ? 'Чат уже открыт' : undefined
 								}
 								onClick={e => {
-									if (router.asPath.includes(`/rooms/${privateRid.rid}`)) e.preventDefault();
+									if (
+										contact.username === userData.username ||
+										router.asPath.includes(`/rooms/${privateRid.rid}`)
+									)
+										e.preventDefault();
 								}}
 							>
 								<Button
-									variant='contained'
 									size='small'
-									disabled={router.asPath.includes(`/rooms/${privateRid.rid}`)}
+									variant='contained'
+									disabled={
+										contact.username === userData.username ||
+										router.asPath.includes(`/rooms/${privateRid.rid}`)
+									}
 									sx={{ paddingInline: '1.25rem', width: '100%', fontSize: '.85rem' }}
-									onClick={() => createChatInit()}
+									onClick={() => (contact.username === userData.username ? {} : createChatInit())}
 								>
 									<RateReviewIcon sx={{ marginRight: '.5rem', fontSize: '1.25rem' }} />
 									Открыть чат
@@ -178,10 +188,11 @@ function ContactCard(
 							</OnyxTypography>
 						) : (
 							<Button
-								variant='outlined'
 								size='small'
+								variant='outlined'
+								disabled={contact.username === userData.username}
 								sx={{ paddingInline: '1.25rem' }}
-								onClick={() => createChatInit()}
+								onClick={() => (contact.username === userData.username ? {} : createChatInit())}
 							>
 								{creating && <ClassicLoader iconVariant />}
 								<MarkUnreadChatAltIcon sx={{ marginRight: '.5rem', fontSize: '1.25rem' }} /> Создать чат
@@ -189,44 +200,17 @@ function ContactCard(
 						)}
 
 						<Button
-							disabled={
-								contact.friend ||
-								adding ||
-								(contact.friendsObject?.accepted &&
-									contact.friendsObject.accepted.includes(contact.username)) ||
-								(contact.friendsObject?.requested &&
-									contact.friendsObject.requested.includes(contact.username)) ||
-								(contact.friendsObject?.pending &&
-									contact.friendsObject.pending.includes(contact.username))
-							}
-							variant='outlined'
+							disabled={isFriendButtonDisabled(contact, contact.friendsObject || userFriends)}
 							size='small'
+							color='success'
+							variant='outlined'
 							sx={{ paddingInline: '1.25rem' }}
 							onClick={requestFriendInit}
 						>
 							{adding && <ClassicLoader iconVariant />}
-							{contact.friend ? (
-								'В списке друзей'
-							) : contact.friendsObject?.accepted ? (
-								contact.friendsObject.accepted.includes(contact.username) ? (
-									'В списке друзей'
-								) : contact.friendsObject?.requested &&
-								  contact.friendsObject.requested.includes(contact.username) ? (
-									'Заявка уже отправлена'
-								) : contact.friendsObject?.pending &&
-								  contact.friendsObject.pending.includes(contact.username) ? (
-									'Ожидает подтверждения!'
-								) : (
-									<>
-										<PersonAddIcon sx={{ marginRight: '.5rem', fontSize: '1.25rem' }} />
-										&nbsp;В друзья
-									</>
-								)
-							) : (
-								<>
-									<ClassicLoader iconVariant /> Проверяем...
-								</>
-							)}
+							{contact.friend
+								? 'В списке друзей'
+								: getFriendButtonContent(contact, contact.friendsObject || userFriends)}
 						</Button>
 					</Stack>
 				)}
@@ -289,3 +273,44 @@ function ContactCard(
 }
 
 export default ContactCard;
+
+function isFriendButtonDisabled(
+	contact: IContactCard,
+	friends: UserFriendsI | undefined = undefined,
+	currentUsername: string = '',
+	adding: boolean = false,
+): boolean {
+	return !!(
+		contact.username === currentUsername ||
+		contact.friend ||
+		adding ||
+		(!!contact.friendsObject
+			? (contact.friendsObject?.accepted && contact.friendsObject.accepted.includes(contact.username)) ||
+			  (contact.friendsObject?.requested && contact.friendsObject.requested.includes(contact.username)) ||
+			  (contact.friendsObject?.pending && contact.friendsObject.pending.includes(contact.username))
+			: (friends?.accepted && friends.accepted.includes(contact.username)) ||
+			  (friends?.requested && friends.requested.includes(contact.username)) ||
+			  (friends?.pending && friends.pending.includes(contact.username)))
+	);
+}
+
+function getFriendButtonContent(contact: IContactCard, friends: UserFriendsI | undefined = undefined): React.ReactNode {
+	return friends?.accepted ? (
+		friends.accepted.includes(contact.username) ? (
+			'В списке друзей'
+		) : friends?.requested && friends.requested.includes(contact.username) ? (
+			'Заявка уже отправлена'
+		) : friends?.pending && friends.pending.includes(contact.username) ? (
+			'Ожидает подтверждения!'
+		) : (
+			<>
+				<PersonAddIcon sx={{ marginRight: '.5rem', fontSize: '1.25rem' }} />
+				&nbsp;В друзья
+			</>
+		)
+	) : (
+		<>
+			<ClassicLoader iconVariant /> Проверяем...
+		</>
+	);
+}

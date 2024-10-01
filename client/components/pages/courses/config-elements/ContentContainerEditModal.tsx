@@ -1,5 +1,6 @@
 import { Box, Button, Divider, Stack, TextField, useTheme } from '@mui/material';
 import React, { ComponentProps } from 'react';
+import { useDebouncedState } from '../../../../hooks/useDebouncedState';
 import { COROPRATIVE_COLOR_DARK, COROPRATIVE_COLOR_LIGHT } from '../../../../theme/ThemeOptions';
 import OnyxAlertModal from '../../../basics/OnyxAlertModal';
 import OnyxSelect from '../../../basics/OnyxSelect';
@@ -7,28 +8,46 @@ import OnyxSwitch from '../../../basics/OnyxSwitch';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
 import SectionContentContainer from '../section-elements/SectionContentContainer/SectionContentContainer';
 
-const ContentContainerEditModal = (
-	props: ComponentProps<typeof SectionContentContainer> & {
-		rowMode?: boolean;
-		modalState: boolean;
-		setModalState: React.Dispatch<React.SetStateAction<boolean>>;
-		onSubmitCallback?: () => void;
-		onCancelCallback?: () => void;
-	},
-) => {
+export interface ContentContainerEditParams {
+	hide: boolean;
+	styles: {
+		centered: boolean;
+		elevation: number;
+		borderWidth: number;
+		borderColor: string;
+		borderStyle: string;
+	};
+}
+
+interface IContentContainerEditModal extends ComponentProps<typeof SectionContentContainer> {
+	rowMode?: boolean;
+	modalState: boolean;
+	setModalState: React.Dispatch<React.SetStateAction<boolean>>;
+	onSubmitCallback?: (payload: ContentContainerEditParams) => void;
+	onCancelCallback?: () => void;
+}
+
+const ContentContainerEditModal = (props: IContentContainerEditModal) => {
 	const theme = useTheme();
 	const colorInputRef = React.useRef<HTMLInputElement>(null);
 
-	const [status, setStatus] = React.useState<boolean>(!!props.status);
+	const [status, setStatus] = React.useState<boolean>(!props.hide ?? true);
+	const [centered, setCentered] = React.useState<boolean>(props.styles?.centered ?? false);
 	const [elevation, setElevation] = React.useState<number>(props.styles?.elevation || 0);
 	const [borderWidth, setBorderWidth] = React.useState<number>(props.styles?.borderWidth || 0);
-	const [borderColor, setBorderColor] = React.useState<string>(
-		props.styles?.borderColor || theme.palette.mode === 'light' ? COROPRATIVE_COLOR_LIGHT : COROPRATIVE_COLOR_DARK,
+	const [borderColor, setBorderColor] = useDebouncedState<string>(
+		props.styles?.borderColor ||
+			(theme.palette.mode === 'light' ? COROPRATIVE_COLOR_LIGHT : COROPRATIVE_COLOR_DARK),
+		250,
 	);
 	const [borderStyle, setBorderStyle] = React.useState<string>(props.styles?.borderStyle || 'solid');
 
 	function handleSubmit() {
-		if (!!props.onSubmitCallback) props.onSubmitCallback();
+		if (!!props.onSubmitCallback)
+			props.onSubmitCallback({
+				hide: status,
+				styles: { centered, elevation, borderWidth, borderColor, borderStyle },
+			});
 		props.setModalState(false);
 	}
 
@@ -71,6 +90,16 @@ const ContentContainerEditModal = (
 							size='small'
 							type='number'
 							variant='outlined'
+						/>
+					</Stack>
+					<Stack sx={{ width: '100%' }}>
+						<OnyxTypography text='Выравнивание содержимого:' tpColor='secondary' tpSize='.85rem' />
+						<OnyxSwitch
+							label={!centered ? 'Стандартное отображение' : 'Форматирование по центру'}
+							state={centered}
+							setState={setCentered}
+							size='medium'
+							labelPlacement='end'
 						/>
 					</Stack>
 					<Stack sx={{ width: '100%' }}>
@@ -154,66 +183,25 @@ const ContentContainerEditModal = (
 							padding: '1rem',
 						}}
 					>
-						<SectionContentContainer
-							forcedMode='observe'
-							status={status}
-							styles={{ elevation, borderWidth, borderColor, borderStyle }}
-						>
-							{!!props.rowMode ? (
-								<Stack direction='row' gap={1}>
-									<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}>
-										<OnyxTypography
-											text='Элемент 1'
-											tpColor='secondary'
-											tpSize='.85rem'
-											tpAlign='center'
-										/>
-									</Box>
-									<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}>
-										<OnyxTypography
-											text='Элемент 2'
-											tpColor='secondary'
-											tpSize='.85rem'
-											tpAlign='center'
-										/>
-									</Box>
-								</Stack>
-							) : (
-								<>
-									<OnyxTypography
-										text='Содержимое контейнера'
-										tpColor='secondary'
-										tpSize='.85rem'
-										tpAlign='center'
-									/>
-									<Stack direction='row' gap={1} width='100%'>
-										<Box
-											sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}
-										></Box>
-										<Box
-											sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}
-										></Box>
-									</Stack>
-									<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '50px' }}></Box>
-									<Box
-										sx={{
-											border: '1px dashed lightgray',
-											width: '65%',
-											height: '25px',
-											marginInline: 'auto',
-										}}
-									></Box>
-								</>
-							)}
-						</SectionContentContainer>
+						{!!props.rowMode ? (
+							<ContentRowContainerSkeleton
+								status={status}
+								styles={{ centered, elevation, borderWidth, borderColor, borderStyle }}
+							/>
+						) : (
+							<ContentContainerSkeleton
+								status={status}
+								styles={{ centered, elevation, borderWidth, borderColor, borderStyle }}
+							/>
+						)}
 					</Box>
 				</Box>
 
 				<Stack direction='row' justifyContent='flex-end' alignItems='center' gap={1.5}>
-					<Button variant='contained' sx={{ paddingInline: '2.25rem' }} onClick={handleSubmit}>
+					<Button color='success' variant='outlined' sx={{ paddingInline: '2.25rem' }} onClick={handleSubmit}>
 						Сохранить изменения
 					</Button>
-					<Button variant='outlined' onClick={handleCancel}>
+					<Button variant='contained' sx={{ paddingInline: '1.75rem' }} onClick={handleCancel}>
 						Вернуться
 					</Button>
 				</Stack>
@@ -221,5 +209,63 @@ const ContentContainerEditModal = (
 		</OnyxAlertModal>
 	);
 };
+
+interface IContentContainerSkeleton
+	extends Omit<IContentContainerEditModal, 'modalState' | 'setModalState' | 'children' | 'csiid' | 'forcedMode'> {}
+
+export function ContentContainerSkeleton(props: IContentContainerSkeleton) {
+	return (
+		<SectionContentContainer {...props} csiid='none' forcedMode='observe'>
+			{!!props.rowMode ? (
+				<Stack direction='row' gap={1}>
+					<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}>
+						<OnyxTypography text='Элемент 1' tpColor='secondary' tpSize='.85rem' tpAlign='center' />
+					</Box>
+					<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}>
+						<OnyxTypography text='Элемент 2' tpColor='secondary' tpSize='.85rem' tpAlign='center' />
+					</Box>
+				</Stack>
+			) : (
+				<>
+					<OnyxTypography text='Содержимое контейнера' tpColor='secondary' tpSize='.85rem' tpAlign='center' />
+					<Stack direction='row' gap={1} width='100%'>
+						<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}></Box>
+						<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}></Box>
+					</Stack>
+					<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '50px' }}></Box>
+					<Box
+						sx={{
+							border: '1px dashed lightgray',
+							width: '75%',
+							height: '38px',
+						}}
+					></Box>
+					<Box
+						sx={{
+							border: '1px dashed lightgray',
+							width: '25%',
+							height: '20px',
+						}}
+					></Box>
+				</>
+			)}
+		</SectionContentContainer>
+	);
+}
+
+export function ContentRowContainerSkeleton(props: IContentContainerSkeleton) {
+	return (
+		<SectionContentContainer {...props} csiid='none' forcedMode='observe'>
+			<Stack direction='row' gap={1}>
+				<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}>
+					<OnyxTypography text='Элемент 1' tpColor='secondary' tpSize='.85rem' tpAlign='center' />
+				</Box>
+				<Box sx={{ border: '1px dashed lightgray', width: '100%', height: '75px' }}>
+					<OnyxTypography text='Элемент 2' tpColor='secondary' tpSize='.85rem' tpAlign='center' />
+				</Box>
+			</Stack>
+		</SectionContentContainer>
+	);
+}
 
 export default ContentContainerEditModal;

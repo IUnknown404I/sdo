@@ -1,94 +1,66 @@
 import {
 	Body,
 	Controller,
-	Delete,
 	Get,
+	Header,
+	Inject,
 	Param,
 	ParseBoolPipe,
+	ParseIntPipe,
+	Patch,
 	Post,
 	Put,
 	Query,
-	Redirect,
 	Request,
 	Response,
+	StreamableFile,
 	UnauthorizedException,
+	UploadedFile,
 	UseGuards,
+	UseInterceptors,
+	forwardRef,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { existsSync, unlink } from 'fs';
+import { EmailValidationPipe } from 'globalPipes/EmailValidationPipe';
+import { PasswordValidationPipe } from 'globalPipes/PasswordValidationPipe';
 import { StringOrUndefinedValidationPipe } from 'globalPipes/StringOrUndefinedValidationPipe';
-import { ErrorMessages } from 'guards';
 import { FingerprintsGuard } from 'guards/FingerprintsGuard';
-import { RefreshOrAccessTokenGuard } from 'guards/RefreshOrAccessTokenGuard';
+import { AccessLevel, SystemRoles, UserData } from 'metadata/metadata-decorators';
 import mongoose from 'mongoose';
+import { diskStorage } from 'multer';
 import { expiredCookiesConfig } from 'utils/cookiesConfig';
 import { NotValidDataError } from '../../errors/NotValidDataError';
-import { EmailValidationPipe } from '../../globalPipes/EmailValidationPipe';
-import { PasswordValidationPipe } from '../../globalPipes/PasswordValidationPipe';
 import { StringValidationPipe } from '../../globalPipes/StringValidationPipe';
 import { UsernameValidationPipe } from '../../globalPipes/UsernameValidationPipes';
-import { AccessTokenGuard } from '../../guards/AccessTokenGuard';
-import { AuthService } from '../auth/auth.service';
-import { AccessTokenPayload, User, UserMetaInformationI, UserPersonalT } from './users.schema';
+import { UsersAuthService } from './users-auth-service';
+import { UsersExportService } from './users-export.service';
+import {
+	SystemRolesOptions,
+	User,
+	UserCreationType,
+	UserLoyalityBlockType,
+	UserMetaInformationI,
+	UserPersonalT
+} from './users.schema';
 import { PublicUserData, UsersService } from './users.service';
 
-export const RESERVED_USERNAMES = [
-	'system',
-	'info',
-	'notification',
-	'notifications',
-	'admin',
-	'superuser',
-	'root',
-	'host',
-	'observe',
-] as const;
+function importFileValidation(file: Express.Multer.File): boolean {
+	const ALLOWED_TYPES: string[] = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+	return ALLOWED_TYPES.includes(file.mimetype);
+}
 
 @Controller('users')
 export class UsersController {
 	constructor(
-		// @Inject(forwardRef(() => AuthService))
-		readonly usersService: UsersService,
-		readonly authService: AuthService,
+		@Inject(forwardRef(() => UsersService))
+		private readonly usersService: UsersService,
+		@Inject(forwardRef(() => UsersAuthService))
+		private readonly usersAuthService: UsersAuthService,
+		private readonly usersExportService: UsersExportService,
 	) {}
 
-	@Post('')
-	@ApiTags('Users')
-	async registration(
-		@Request() req,
-		@Body('username', UsernameValidationPipe) username: string,
-		@Body('password', PasswordValidationPipe) password: string,
-		@Body('email', EmailValidationPipe) email: string,
-		@Body('company') company?: string,
-		@Query('activatedUser') activatedUser?: boolean,
-	) {
-		// reservation check
-		if (RESERVED_USERNAMES.includes(username as (typeof RESERVED_USERNAMES)[number]))
-			throw new NotValidDataError('Данный логин зарезервирован системой! Укажите другой.');
-
-		let resultOfCreatingUser: any = false;
-		const accessToken: string | undefined = req.headers.authorization?.split(' ')[1];
-
-		if (!!activatedUser === true && accessToken)
-			resultOfCreatingUser = await this.usersService.createOne({
-				username,
-				password,
-				email,
-				company,
-				activatedUser,
-			});
-		else if (!!activatedUser === true && !accessToken) throw new UnauthorizedException(ErrorMessages.ACCESS_ERROR);
-		else
-			resultOfCreatingUser = await this.usersService.createOne({
-				username,
-				password,
-				email,
-				company,
-			});
-
-		return !!resultOfCreatingUser;
-	}
-
-	@UseGuards(AccessTokenGuard)
 	@Get('')
 	@ApiTags('Users')
 	async getUser(
@@ -99,163 +71,411 @@ export class UsersController {
 		return await this.usersService.findUser({ _id, username });
 	}
 
-	@UseGuards(AccessTokenGuard)
-	@Delete('')
+	@Get('loyality')
 	@ApiTags('Users')
-	async deleteUser(
-		@Query('_id') _id: mongoose.Types.ObjectId,
-		@Query('username', UsernameValidationPipe) username: string,
+	async getUserLoyality(
+		@UserData() userData: User,
+		@Query('username') username?: string,
+	): Promise<UserLoyalityBlockType> {
+		return await this.usersService.getUserLoyality({ user: userData, requestedUsername: username });
+	}
+
+	@Patch('loyality/convert-energy')
+	@ApiTags('Users')
+	async convertUserEnergy(@UserData() userData: User): Promise<{ result: true }> {
+		return await this.usersService.convertUserEnergy(userData);
+	}
+
+	@AccessLevel(4)
+	@Patch('loyality/coin')
+	@ApiTags('Users')
+	async patchUserLoyalityCoins(
+		@UserData() userData: User,
+		@Body('coins', ParseIntPipe) coins: number,
+		@Body('type') type?: 'inc' | 'dec',
+		@Query('username') username?: string,
+	): Promise<{ result: true }> {
+		return await this.usersService.patchUserLoyalityCoins({
+			user: userData,
+			requestedUsername: username,
+			coins,
+			type,
+		});
+	}
+
+	@AccessLevel(4)
+	@Patch('loyality/experience')
+	@ApiTags('Users')
+	async patchUserLoyalityExperience(
+		@UserData() userData: User,
+		@Body('exp', ParseIntPipe) exp: number,
+		@Body('type') type?: 'inc' | 'dec',
+		@Query('username') username?: string,
+	): Promise<{ result: true }> {
+		return await this.usersService.patchUserLoyalityExperience({
+			user: userData,
+			requestedUsername: username,
+			exp,
+			type,
+		});
+	}
+
+	@SystemRoles(['developer', 'admin'])
+	@Post('advansed-search')
+	@ApiTags('Users')
+	async getUsersAdvancedSearch(
+		@Body('username') username?: string,
+		@Body('email') email?: string,
+		@Body('isActive') isActive?: boolean | 'all',
+		@Body('isBlocked') isBlocked?: boolean | 'all',
+		@Body('creationType') creationType?: UserCreationType | 'all',
+		@Body('systemRole') systemRole?: keyof typeof SystemRolesOptions | 'all',
+		@Body('limit') limit?: number,
+		@Body('from') from?: number,
+	): Promise<{ users: User[]; total: number }> {
+		return await this.usersService.getUsersAdvancedSearch({
+			username,
+			email,
+			isActive,
+			isBlocked,
+			creationType,
+			systemRole,
+			limit,
+			from,
+		});
+	}
+
+	@SystemRoles(['developer', 'admin'])
+	@Post('import')
+	@ApiTags('Users')
+	@ApiConsumes('multipart/form-data')
+	@UseInterceptors(
+		FileInterceptor('file', {
+			fileFilter(req: any, file: any, cb: any) {
+				cb(null, importFileValidation(file));
+			},
+			storage: diskStorage({
+				destination: (req, file, cb) => {
+					const uploadPath = 'public/users/import/';
+					if (!existsSync(uploadPath)) cb(new NotValidDataError(), 'public/users/import/');
+					else cb(null, uploadPath);
+				},
+				filename(req, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) {
+					const requestedUserData = (req as typeof req & { guardUserData?: User & { _id: string } })
+						.guardUserData;
+					if (!requestedUserData) callback(new UnauthorizedException(), 'error');
+
+					const filename = file.originalname.slice(0, file.originalname.lastIndexOf('.'));
+					const fileExt = file.originalname.slice(file.originalname.lastIndexOf('.') + 1);
+					const fileRandomName = Array(32)
+						.fill(null)
+						.map(() => Math.round(Math.random() * 32).toString(32))
+						.join('');
+					callback(null, `${requestedUserData.username}-${fileRandomName}.${fileExt}`);
+				},
+			}),
+			limits: { fileSize: 5 * 1024 * 1024 },
+		}),
+	)
+	async importUsersFromExcel(
+		@UploadedFile() file: Express.Multer.File,
+		@Request() req,
+		@UserData() userData,
+		@Query('skipAlreadyExistingUsers') skipAlreadyExistingUsers?: boolean,
+	): Promise<{ imported: { username: string; email: string }[]; total: number }> {
+		if (!userData) throw new UnauthorizedException();
+		try {
+			const importedInfo = await this.usersExportService.importUsersFromExcel(
+				file.path,
+				userData,
+				skipAlreadyExistingUsers,
+			);
+			return {
+				imported: importedInfo.imported.map(user => ({ username: user.username, email: user.email })),
+				total: importedInfo.total,
+			};
+		} catch (e) {
+			throw e;
+		} finally {
+			unlink(file.path, err => err);
+		}
+	}
+
+	@SystemRoles(['developer', 'admin'])
+	@Post('')
+	@ApiTags('Users')
+	async createUser(
+		@Request() req,
+		@UserData() userData,
+		@Body('username', UsernameValidationPipe) username: string,
+		@Body('password', PasswordValidationPipe) password: string,
+		@Body('email', EmailValidationPipe) email: string,
+		@Body('company') company?: string,
+		@Query('activatedUser') activatedUser?: boolean,
 	) {
-		throw new UnauthorizedException();
+		if (!userData) throw new UnauthorizedException();
+		if (activatedUser !== undefined)
+			this.usersService.createOne({
+				username,
+				password,
+				email,
+				company,
+				activatedUser,
+				creationType: `createdby-${(userData as User).username}`,
+			});
+		else
+			this.usersService.createOne({
+				username,
+				password,
+				email,
+				company,
+				creationType: `createdby-${(userData as User).username}`,
+			});
 	}
 
-	@UseGuards(AccessTokenGuard)
-	@Get('all')
+	@SystemRoles(['developer', 'admin'])
+	@Post('byadmin')
 	@ApiTags('Users')
-	async getAll(): Promise<PublicUserData[]> {
-		return await this.usersService.findAll();
+	async createUserFromAdminLayer(
+		@Request() req,
+		@UserData() userData,
+		@Body('username', UsernameValidationPipe) username: string,
+		@Body('password', PasswordValidationPipe) password: string,
+		@Body('email', EmailValidationPipe) email: string,
+		@Body('isActive') isActive: boolean,
+		@Body('isBlocked') isBlocked: boolean,
+		@Body('_permittedSystemRoles') _permittedSystemRoles: (keyof typeof SystemRolesOptions)[],
+		@Body('name') name?: string,
+		@Body('surname') surname?: string,
+		@Body('tel') tel?: string,
+		@Body('city') city?: string,
+		@Body('company') company?: string,
+		@Body('position') position?: string,
+		@Body('avatar') avatar?: string,
+		@Query('sendEmailVerification') sendEmailVerification?: boolean,
+	): Promise<{ result: true }> {
+		if (!userData) throw new UnauthorizedException();
+		if (!_permittedSystemRoles?.length)
+			throw new NotValidDataError('Не предоставлены доступные роли пользователя!');
+		await this.usersService.createUserFromAdminLayer({
+			username,
+			password,
+			email,
+			isActive,
+			isBlocked,
+			_permittedSystemRoles,
+			name,
+			surname,
+			tel,
+			city,
+			company,
+			position,
+			avatar,
+			createdBy: (userData as User).username,
+			sendEmailVerification,
+		});
+		return { result: true };
 	}
 
-	@UseGuards(AccessTokenGuard)
-	@Get('hash')
+	@SystemRoles(['developer', 'admin'])
+	@Put('byadmin/:username')
 	@ApiTags('Users')
-	async hash(@Query('payload', StringValidationPipe) payload: string) {
-		return await this.usersService.hashData(payload);
+	async updateUserFromAdminLayer(
+		@Request() req,
+		@UserData() userData,
+		@Param('username', UsernameValidationPipe) username: string,
+		@Body('email', EmailValidationPipe) email: string,
+		@Body('isActive') isActive: boolean,
+		@Body('isBlocked') isBlocked: boolean,
+		@Body('_permittedSystemRoles') _permittedSystemRoles: (keyof typeof SystemRolesOptions)[],
+		@Body('password') password?: string,
+		@Body('name') name?: string,
+		@Body('surname') surname?: string,
+		@Body('tel') tel?: string,
+		@Body('city') city?: string,
+		@Body('company') company?: string,
+		@Body('position') position?: string,
+	): Promise<{ result: true }> {
+		if (!userData) throw new UnauthorizedException();
+		await this.usersService.updateUserFromAdminLayer({
+			requestedUser: userData as User,
+			usernameToChange: username,
+			password,
+			email,
+			isActive,
+			isBlocked,
+			_permittedSystemRoles,
+			name,
+			surname,
+			tel,
+			city,
+			company,
+			position,
+		});
+		return { result: true };
 	}
 
-	@UseGuards(AccessTokenGuard)
+	@SystemRoles(['developer', 'admin'])
+	@Post('byadmin/send/activate-email/:username')
+	@ApiTags('Users')
+	async resendActiveEmailToUser(
+		@UserData() userData,
+		@Param('username', UsernameValidationPipe) username: string,
+	): Promise<{ result: true }> {
+		if (!userData) throw new UnauthorizedException();
+		return this.usersService.resendActiveEmailToUser(username, userData as User);
+	}
+
+	@SystemRoles(['developer', 'admin'])
 	@Put('block')
 	@ApiTags('Users')
-	async blockUser(
-		@Body('username', UsernameValidationPipe) username: string,
+	async blockUsers(
+		@UserData() userData,
+		@Body('usernames') usernames: string[],
 		@Body('isBlocked', ParseBoolPipe) isBlocked: boolean,
 		@Body('reason') reason?: string,
 	) {
-		if (isBlocked) return await this.usersService.blockUser({ username, reason });
-		else return await this.usersService.unBlockUser({ username });
-	}
+		if (!userData) throw new UnauthorizedException();
+		if (!usernames || !usernames.length || (isBlocked && !reason)) throw new NotValidDataError();
 
-	@Get('/validate/:token')
-	@ApiTags('Users')
-	@Redirect()
-	async validateEmailToken(@Param() params, @Response() res) {
-		try {
-			const result: false | User = await this.usersService.validateEmailToken(params.token);
-			if (result && result.username) return res.redirect('https://sdo.rnprog.ru/login?source=validation');
-			else return res.redirect('https://sdo.rnprog.ru/registration/error');
-		} catch (e) {
-			return res.redirect('https://sdo.rnprog.ru/registration/error'); //no token or no user with the token
+		for (const username of usernames) {
+			const requestedUserData = await this.usersService.findUser({ username, secret: true });
+			if (!requestedUserData) throw new NotValidDataError();
+			if (
+				SystemRolesOptions[requestedUserData.__systemRole].accessLevel >
+					SystemRolesOptions[(userData as User).__systemRole].accessLevel &&
+				(userData as User).__systemRole !== 'superuser'
+			)
+				throw new UnauthorizedException(
+					'У вас недостаточно прав для выполнения этого действия над одним из выбранных пользователей!',
+				);
 		}
+
+		for (const username of usernames) {
+			if (username === (userData as User).username) continue;
+			if (isBlocked) await this.usersAuthService.blockUser({ username, reason });
+			else await this.usersAuthService.unBlockUser({ username });
+		}
+		return { result: true };
 	}
 
-	@UseGuards(RefreshOrAccessTokenGuard, FingerprintsGuard)
+	@SystemRoles(['developer', 'admin'])
+	@Put('activate')
+	@ApiTags('Users')
+	async activateUsers(
+		@UserData() userData,
+		@Body('usernames') usernames: string[],
+		@Body('isActive', ParseBoolPipe) isActive: boolean,
+	): Promise<{ result: true }> {
+		if (!userData) throw new UnauthorizedException();
+		if (!usernames || !usernames.length) throw new NotValidDataError();
+
+		for (const username of usernames) {
+			const requestedUserData = await this.usersService.findUser({ username, secret: true });
+			if (!requestedUserData) throw new NotValidDataError();
+			if (
+				SystemRolesOptions[requestedUserData.__systemRole].accessLevel >
+					SystemRolesOptions[(userData as User).__systemRole].accessLevel &&
+				(userData as User).__systemRole !== 'superuser'
+			)
+				throw new UnauthorizedException(
+					'У вас недостаточно прав для выполнения этого действия над одним из выбранных пользователей!',
+				);
+		}
+
+		for (const username of usernames) {
+			if (username === (userData as User).username) continue;
+			if (isActive) await this.usersAuthService.activateUser({ username });
+			else await this.usersAuthService.disactivateUser({ username });
+		}
+		return { result: true };
+	}
+
+	@UseGuards(FingerprintsGuard)
 	@Put('logout')
 	@ApiTags('Users')
-	async logoutUser(@Response() res, @Request() req, @Body('username', UsernameValidationPipe) username: string) {
-		const user = await this.usersService.findUser({ username });
-		if (!user) throw new NotValidDataError();
+	async logoutUser(@Response() res, @UserData() userData, @Request() req) {
+		if (!userData) throw new NotValidDataError();
+		await this.usersAuthService.logoutUser(userData as User);
 
-		let usernameFromToken = '';
-		if (req.headers?.authorization)
-			usernameFromToken = (
-				(await this.usersService.decodeJWT(req.headers.authorization.split(' ')[1])) as AccessTokenPayload
-			)?.username;
-		else usernameFromToken = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username;
-		if (user.username !== usernameFromToken)
-			throw new UnauthorizedException('Ошибка авторизации запрошенной операции!');
-
-		await this.usersService.logoutUser(user);
 		res.cookie('refreshToken', '', expiredCookiesConfig);
-		res.status(200).send('See you again!');
+		res.status(200).send('See you later!');
 	}
 
-	@Get('recovery-token-validate')
+	@SystemRoles(['developer', 'admin'])
+	@Put('logout-force')
 	@ApiTags('Users')
-	async recoveryTokenValidate(@Query('token', StringValidationPipe) token: string): Promise<boolean> {
-		const searchResult = await this.usersService.findUserByRecoveryToken(token, true);
-		if (!!searchResult == null) throw new NotValidDataError();
-		// check for one hour delta max
-		const createdDateArr: string[] = searchResult[0].lastPasswordRequest.split(' ');
-		const createdValidDate: string = `${createdDateArr[0].split('.')[2]}-${createdDateArr[0].split('.')[1]}-${
-			createdDateArr[0].split('.')[0]
-		}`;
+	async forcedUsersLogout(@UserData() userData, @Body('usernames') usernames: string[]): Promise<{ result: true }> {
+		if (!userData) throw new UnauthorizedException();
+		if (!usernames || !usernames.length) throw new NotValidDataError();
 
-		const requestedUserValidFullDate = new Date(createdValidDate).setHours(
-			parseInt(createdDateArr[1].split(':')[0]),
-			parseInt(createdDateArr[1].split(':')[1].slice(0, 2)),
-			parseInt(createdDateArr[1].split('.')[1]),
-		);
-		if (Math.abs(requestedUserValidFullDate - new Date().setHours(new Date().getHours())) > 1000 * 60 * 60 * 1) {
-			this.usersService.updateRecoveryTokenValue({ username: searchResult[0].username, newToken: '' });
-			throw new NotValidDataError('Заявка на смену пароля просрочена (дается 1 час)!');
+		const requestedUsersData: User[] = [];
+		for (const username of usernames) {
+			const requestedUserData = await this.usersService.findUser({ username, secret: true });
+			if (!requestedUserData) throw new NotValidDataError();
+			if (
+				SystemRolesOptions[requestedUserData.__systemRole].accessLevel >
+					SystemRolesOptions[(userData as User).__systemRole].accessLevel &&
+				(userData as User).__systemRole !== 'superuser'
+			)
+				throw new UnauthorizedException(
+					'У вас недостаточно прав для выполнения этого действия над одним из выбранных пользователей!',
+				);
+			requestedUsersData.push(requestedUserData);
 		}
 
-		return !(!searchResult || searchResult.length !== 1);
+		for (const requestedUserData of requestedUsersData) await this.usersAuthService.logoutUser(requestedUserData);
+		return { result: true };
 	}
 
-	@Post('recovery')
-	@ApiTags('Users')
-	async passRecovery(
-		@Body('username', UsernameValidationPipe) username: string,
-		@Body('email', EmailValidationPipe) email: string,
-	): Promise<boolean> {
-		return !!(await this.usersService.recoveryActions(username, email, true));
-	}
-
-	@Redirect()
-	@Get('recovery/:token')
-	@ApiTags('Users')
-	async recoveryTokenValidation(@Response() res, @Param() params, @Query('request') request?: string) {
-		const searchResult = await this.usersService.findUserByRecoveryToken(params.token, true);
-		if (!searchResult || searchResult.length !== 1) return res.redirect('https://sdo.rnprog.ru/recovery/error');
-		else
-			return res.redirect(
-				`https://sdo.rnprog.ru/recovery/password-rewrite?token=${params.token}${
-					request ? `&request=${request}` : ''
-				}`,
-			);
-	}
-
-	@Put('recovery/password')
-	@ApiTags('Users')
-	async passUpdateAfterRecovery(
-		@Body('token', StringValidationPipe) token: string,
-		@Body('newPassword', PasswordValidationPipe) newPassword: string,
-	): Promise<boolean> {
-		return await this.usersService.recoveryUpdate(token, newPassword);
-	}
-
+	@UseGuards(FingerprintsGuard)
 	@Put('leave-meta')
 	@ApiTags('Users')
-	@UseGuards(RefreshOrAccessTokenGuard, FingerprintsGuard)
-	async onLeaveDataUpdate(@Request() req, @Body('lastPage', StringValidationPipe) lastPage: string) {
-		let username = '';
-		if (req.headers?.authorization)
-			username = (
-				(await this.usersService.decodeJWT(req.headers.authorization.split(' ')[1])) as AccessTokenPayload
-			)?.username;
-		else username = (await this.usersService.findByRefreshToken(req.cookies.refreshToken)).username;
+	async onLeaveDataUpdate(
+		@Request() req,
+		@UserData() userData,
+		@Body('lastPage', StringValidationPipe) lastPage: string,
+	) {
+		if (!userData) throw new UnauthorizedException();
+		return await this.usersService.onLeaveDataUpdate({ username: (userData as User).username, lastPage });
+	}
 
-		if (username == null) throw new NotValidDataError();
-		return await this.usersService.onLeaveDataUpdate({ username, lastPage });
+	@UseGuards(FingerprintsGuard)
+	@Get('activity')
+	@ApiTags('Users')
+	async getMyActivity(@Request() req, @UserData() userData) {
+		if (!userData) throw new UnauthorizedException();
+		return this.usersService.getMyActivity(userData as User & { _id: string });
+	}
+
+	@UseGuards(FingerprintsGuard)
+	@Put('activity')
+	@ApiTags('Users')
+	async updateMyActivity(@Request() req, @UserData() userData) {
+		if (!userData) throw new UnauthorizedException();
+		return this.usersService.updateMyActivity(userData as User & { _id: string });
 	}
 
 	@Get('personal')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async getPersonalUserData(@Request() req) {
-		if (!req.headers.authorization) throw new UnauthorizedException();
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.getUserPersonalData({ username: decodedTokenData.username });
+	async getPersonalUserData(
+		@Request() req,
+		@UserData() userData,
+		@Query('username') username?: string,
+	): Promise<UserPersonalT> {
+		if (!userData) throw new UnauthorizedException();
+		if (!!username && SystemRolesOptions[(userData as User).__systemRole].accessLevel < 4)
+			throw new UnauthorizedException(
+				'У вас недостаточно прав для запроса пользовательской информации другого аккаунта!',
+			);
+		return await this.usersService.getUserPersonalData({ username: username || (userData as User).username });
 	}
 
 	@Put('personal')
 	@ApiTags('Users')
-	@UseGuards(RefreshOrAccessTokenGuard)
 	async updatePersonalUserdata(
 		@Request() req,
+		@UserData() userData,
 		@Body('name', StringValidationPipe) name: string,
 		@Body('surname', StringValidationPipe) surname: string,
 		@Body('city', StringOrUndefinedValidationPipe) city?: string,
@@ -263,21 +483,14 @@ export class UsersController {
 		@Body('position', StringOrUndefinedValidationPipe) position?: string,
 		@Body('tel', StringOrUndefinedValidationPipe) tel?: string,
 		@Body('avatar', StringOrUndefinedValidationPipe) avatar?: string,
+		@Body('username') username?: string,
 	) {
-		let requestedUsername = '';
-		if (req.headers.authorization?.split(' ')[1])
-			requestedUsername = (
-				(await this.usersService.decodeJWT(req.headers.authorization?.split(' ')[1])) as AccessTokenPayload
-			).username;
-		else if (!!req.cookies.refreshToken) {
-			requestedUsername = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username || '';
-		}
-		if (!requestedUsername) throw new UnauthorizedException('Не удалось подтвердить данные пользователя!');
-
+		if (!userData) throw new UnauthorizedException();
 		const parsedObject: UserPersonalT = {
 			name,
 			surname,
 		};
+
 		if (city) parsedObject.city = city;
 		if (company) parsedObject.company = company;
 		if (position) parsedObject.position = position;
@@ -285,101 +498,89 @@ export class UsersController {
 		if (avatar) parsedObject.avatar = avatar;
 
 		return await this.usersService.updatePersonalUserData({
-			ident: { username: requestedUsername },
+			ident: { username: username || (userData as User).username },
+			requestedUserUsername: !!username ? (userData as User).username : undefined,
 			personal: parsedObject,
 		});
 	}
 
 	@Put('personal/email')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
 	async emailChange(
 		@Request() req,
+		@UserData() userData,
 		@Body('email', StringValidationPipe) email: string,
 		@Body('password', StringValidationPipe) password: string,
 	) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		const userValidateFlag = await this.usersService.validateUser({
-			username: decodedTokenData.username,
+		if (!userData) throw new UnauthorizedException();
+		const requestedUser = userData as User;
+
+		const userValidateFlag = await this.usersAuthService.validateUser({
+			username: requestedUser.username,
 			password,
 		});
 		if (!userValidateFlag) throw new UnauthorizedException();
-		this.usersService.updateLastEmailUpdateRequest({ username: decodedTokenData.username });
+		this.usersService.updateLastEmailUpdateRequest({ username: requestedUser.username });
 
 		// email comparisson with other users
-		if (decodedTokenData.email === email)
+		if (requestedUser.email === email)
 			throw new NotValidDataError('Данная почта уже привязана к учетной записи! Укажите другую.');
 
 		if ((await this.usersService.findUserByEmail(email, true))?.username != null)
 			throw new NotValidDataError('Данная почта уже используется в системе! Укажите другую.');
 
 		// generate and set the email token + writing requested email address and send verification email
-		const newEmailToken = await this.usersService.createEmailToken();
-		this.usersService.updateRequestedEmailUser({ username: decodedTokenData.username, requestedEmail: email });
-		this.usersService.updateRequestedEmailToken({ username: decodedTokenData.username, token: newEmailToken });
-		return await this.usersService.sendEmailChangeRequest({
-			oldEmail: decodedTokenData.email,
+		const newEmailToken = await this.usersAuthService.createEmailToken();
+		this.usersService.updateRequestedEmailUser({ username: requestedUser.username, requestedEmail: email });
+		this.usersService.updateRequestedEmailToken({ username: requestedUser.username, token: newEmailToken });
+		return await this.usersAuthService.sendEmailChangeRequest({
+			oldEmail: requestedUser.email,
 			newEmail: email,
 			verificationLink: newEmailToken,
 		});
 	}
 
-	@Get('personal/email/validation/:token')
-	@ApiTags('Users')
-	@Redirect()
-	async newEmailTokenValidation(@Param() params, @Response() res) {
-		try {
-			const result: false | User = await this.usersService.validateEmailToken(params.token, false, 1);
-			if (result && result.username) {
-				res.cookie('refreshToken', '', expiredCookiesConfig);
-				return res.redirect('https://sdo.rnprog.ru?source=replacement');
-			} else return res.redirect('https://sdo.rnprog.ru/replacement/error');
-		} catch (e) {
-			return res.redirect('https://sdo.rnprog.ru/replacement/error'); //no token or no user with the token
-		}
-	}
-
 	@Put('personal/password')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async passwordChange(@Request() req, @Body('password', StringValidationPipe) password: string) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		const userValidateFlag = await this.usersService.validateUser({
-			username: decodedTokenData.username,
+	async passwordChange(
+		@Request() req,
+		@UserData() userData,
+		@Body('password', StringValidationPipe) password: string,
+	) {
+		if (!userData) throw new UnauthorizedException();
+		const requestedUser = userData as User;
+
+		const userValidateFlag = await this.usersAuthService.validateUser({
+			username: requestedUser.username,
 			password,
 		});
 		if (!userValidateFlag) throw new UnauthorizedException();
-		this.usersService.updatePasswordRequestDate({ username: decodedTokenData.username });
+		this.usersService.updatePasswordRequestDate({ username: requestedUser.username });
 
-		const newRecoveryToken = await this.usersService.createRecoveryToken();
-		this.usersService.updateRecoveryTokenValue({ username: decodedTokenData.username, newToken: newRecoveryToken });
-		return await this.usersService.sendPasswordChangeRequest({
-			email: decodedTokenData.email,
-			recoveryLink: newRecoveryToken + '?request=change',
+		const newRecoveryToken = await this.usersAuthService.createRecoveryToken();
+		this.usersService.updateRecoveryTokenValue({ username: requestedUser.username, newToken: newRecoveryToken });
+		return await this.usersAuthService.sendPasswordChangeRequest({
+			email: requestedUser.email,
+			recoveryLink: newRecoveryToken,
 		});
 	}
 
 	@Get('meta')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async getUserMetaInfo(@Request() req) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.getUserMetaInfo({ username: decodedTokenData.username });
+	async getUserMetaInfo(@Request() req, @UserData() userData): Promise<UserMetaInformationI> {
+		if (!userData) throw new UnauthorizedException();
+		return await this.usersService.getUserMetaInfo({ username: (userData as User).username });
 	}
 
 	@Put('meta')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async updateUserMetaInfo(@Request() req, @Body('metaInfo') metaInfo: Partial<UserMetaInformationI>) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
+	async updateUserMetaInfo(
+		@Request() req,
+		@UserData() userData,
+		@Body('metaInfo') metaInfo: Partial<UserMetaInformationI>,
+	) {
+		if (!userData) throw new UnauthorizedException();
+		const requestedUser = userData as User;
 
 		const validMetaObject = {
 			theme: metaInfo.theme,
@@ -398,8 +599,147 @@ export class UsersController {
 			delete validMetaObject.prefferedCommunication;
 
 		return await this.usersService.updateMetaInformation({
-			ident: { username: decodedTokenData.username },
+			ident: { username: requestedUser.username },
 			metaInfo: validMetaObject,
 		});
+	}
+
+	@ApiTags('Users - Export')
+	@SystemRoles(['admin', 'developer'])
+	@Post('sheets/pages')
+	@Header('Content-Disposition', 'attachment; filename="UsersPagesHistoryExport.xlsx"')
+	async downloadUsersPagesHistoryExcel(
+		@Request() req,
+		@UserData() userData,
+		@Body('usernames') usernames: string[],
+	): Promise<StreamableFile> {
+		if (!userData) throw new UnauthorizedException();
+		if (!usernames || !usernames.length) throw new NotValidDataError();
+		return this.usersExportService.downloadHistoryExcel(usernames, 'pages');
+	}
+
+	@ApiTags('Users - Export')
+	@SystemRoles(['admin', 'developer'])
+	@Post('sheets/requests')
+	@Header('Content-Disposition', 'attachment; filename="UsersRequestsHistoryExport.xlsx"')
+	async downloadUsersRequestsHistoryExcel(
+		@Request() req,
+		@UserData() userData,
+		@Body('usernames') usernames: string[],
+	): Promise<StreamableFile> {
+		if (!userData) throw new UnauthorizedException();
+		if (!usernames || !usernames.length) throw new NotValidDataError();
+		return this.usersExportService.downloadHistoryExcel(usernames, 'requests');
+	}
+
+	@ApiTags('Users - Export')
+	@SystemRoles('developer')
+	@Post('sheets')
+	@Header('Content-Disposition', 'attachment; filename="UsersExport.xlsx"')
+	async downloadUsersExcel(
+		@Request() req,
+		@UserData() userData,
+		@Body('createdAt') createdAt?: boolean,
+		@Body('lastLoginIn') lastLoginIn?: boolean,
+		@Body('lastModified') lastModified?: boolean,
+		@Body('isActive') isActive?: boolean,
+		@Body('isBlocked') isBlocked?: boolean,
+		@Body('blockReason') blockReason?: boolean,
+	): Promise<StreamableFile> {
+		if (!userData) throw new UnauthorizedException();
+		return this.usersExportService.downloadUsersExcel(userData as User, {
+			createdAt,
+			lastLoginIn,
+			lastModified,
+			isActive,
+			isBlocked,
+			blockReason,
+		});
+	}
+
+	@ApiTags('Users - Export')
+	@SystemRoles(['admin', 'developer'])
+	@Post('sheets/accounts')
+	@Header('Content-Disposition', 'attachment; filename="ExactUsersExport.xlsx"')
+	async downloadExactUsersExcel(
+		@Request() req,
+		@UserData() userData,
+		@Body('usernames') usernames: string[],
+		@Body('createdAt') createdAt?: boolean,
+		@Body('lastLoginIn') lastLoginIn?: boolean,
+		@Body('lastModified') lastModified?: boolean,
+		@Body('isActive') isActive?: boolean,
+		@Body('isBlocked') isBlocked?: boolean,
+		@Body('blockReason') blockReason?: boolean,
+	): Promise<StreamableFile> {
+		if (!userData) throw new UnauthorizedException();
+		if (!usernames?.length) throw new NotValidDataError();
+		if (usernames.length > 500)
+			throw new NotValidDataError('Запрещено экспортировать данные более 500 пользователей за один запрос!');
+		return this.usersExportService.downloadExactUsersExcel(usernames, userData as User, {
+			createdAt,
+			lastLoginIn,
+			lastModified,
+			isActive,
+			isBlocked,
+			blockReason,
+		});
+	}
+
+	@ApiTags('Users - Export')
+	@SystemRoles(['admin', 'developer'])
+	@Post('sheets/accounts/global-group/:ggid')
+	@Header('Content-Disposition', 'attachment; filename="UsersFromGlobalGroupExport.xlsx"')
+	async downloadUsersFromGlobalGroupExcel(
+		@Request() req,
+		@UserData() userData,
+		@Param('ggid', StringValidationPipe) ggid: string,
+		@Body('createdAt') createdAt?: boolean,
+		@Body('lastLoginIn') lastLoginIn?: boolean,
+		@Body('lastModified') lastModified?: boolean,
+		@Body('isActive') isActive?: boolean,
+		@Body('isBlocked') isBlocked?: boolean,
+		@Body('blockReason') blockReason?: boolean,
+	): Promise<StreamableFile> {
+		if (!userData) throw new UnauthorizedException();
+		return this.usersExportService.downloadUsersFromGlobalGroupExcel(ggid, userData as User, {
+			createdAt,
+			lastLoginIn,
+			lastModified,
+			isActive,
+			isBlocked,
+			blockReason,
+		});
+	}
+
+	@SystemRoles(['developer', 'admin'])
+	@Post('delete')
+	@ApiTags('Users')
+	async deleteUsers(
+		@UserData() userData,
+		@Query('_id') _id: mongoose.Types.ObjectId,
+		@Body('usernames') usernames: string[],
+	) {
+		if (!userData) throw new UnauthorizedException();
+		if (!usernames || !usernames.length) throw new NotValidDataError();
+
+		for (const username of usernames) {
+			const requestedUserData = await this.usersService.findUser({ username, secret: true });
+			if (!requestedUserData) throw new NotValidDataError();
+			if (
+				SystemRolesOptions[requestedUserData.__systemRole].accessLevel >
+					SystemRolesOptions[(userData as User).__systemRole].accessLevel &&
+				(userData as User).__systemRole !== 'superuser'
+			)
+				throw new UnauthorizedException(
+					'У вас недостаточно прав для выполнения этого действия над одним из выбранных пользователей!',
+				);
+		}
+
+		for (const username of usernames) {
+			if (username === (userData as User).username) continue;
+			await this.usersService.deleteUser(username, userData as User);
+		}
+		return { result: true };
 	}
 }

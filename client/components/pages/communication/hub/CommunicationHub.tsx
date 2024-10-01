@@ -7,9 +7,8 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import { rtkApi } from '../../../../redux/api';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
-import { EmptyDialogsNotification, MessangerHelpTabContent } from '../../../messenger/MessengerTabContent';
-import { ChatContainer } from '../../../messenger/chatContainer/ChatContainer';
-import ModernLoader from '../../../utils/loaders/ModernLoader';
+import { MessangerHelpTabContent } from '../../../messenger/MessengerTabContentComponents';
+import { CommunicationHubGroupOrPrivateBlock } from './CommunicationHubComponents';
 import ContactsModal from './personal/ContactsModal';
 import FriendsModal from './personal/FriendsModal';
 import CommonTabCommunication from './system/CommonTab';
@@ -141,15 +140,7 @@ const CommunicationHub = () => {
 						padding='.5rem'
 						sx={{ overflowY: 'auto', maxHeight: { md: 'unset', lg: 'calc(100vh - 290px)' } }}
 					>
-						{fulfilledTimeStamp && chats ? (
-							chats.group.length ? (
-								chats.group.map((rid, index) => <ChatContainerElement rid={rid} key={index} />)
-							) : (
-								<EmptyDialogsNotification text='Пока что у вас нет групповых чатов!' size='medium' />
-							)
-						) : (
-							<ModernLoader tripleLoadersMode loading centered />
-						)}
+						<CommunicationHubGroupOrPrivateBlock type='group' />
 					</Stack>
 				</Box>
 			</Grow>
@@ -189,15 +180,7 @@ const CommunicationHub = () => {
 							maxHeight: { md: 'unset', lg: 'calc(100vh - 290px)' },
 						}}
 					>
-						{fulfilledTimeStamp && chats ? (
-							chats.private.length ? (
-								chats.private.map((rid, index) => <ChatContainerElement rid={rid} key={index} />)
-							) : (
-								<EmptyDialogsNotification text='Пока что у вас нет личных чатов!' size='medium' />
-							)
-						) : (
-							<ModernLoader tripleLoadersMode loading centered />
-						)}
+						<CommunicationHubGroupOrPrivateBlock type='private' />
 					</Stack>
 				</Box>
 			</Grow>
@@ -210,37 +193,5 @@ const CommunicationHub = () => {
 		</Box>
 	);
 };
-
-function ChatContainerElement(props: { rid: string }) {
-	const { data: chatData } = rtkApi.useChatDataQuery(props.rid);
-	return chatData ? <ChatContainer {...chatData} mode='line' /> : <></>;
-}
-
-interface TabPanelProps {
-	children?: React.ReactNode;
-	index: number;
-	value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-	const { children, value, index, ...other } = props;
-
-	return (
-		<Grow in={index === value} timeout={500}>
-			<Stack
-				gap={1}
-				height='100%'
-				direction='column'
-				role='tabpanel'
-				hidden={value !== index}
-				id={`vertical-tabpanel-${index}`}
-				aria-labelledby={`vertical-tab-${index}`}
-				{...other}
-			>
-				{value === index && <>{children}</>}
-			</Stack>
-		</Grow>
-	);
-}
 
 export default CommunicationHub;

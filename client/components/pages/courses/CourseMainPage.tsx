@@ -1,16 +1,26 @@
 import StartOutlinedIcon from '@mui/icons-material/StartOutlined';
 import { Box, Grid, Grow, Paper, Stack } from '@mui/material';
+import { useRouter } from 'next/router';
 import React from 'react';
 import { useWindowDimensions } from '../../../hooks/useWindowDimensions';
+import { checkSectionAvailability } from '../../../layout/CoursesLayout';
+import { rtkApi } from '../../../redux/api';
+import ClassicLoadersBlock from '../../utils/loaders/ClassicLoadersBlock';
 import { CourseI } from './coursesTypes';
 import MainPageCourseHeader from './mainpage-elements/MainPageCourseHeader';
 import MainPageCourseSectionContent from './mainpage-elements/MainPageCourseSectionContent';
 import MainPageSectionCard from './mainpage-elements/MainPageSectionCard';
 
 const CourseMainPage = (props: { courseData: CourseI }) => {
+	const router = useRouter();
 	const windowDimensions = useWindowDimensions();
+
 	const [activeSection, setActiveSection] = React.useState<number>(
 		!!windowDimensions?.clientWidth && windowDimensions.clientWidth < 1200 ? 0 : 1,
+	);
+
+	const { data: currentProgressData, isLoading } = rtkApi.useCurrentCourseProgressQuery(
+		(router.query.cid as string) || '',
 	);
 
 	function handleSectionsScroll(down: boolean = true) {
@@ -99,6 +109,7 @@ const CourseMainPage = (props: { courseData: CourseI }) => {
 
 						<Paper
 							sx={{
+								width: '100%',
 								borderRadius: '15px',
 								backgroundColor: theme => (theme.palette.mode === 'light' ? '#edeff1' : ''),
 								padding: '.5rem !important',
@@ -106,35 +117,68 @@ const CourseMainPage = (props: { courseData: CourseI }) => {
 								direction: 'ltr',
 							}}
 						>
-							<Stack position='relative' direction='column' gap='10px' width='100%' zIndex={1}>
-								{props.courseData.sections
-									.toSorted((a, b) => a.orderNumber - b.orderNumber)
-									.map(section => (
-										<MainPageSectionCard
-											key={section.csid}
-											orderNumber={section.orderNumber}
-											description={section.title}
-											iconUrl={section.background?.backgroundIcon}
-											patternUrl={section.background?.backgroundPattern}
-											onClick={setActiveSection}
-										/>
-									))}
+							<Stack
+								position='relative'
+								direction='column'
+								width='100%'
+								gap='10px'
+								zIndex={1}
+								sx={{
+									transition: 'all .25s ease-out',
+									minHeight: isLoading ? '500px' : '',
+									alignItems: isLoading ? 'center' : '',
+									justyfyContent: isLoading ? 'center' : '',
+								}}
+							>
+								{isLoading ? (
+									<ClassicLoadersBlock />
+								) : (
+									<>
+										{props.courseData.sections
+											.toSorted((a, b) => a.orderNumber - b.orderNumber)
+											.map(section => {
+												const accessible = checkSectionAvailability(
+													section.csid,
+													currentProgressData?.restrictments,
+												);
+												return (
+													<MainPageSectionCard
+														key={section.csid}
+														disabled={!accessible}
+														orderNumber={section.orderNumber}
+														description={section.title}
+														iconUrl={section.background?.backgroundIcon}
+														patternUrl={section.background?.backgroundPattern}
+														from={
+															currentProgressData?.restrictments?.sections[section.csid]
+																?.availableFrom
+														}
+														to={
+															currentProgressData?.restrictments?.sections[section.csid]
+																?.availableTo
+														}
+														onClick={setActiveSection}
+													/>
+												);
+											})}
 
-								<Box
-									sx={{
-										position: 'absolute',
-										width: '100%',
-										transform: `translateY(${
-											((activeSection || 1) - 1) * 140 + ((activeSection || 1) - 1) * 26
-										}px)`,
-										opacity: activeSection === 0 ? '0' : '1',
-										height: 'calc(140px + 1rem)',
-										backgroundColor: 'rgba(54, 142, 232, .25)',
-										borderRadius: '15px',
-										zIndex: '0',
-										transition: 'all .25s ease-out',
-									}}
-								/>
+										<Box
+											sx={{
+												position: 'absolute',
+												width: '100%',
+												transform: `translateY(${
+													((activeSection || 1) - 1) * 140 + ((activeSection || 1) - 1) * 26
+												}px)`,
+												opacity: activeSection === 0 ? '0' : '1',
+												height: 'calc(140px + 1rem)',
+												backgroundColor: 'rgba(54, 142, 232, .25)',
+												borderRadius: '15px',
+												zIndex: '0',
+												transition: 'all .25s ease-out',
+											}}
+										/>
+									</>
+								)}
 							</Stack>
 						</Paper>
 					</Grid>
@@ -144,6 +188,7 @@ const CourseMainPage = (props: { courseData: CourseI }) => {
 					{props.courseData.sections.map(section => (
 						<MainPageCourseSectionContent
 							key={section.csid}
+							csid={section.csid}
 							active={activeSection === section.orderNumber}
 							setActive={setActiveSection}
 							sectionUrl={`${section.csid}`}
@@ -153,7 +198,16 @@ const CourseMainPage = (props: { courseData: CourseI }) => {
 							patternUrl={section.background?.backgroundPattern}
 							duration={section.duration}
 							contentTypes={section.contentTypes}
-							progress={{ current: 7, total: 10 }}
+							progress={{
+								current: !!currentProgressData
+									? currentProgressData.data.progress[section.csid].filter(
+											item => item.visited === true,
+									  ).length
+									: 0,
+								total: !!currentProgressData
+									? currentProgressData.data.progress[section.csid].length
+									: 0,
+							}}
 						/>
 					))}
 				</Grid>
@@ -163,90 +217,3 @@ const CourseMainPage = (props: { courseData: CourseI }) => {
 };
 
 export default CourseMainPage;
-
-/* <MainPageSectionCard
-	orderNumber={1}
-	description='Общие сведения о средствах индивидуальной защиты'
-	iconUrl='/images/courses/mainPage/shield.svg'
-	onClick={setActiveSection}
-/>
-<MainPageSectionCard
-	orderNumber={2}
-	description='Входной контроль при поставках средств индивидуальной защиты'
-	iconUrl='/images/courses/mainPage/helmet.svg'
-	onClick={setActiveSection}
-/>
-<MainPageSectionCard
-	orderNumber={3}
-	description='Требования к составу сопроводительной документации, упаковке и маркировке СИЗ'
-	iconUrl='/images/courses/mainPage/gloves.svg'
-	onClick={setActiveSection}
-/>
-<MainPageSectionCard
-	orderNumber={4}
-	description='Списание и утилизация СИЗ'
-	iconUrl='/images/courses/mainPage/trash-bin.svg'
-	onClick={setActiveSection}
-/>
-<MainPageSectionCard
-	orderNumber={5}
-	description='Итоговое тестирование'
-	onClick={setActiveSection}
-/> */
-
-/* <MainPageCourseSectionContent
-	active={activeSection === 1}
-	setActive={setActiveSection}
-	sectionUrl='/'
-	sectionOrder={1}
-	title='Общие сведения о средствах индивидуальной защиты'
-	iconUrl='/images/courses/mainPage/shield.svg'
-	duration={6}
-	progress={{ current: 7, total: 10 }}
-	contentTypes={{ lectures: true, videoLectures: true, interactivity: true, tests: true }}
-/>
-<MainPageCourseSectionContent
-	active={activeSection === 2}
-	setActive={setActiveSection}
-	sectionUrl='/'
-	sectionOrder={2}
-	title='Входной контроль при поставках средств индивидуальной защиты'
-	iconUrl='/images/courses/mainPage/helmet.svg'
-	duration={3}
-	progress={{ current: 2, total: 7 }}
-	contentTypes={{ lectures: true, videoLectures: true, interactivity: true }}
-/>
-<MainPageCourseSectionContent
-	active={activeSection === 3}
-	setActive={setActiveSection}
-	sectionUrl='/'
-	sectionOrder={3}
-	title='Требования к составу сопроводительной документации, упаковке и маркировке СИЗ'
-	iconUrl='/images/courses/mainPage/gloves.svg'
-	duration={3}
-	progress={{ current: 0, total: 12 }}
-	contentTypes={{ lectures: true, videoLectures: true, interactivity: true, tests: true }}
-/>
-<MainPageCourseSectionContent
-	active={activeSection === 4}
-	setActive={setActiveSection}
-	sectionUrl='/'
-	sectionUrlDisabled
-	sectionOrder={4}
-	title='Списание и утилизация СИЗ'
-	iconUrl='/images/courses/mainPage/trash-bin.svg'
-	duration={3}
-	progress={{ current: 0, total: 9 }}
-	contentTypes={{ lectures: true, tests: true }}
-/>
-<MainPageCourseSectionContent
-	active={activeSection === 5}
-	setActive={setActiveSection}
-	sectionUrl='/'
-	sectionUrlDisabled
-	sectionOrder={5}
-	title='Итоговое тестирование'
-	duration={1}
-	progress={{ current: 0, total: 1 }}
-	contentTypes={{ tests: true }}
-/> */

@@ -17,9 +17,11 @@ const flexBase: SxProps = {
 	justifyContent: 'flex-start',
 	alignItems: 'center',
 	gap: '.75rem',
+	flexWrap: { xs: 'wrap', lg: 'nowrap' },
 };
 
 interface OnyxSelectProps {
+	id?: string;
 	listItems: string[];
 	value: string | number;
 	setValue: (e: SelectChangeEvent<string | number>) => void;
@@ -37,6 +39,7 @@ interface OnyxSelectProps {
 		containerSx?: SxProps;
 	};
 	fullwidth?: boolean;
+	error?: boolean;
 }
 
 /**
@@ -79,6 +82,10 @@ const OnyxSelect = (props: OnyxSelectProps): JSX.Element => {
 		<Box sx={{ ...flexBase, ...props.helperText?.containerSx }}>
 			{props.reversed == null && <MainBlock />}
 			<Button
+				size='large'
+				variant='text'
+				color={!!props.error ? 'error' : undefined}
+				onClick={handleOpen}
 				sx={{
 					display: 'inline',
 					mt: 2,
@@ -89,9 +96,6 @@ const OnyxSelect = (props: OnyxSelectProps): JSX.Element => {
 					marginLeft: props.reversed ? '0' : '.5rem',
 					marginRight: props.reversed ? '.5rem' : '0',
 				}}
-				size='large'
-				variant='text'
-				onClick={handleOpen}
 			>
 				{props.helperText.text}
 			</Button>
@@ -100,7 +104,11 @@ const OnyxSelect = (props: OnyxSelectProps): JSX.Element => {
 	) : props.helperText != null && (props.helperText.type === undefined || props.helperText.type === 'text') ? (
 		<Box sx={{ ...flexBase, ...props.helperText?.containerSx }}>
 			{props.reversed == null && <MainBlock />}
-			<OnyxTypography onClick={handleOpen} sx={{ cursor: 'pointer' }}>
+			<OnyxTypography
+				onClick={handleOpen}
+				tpColor={!!props.error ? 'error' : undefined}
+				sx={{ cursor: 'pointer' }}
+			>
 				{props.helperText.text}
 			</OnyxTypography>
 			{props.reversed != null && <MainBlock />}
@@ -117,7 +125,21 @@ const OnyxSelect = (props: OnyxSelectProps): JSX.Element => {
 						label={props.label}
 						labelPlacement={props.labelPlacement || 'start'}
 						control={<SelectElement />}
-						sx={{ gap: '.5rem', '> label': { gap: '.75rem' } }}
+						// onClick={() => setOpen(prev => !prev)}
+						sx={{
+							gap:
+								props.labelPlacement === 'top' || props.labelPlacement === 'bottom'
+									? '.15rem'
+									: '.5rem',
+							'> span': {
+								cursor: 'text',
+								alignSelf:
+									props.labelPlacement === 'top' || props.labelPlacement === 'bottom'
+										? 'flex-start'
+										: 'center',
+								whiteSpace: props.fullwidth ? 'nowrap' : '',
+							},
+						}}
 					/>
 				) : (
 					<SelectElement />
@@ -129,24 +151,28 @@ const OnyxSelect = (props: OnyxSelectProps): JSX.Element => {
 	function SelectElement(): JSX.Element {
 		return (
 			<Select
+				fullWidth={props.fullwidth}
+				id={props.id}
+				error={props.error}
 				disabled={props.disabled}
 				disableUnderline
 				variant='outlined'
 				size={props.size || 'small'}
 				open={open}
-				value={props.value || val}
+				value={props.value !== undefined ? props.value : val}
 				onOpen={handleOpen}
 				onClose={handleClose}
 				onChange={handleChange}
 				sx={{ minWidth: '175px', fieldset: { borderColor: '#7FB7DC' } }}
 			>
 				{!!!props.disableEmptyOption && (
-					<MenuItem value={-1}>
+					<MenuItem disabled={props.disabled} value={-1}>
 						<em>Не указано</em>
 					</MenuItem>
 				)}
 				{props.listItems.map((el, index) => (
 					<MenuItem
+						disabled={props.disabled}
 						value={props.itemsIndexes == null ? index : props.itemsIndexes[index]}
 						key={el + '' + (props.itemsIndexes == null ? index : props.itemsIndexes[index])}
 					>

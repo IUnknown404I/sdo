@@ -12,12 +12,19 @@ export class Scorm {
 	type: 'ispring' | 'storyline';
 	@Prop({ required: true })
 	title: string;
-	@Prop({ required: true, unique: true })
+	@Prop({ required: true })
 	scname: string;
 	@Prop({ required: true })
 	category?: string;
-	@Prop({ required: false })
+	@Prop({ required: true })
 	size: number;
+	@Prop({ required: true, type: Object })
+	meta: {
+		uploadedBy: string;
+		uploadTimestamp: number;
+		changedBy: string;
+		changeTimestamp: number;
+	};
 }
 
 export const scormsSchema = SchemaFactory.createForClass(Scorm);

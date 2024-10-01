@@ -1,26 +1,16 @@
-import AirlineStopsIcon from '@mui/icons-material/AirlineStops';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
-import ControlPointDuplicateIcon from '@mui/icons-material/ControlPointDuplicate';
-import Crop75Icon from '@mui/icons-material/Crop75';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
-import ErrorIcon from '@mui/icons-material/Error';
-import HeightIcon from '@mui/icons-material/Height';
-import SecurityIcon from '@mui/icons-material/Security';
-import SwapVertIcon from '@mui/icons-material/SwapVert';
-import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
-import WidthFullIcon from '@mui/icons-material/WidthFull';
-import WidthNormalIcon from '@mui/icons-material/WidthNormal';
-import WidthWideIcon from '@mui/icons-material/WidthWide';
-import { Button, Stack, SxProps } from '@mui/material';
+import { Button, Stack, SxProps, useMediaQuery, useTheme } from '@mui/material';
+import { useRouter } from 'next/router';
 import React, { ComponentProps, ReactNode } from 'react';
+import { rtkApi } from '../../../../../redux/api';
 import { useTypedSelector } from '../../../../../redux/hooks';
 import { CoursesReduxI } from '../../../../../redux/slices/courses';
+import { selectUser, SystemRolesOptions } from '../../../../../redux/slices/user';
 import OnyxLink from '../../../../basics/OnyxLink';
 import { OnyxTypography } from '../../../../basics/OnyxTypography';
 import ContentLinkEditModal from '../../config-elements/ContentLinkEditModal';
-import { CourseSectionItemLinkI } from '../../courseItemsTypes';
+import { ContentItemLinksType, LINKS_MAP, SectionItemBaseProps } from '../../courseItemsTypes';
+import SectionContentSkeleton from '../SectionContentSkeleton';
 import {
 	EditFieldset,
 	EditFieldsetLegend,
@@ -28,58 +18,66 @@ import {
 	SectionEditConfigSubDial,
 } from '../SectionEditElements';
 import { CourseSectionItemFooter } from '../SectionItems';
+import { EditMovementSubDial, EditWidthSubDial, ManageOptionsSubDial } from '../edit-sub-dials/edit-sub-dials';
 
-const LINKS_MAP = {
-	link: {
-		href: '/images/courses/sections/link.png',
-		width: '35px',
-		hrefTitle: 'Перейти',
-		fileType: 'Веб-ссылка',
-		target: '_blank',
-	},
-	video: {
-		href: '/images/courses/sections/video.png',
-		width: '40px',
-		hrefTitle: 'Перейти к видео',
-		fileType: 'Видеофайл',
-		target: '_blank',
-	},
-	feedback: {
-		href: '/images/courses/sections/feedback.png',
-		width: '50px',
-		hrefTitle: 'Заполнить анкету',
-		fileType: 'Опросный лист',
-		target: '_blank',
-	},
-};
-
-export interface SectionItemBaseProps {
-	text: string;
-	basis?: number;
-	viewed?: boolean;
-	fileSize?: number;
-	styles?: CourseSectionItemLinkI['styles'];
+interface ISectionContentLinkItem
+	extends Omit<SectionItemBaseProps, 'csiid'>,
+		Partial<Pick<SectionItemBaseProps, 'csiid'>> {
+	forcedMode?: CoursesReduxI['mode'];
+	linkType: ContentItemLinksType;
+	href?: string;
+	sx?: SxProps;
 }
 
-function SectionContentLinkItem(
-	props: {
-		forcedMode?: CoursesReduxI['mode'];
-		type: keyof typeof LINKS_MAP;
-		href?: string;
-		sx?: SxProps;
-	} & SectionItemBaseProps,
-) {
+function SectionContentLinkItem(props: ISectionContentLinkItem) {
+	const theme = useTheme();
+	const router = useRouter();
+	const userData = useTypedSelector(selectUser);
+	const mobileMode = useMediaQuery(theme.breakpoints.down('lg'));
 	const viewMode = useTypedSelector(store => store.courses.mode);
+
+	const [changeItemStatus] = rtkApi.useSetViewedItemStatusMutation();
+	const { data: currentProgressData } = rtkApi.useCurrentCourseProgressQuery((router.query.cid as string) || '');
+
+	const isViewed = !!currentProgressData
+		? !!currentProgressData.data.progress[router.query.csid as string]?.find(
+				item => item.itemID === (props.csiid || ''),
+		  )?.visited || false
+		: false;
+
+	function handleViewStatusChange(_event: any, status: boolean = true) {
+		if (!!props.csiid && !!router.query.csid && !!currentProgressData?.data.cpid)
+			changeItemStatus({
+				cpid: currentProgressData.data.cpid,
+				csid: router.query.csid as string,
+				csiid: props.csiid,
+				status: status,
+			});
+	}
+
 	const ContentLink = (
 		<OnyxLink
-			href={props.href || '/'}
-			title={LINKS_MAP[props.type].hrefTitle}
-			target={props.type === 'link' || props.type === 'feedback' ? '_blank' : undefined}
-			rel={props.type === 'link' || props.type === 'feedback' ? 'norefferer' : undefined}
+			disabled={!props.href}
+			href={props.hide && SystemRolesOptions[userData._systemRole].accessLevel < 2 ? '/' : props.href || '/'}
+			title={LINKS_MAP[props.linkType].hrefTitle}
+			target={props.linkType === 'link' || props.linkType === 'feedback' ? '_blank' : undefined}
+			rel={props.linkType === 'link' || props.linkType === 'feedback' ? 'norefferer' : undefined}
 			style={{
-				width: props.basis ? `${props.basis}%` : '100%',
-				flexBasis: props.basis ? `${props.basis}%` : '100%',
+				display:
+					SystemRolesOptions[userData._systemRole].accessLevel < 1 && !!props.hide && viewMode === 'observe'
+						? 'none'
+						: '',
+				opacity:
+					SystemRolesOptions[userData._systemRole].accessLevel < 1 && !!props.hide && viewMode === 'observe'
+						? '0'
+						: !!props.hide
+						? '.75'
+						: '1',
+				filter: !!props.hide ? 'grayscale(1)' : undefined,
+				width: mobileMode ? '100%' : props.basis ? `${props.basis}%` : '100%',
+				flexBasis: mobileMode ? '100%' : props.basis ? `${props.basis}%` : '100%',
 			}}
+			onClick={handleViewStatusChange}
 		>
 			<Button
 				fullWidth
@@ -88,8 +86,9 @@ function SectionContentLinkItem(
 					height: '100%',
 					padding: '.5rem .5rem .25rem !important',
 					flexDirection: 'column',
-					flexBasis: props.basis ? `${props.basis}% !important` : '100%',
-					borderWidth: props.styles?.borderWidth ? `${props.styles.borderWidth}px !important` : '',
+					flexBasis: mobileMode ? '100%' : props.basis ? `${props.basis}%` : '100%',
+					borderWidth:
+						props.styles?.borderWidth !== undefined ? `${props.styles.borderWidth}px !important` : '1px',
 					borderColor: `${props.styles?.borderColor} !important`,
 					borderStyle: `${props.styles?.borderStyle} !important`,
 					color: props.styles?.color,
@@ -97,21 +96,24 @@ function SectionContentLinkItem(
 			>
 				<Stack width='100%' height='100%' direction='row' alignItems='center' gap={2}>
 					<img
-						alt='Link type icon'
-						src={LINKS_MAP[props.type].href}
-						style={{ width: LINKS_MAP[props.type].width }}
+						alt='Link linkType icon'
+						src={LINKS_MAP[props.linkType].href}
+						style={{ width: LINKS_MAP[props.linkType].width }}
 					/>
 					<OnyxTypography text={props.text} />
 				</Stack>
 				<CourseSectionItemFooter
-					viewed={props.viewed}
-					additional={{ fileSize: props.fileSize, fileType: props.type }}
+					viewed={isViewed}
+					onStatusClickCallback={isViewed ? () => handleViewStatusChange(undefined, false) : undefined}
+					additional={{ fileSize: props.fileSize, fileType: props.linkType }}
 				/>
 			</Button>
 		</OnyxLink>
 	);
 
-	return props.forcedMode === 'observe' || (props.forcedMode !== 'editor' && viewMode === 'observe') ? (
+	return !!props.skeleton ? (
+		<SectionContentSkeleton {...props} iconType='link' linkType={props.linkType} />
+	) : props.forcedMode === 'observe' || (props.forcedMode !== 'editor' && viewMode === 'observe') ? (
 		ContentLink
 	) : (
 		<EditFieldsetLinkWrapper {...props}>{ContentLink}</EditFieldsetLinkWrapper>
@@ -129,14 +131,28 @@ export function EditFieldsetLinkWrapper(
 	return (
 		<EditFieldset styles={{ borderStyle: 'ridge', width: !!props.basis ? `${props.basis}%` : '100%' }}>
 			<EditFieldsetLegend>
-				Элемент - {LINKS_MAP[props.type]['fileType']}
+				{!!props.hide && (
+					<OnyxTypography
+						tpSize='.7rem'
+						component='span'
+						tpColor='warning'
+						sx={{
+							padding: '1px .25rem',
+							marginRight: '.25rem',
+							borderRadius: '6px',
+							border: theme => `1px solid ${theme.palette.warning.dark}`,
+						}}
+					>
+						Скрытый элемент
+					</OnyxTypography>
+				)}
+				Элемент - {LINKS_MAP[props.linkType]['fileType']}
 				<SectionEditCofigButton configState={configState} setConfigState={setConfigState} />
 				<SectionEditConfigSubDial
 					orderNumber={1}
 					configState={configState}
 					ariaLabel='Container config'
 					items={[
-						{ name: 'Ограничения', icon: <SecurityIcon /> },
 						{
 							name: 'Редактировать',
 							icon: <EditIcon />,
@@ -144,54 +160,15 @@ export function EditFieldsetLinkWrapper(
 						},
 					]}
 				/>
-				<SectionEditConfigSubDial
+				<EditMovementSubDial
 					orderNumber={2}
-					icon={<SwapVertIcon />}
-					configState={configState}
-					ariaLabel='Container movement'
-					items={[
-						{ name: 'Переместить вниз', icon: <ArrowDropDownIcon /> },
-						{ name: 'Вынести из конейнера', icon: <UTurnLeftIcon /> },
-						{ name: 'Переместить', icon: <AirlineStopsIcon /> },
-						{ name: 'Переместить вверх', icon: <ArrowDropUpIcon /> },
-					]}
+					state={configState}
+					csiid={props.csiid}
+					parentCsiid={props.parentCsiid}
+					excludeOutOfContainer={!props.parentCsiid}
 				/>
-				<SectionEditConfigSubDial
-					orderNumber={3}
-					icon={<HeightIcon sx={{ transform: 'rotate(90deg)' }} />}
-					configState={configState}
-					ariaLabel='Container size'
-					items={[
-						{
-							name: '25% ширины',
-							icon: <Crop75Icon color={props.basis === 25 ? 'secondary' : 'primary'} />,
-						},
-						{
-							name: '50% ширины',
-							icon: <WidthNormalIcon color={props.basis === 50 ? 'secondary' : 'primary'} />,
-						},
-						{
-							name: '75% ширины',
-							icon: <WidthWideIcon color={props.basis === 75 ? 'secondary' : 'primary'} />,
-						},
-						{
-							name: 'Вся ширина',
-							icon: (
-								<WidthFullIcon color={!props.basis || props.basis === 100 ? 'secondary' : 'primary'} />
-							),
-						},
-					]}
-				/>
-				<SectionEditConfigSubDial
-					orderNumber={4}
-					icon={<ErrorIcon />}
-					configState={configState}
-					ariaLabel='Container options'
-					items={[
-						{ name: 'Удалить элемент', icon: <DeleteForeverIcon color='error' /> },
-						{ name: 'Дублировать элемент', icon: <ControlPointDuplicateIcon /> },
-					]}
-				/>
+				<EditWidthSubDial basis={props.basis} orderNumber={3} csiid={props.csiid} state={configState} />
+				<ManageOptionsSubDial orderNumber={4} state={configState} hide={props.hide} csiid={props.csiid} />
 			</EditFieldsetLegend>
 
 			{props.children}

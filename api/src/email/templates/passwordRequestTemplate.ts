@@ -32,7 +32,7 @@ const PasswordRequestTemplate = (props: { password: string; date: string }) => {
                                                                         <td align="center"
                                                                             style="padding:0;Margin:0;font-size:0px">
                                                                             <img
-                                                                                src="https://sdo.rnprog.ru/static/lock-image"
+                                                                                src="${process.env.SELF_CLIENT_DOMAIN}/static/lock-image"
                                                                                 alt="Emailing"
                                                                                 style="display:block;border:0;outline:none;text-decoration:none"
                                                                                 width="100" className="CToWUd"

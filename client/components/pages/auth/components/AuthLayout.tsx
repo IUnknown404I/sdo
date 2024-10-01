@@ -8,7 +8,7 @@ import RightGridComponent from './RightGridComponent';
  * @param props pass children and sideImgUrl (right side), fully adaptive.
  * @returns [Component] with adaptivity, minified outer-header, bottom-copyrights and main content: passed children on the left side and image on the right.
  */
-const AuthLayout = (props: { children: JSX.Element | JSX.Element[]; sideImgUrl: string }) => {
+const AuthLayout = (props: { children: JSX.Element | JSX.Element[]; sideImgUrl: string }): React.ReactElement => {
 	return (
 		<Grid
 			sx={{
@@ -41,7 +41,7 @@ const AuthLayout = (props: { children: JSX.Element | JSX.Element[]; sideImgUrl: 
 				}}
 			>
 				<MinifiedHeader />
-				{Array.isArray(props.children) ? props.children.map(el => <>{el}</>) : props.children}
+				{props.children}
 				<AuthCopyrights displaySxProps={{ sx: 'block', lg: 'none' }} />
 			</Grid>
 

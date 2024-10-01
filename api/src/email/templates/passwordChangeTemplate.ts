@@ -32,7 +32,7 @@ const PasswordChangeTemplate = (props: { datetime: string; recoveryLink: string 
                                                                         <td align="center"
                                                                             style="padding:0;Margin:0;font-size:0px">
                                                                             <img
-                                                                                src="https://sdo.rnprog.ru/static/lock-image"
+                                                                                src="${process.env.SELF_CLIENT_DOMAIN}/static/lock-image"
                                                                                 alt="Emailing"
                                                                                 style="display:block;border:0;outline:none;text-decoration:none"
                                                                                 width="100" className="CToWUd"
@@ -75,9 +75,9 @@ const PasswordChangeTemplate = (props: { datetime: string; recoveryLink: string 
                                                                                             кнопку подтверждения или
                                                                                             перейдите по ссылке:&nbsp;
                                                                                             <br><u><a title="Изменить пароль"
-                                                                                                href="https://api.sdo.rnprog.ru/users/recovery/${props.recoveryLink}?request=change"
+                                                                                                href="${process.env.SELF_DOMAIN}/users/recovery/${props.recoveryLink}?request=change"
                                                                                                 style="text-decoration:none;color:#134f5c;font-size:16px;word-break:break-all"
-                                                                                                target="_blank">https://api.sdo.rnprog.ru/users/recovery/<wbr>${props.recoveryLink}?request=change
+                                                                                                target="_blank">${process.env.SELF_DOMAIN}/users/recovery/<wbr>${props.recoveryLink}?request=change
                                                                                             </a></u>
                                                                                 <br>в течении <strong>1 часа</strong>
                                                                         </td>
@@ -102,7 +102,7 @@ const PasswordChangeTemplate = (props: { datetime: string; recoveryLink: string 
                                                                             style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px">
                                                                             <span
                                                                                 style="border-style:solid;border-color:#999999;background:#ffffff;border-width:1px;display:inline-block;border-radius:0px;width:auto"><a title="Перейти к восстановлению"
-                                                                                href="https://api.sdo.rnprog.ru/users/recovery/${props.recoveryLink}?request=change"
+                                                                                href="${process.env.SELF_DOMAIN}/users/recovery/${props.recoveryLink}?request=change"
                                                                                 style="text-decoration:none;color:#666666;font-size:16px;border-style:solid;border-color:#ffffff;border-width:10px 30px 10px 30px;display:inline-block;background:#ffffff;border-radius:0px;font-family:Montserrat,sans-serif;font-weight:normal;font-style:normal;line-height:19px;width:auto;text-align:center"
                                                                                 target="_blank">Изменить пароль учетной записи</a></span>
                                                                         </td>

@@ -1,11 +1,14 @@
 import DesignServicesOutlinedIcon from '@mui/icons-material/DesignServicesOutlined';
 import LibraryBooksOutlinedIcon from '@mui/icons-material/LibraryBooksOutlined';
+import SettingsIcon from '@mui/icons-material/Settings';
 import SwipeVerticalOutlinedIcon from '@mui/icons-material/SwipeVerticalOutlined';
 import VideoLibraryOutlinedIcon from '@mui/icons-material/VideoLibraryOutlined';
-import { Box, Button, Divider, Stack } from '@mui/material';
+import { Box, Button, Divider, IconButton, Stack, Tooltip } from '@mui/material';
 import { useRouter } from 'next/router';
 import React, { SetStateAction } from 'react';
 import { useWindowDimensions } from '../../../../hooks/useWindowDimensions';
+import { useTypedSelector } from '../../../../redux/hooks';
+import { selectUser, SystemRolesOptions } from '../../../../redux/slices/user';
 import { convertToRomanNumeral } from '../../../../utils/utilityFunctions';
 import OnyxAlertModal from '../../../basics/OnyxAlertModal';
 import OnyxLink from '../../../basics/OnyxLink';
@@ -13,6 +16,8 @@ import { OnyxTypography } from '../../../basics/OnyxTypography';
 import ClassicLoader from '../../../utils/loaders/ClassicLoader';
 
 export interface MainPageCourseContentI {
+	disabled?: boolean;
+	csid: string;
 	active?: boolean;
 	setActive: React.Dispatch<SetStateAction<number>>;
 	title: string;
@@ -36,7 +41,9 @@ export interface MainPageCourseContentI {
 
 const MainPageCourseSectionContent = (props: MainPageCourseContentI) => {
 	const router = useRouter();
+	const userData = useTypedSelector(selectUser);
 	const windowDimensions = useWindowDimensions();
+
 	const [modalState, setModalState] = React.useState<boolean>(false);
 
 	React.useEffect(() => {
@@ -135,7 +142,7 @@ const MainPageCourseSectionContent = (props: MainPageCourseContentI) => {
 					sx={{ position: 'absolute', bottom: '10px', right: '20px' }}
 				>
 					<OnyxTypography
-						text={`Завершено: ${props.progress.current}/${props.progress.total}`}
+						text={`Изучено: ${props.progress?.current || 0}/${props.progress?.total || 0}`}
 						tpColor='white'
 						sx={{ textTransform: 'uppercase', fontSize: { xs: '.85rem', md: '1rem' } }}
 					/>
@@ -145,7 +152,7 @@ const MainPageCourseSectionContent = (props: MainPageCourseContentI) => {
 							variant='determinate'
 							color={{ darkTheme: 'lightgreen', lightTheme: 'lightgreen' }}
 							secondaryColor={{ darkTheme: 'grey', lightTheme: 'grey' }}
-							value={(props.progress.current / props.progress.total) * 100}
+							value={(props.progress.current / (props.progress?.total || 0)) * 100}
 							size={!!windowDimensions && windowDimensions.clientWidth < 750 ? 35 : 50}
 						/>
 					</Box>
@@ -217,35 +224,71 @@ const MainPageCourseSectionContent = (props: MainPageCourseContentI) => {
 				</Box>
 
 				<Divider orientation='vertical' sx={{ width: '1px', margin: '0 1rem' }} />
-				<Stack width={{ xs: '100%', md: '70%' }}>
-					<OnyxTypography
-						text='Перейти к изучению:'
-						tpSize='.85rem'
-						tpAlign='left'
-						tpColor='secondary'
-						sx={{ marginBottom: { xs: '.25rem', md: '1.5rem' }, textTransform: 'uppercase' }}
-					/>
-					<OnyxLink
-						href={`${(router.query.cid as string | undefined) || ''}/${props.sectionUrl}`}
-						title='Перейти к разделу'
-						fullwidth
-						onClick={event => {
-							if (!!props.sectionUrlDisabled) {
-								event.preventDefault();
-								event.stopPropagation();
-							}
-						}}
+				<Stack width={{ xs: '100%', md: '70%' }} gap={0.5}>
+					<Stack direction='row' width='100%' alignItems='center' justifyContent='space-between' gap={1.5}>
+						<OnyxTypography
+							component='span'
+							tpSize='.85rem'
+							tpColor='secondary'
+							text='Перейти к изучению:'
+							sx={{ textTransform: 'uppercase' }}
+						/>
+
+						{SystemRolesOptions[userData._systemRole].accessLevel > 1 && (
+							<OnyxLink
+								href={`/admin-courses/${(router.query.cid as string | undefined) || ''}/sections/${
+									props.csid
+								}`}
+							>
+								<Tooltip arrow title='Настройки раздела' placement='left'>
+									<IconButton size='small' color='warning'>
+										<SettingsIcon />
+									</IconButton>
+								</Tooltip>
+							</OnyxLink>
+						)}
+					</Stack>
+
+					<Stack
+						width='100%'
+						alignItems='center'
+						justifyContent='space-between'
+						sx={{ flexDirection: { xs: 'column', sm: 'row' }, button: { whiteSpace: 'nowrap' } }}
+						gap={1.5}
 					>
-						<Button
-							disabled={props.sectionUrlDisabled}
-							variant='contained'
-							fullWidth
-							size='medium'
-							sx={{ padding: '1rem 1.75rem' }}
+						<OnyxLink
+							fullwidth
+							title='Перейти к разделу'
+							href={`${(router.query.cid as string | undefined) || ''}/${props.sectionUrl}`}
+							onClick={event => {
+								if (!!props.sectionUrlDisabled) {
+									event.preventDefault();
+									event.stopPropagation();
+								}
+							}}
 						>
-							Перейти к изучению
-						</Button>
-					</OnyxLink>
+							<Button
+								disabled={props.sectionUrlDisabled}
+								variant='contained'
+								fullWidth
+								size='medium'
+								sx={{ padding: '1rem 1.75rem' }}
+							>
+								Перейти к изучению
+							</Button>
+						</OnyxLink>
+
+						{!!windowDimensions && windowDimensions?.clientWidth < 1200 && (
+							<Button
+								size='medium'
+								variant='outlined'
+								sx={{ padding: '1rem 1.75rem' }}
+								onClick={() => props.setActive(0)}
+							>
+								Закрыть окно
+							</Button>
+						)}
+					</Stack>
 				</Stack>
 			</Stack>
 		</Box>
@@ -255,9 +298,11 @@ const MainPageCourseSectionContent = (props: MainPageCourseContentI) => {
 		<OnyxAlertModal
 			state={modalState}
 			setState={() => props.setActive(0)}
-			title={`Информация по разделу ${props.sectionOrder}`}
+			// title={`Информация по разделу ${props.sectionOrder}`}
 			fullWidth
 			disableButton
+			disableCloseButton
+			disableCloseIcon
 			sx={{ display: modalState ? '' : 'none' }}
 		>
 			{SectionContent}

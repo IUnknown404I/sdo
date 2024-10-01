@@ -1,25 +1,25 @@
-import AirlineStopsIcon from '@mui/icons-material/AirlineStops';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
-import ControlPointDuplicateIcon from '@mui/icons-material/ControlPointDuplicate';
-import Crop75Icon from '@mui/icons-material/Crop75';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
+import DocumentScannerOutlinedIcon from '@mui/icons-material/DocumentScannerOutlined';
 import EditIcon from '@mui/icons-material/Edit';
-import ErrorIcon from '@mui/icons-material/Error';
-import HeightIcon from '@mui/icons-material/Height';
-import SecurityIcon from '@mui/icons-material/Security';
-import SwapVertIcon from '@mui/icons-material/SwapVert';
-import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
-import WidthFullIcon from '@mui/icons-material/WidthFull';
-import WidthNormalIcon from '@mui/icons-material/WidthNormal';
-import WidthWideIcon from '@mui/icons-material/WidthWide';
-import { Button, Stack, SxProps } from '@mui/material';
+import { Button, Stack, useMediaQuery, useTheme } from '@mui/material';
+import { useRouter } from 'next/router';
 import React, { ComponentProps, ReactNode } from 'react';
+import { OnyxApiErrorResponseType, rtkApi } from '../../../../../redux/api';
+import {
+	isInLectureContent,
+	parseCurrentContentID,
+	parseCurrentUrlWithoutFromQuery,
+} from '../../../../../redux/endpoints/lecturesEnd';
 import { useTypedSelector } from '../../../../../redux/hooks';
 import { CoursesReduxI } from '../../../../../redux/slices/courses';
+import { selectUser, SystemRolesOptions } from '../../../../../redux/slices/user';
 import OnyxLink from '../../../../basics/OnyxLink';
 import { OnyxTypography } from '../../../../basics/OnyxTypography';
-import { SectionItemBaseProps } from '../SectionContentLinkItem/SectionContentLinkItem';
+import ClassicLoader from '../../../../utils/loaders/ClassicLoader';
+import { notification } from '../../../../utils/notifications/Notification';
+import { SectionItemBaseProps, SYSTEM_DOCUMENTS_MAP } from '../../courseItemsTypes';
+import { EditMovementSubDial, EditWidthSubDial, ManageOptionsSubDial } from '../edit-sub-dials/edit-sub-dials';
+import SectionContentSkeleton from '../SectionContentSkeleton';
 import {
 	EditFieldset,
 	EditFieldsetLegend,
@@ -27,83 +27,141 @@ import {
 	SectionEditConfigSubDial,
 } from '../SectionEditElements';
 import { CourseSectionItemFooter } from '../SectionItems';
+import DocumentChangeModal from './DocumentChangeModal';
+import DocumentEditModal from './DocumentEditModal';
 
-const DOCUMENTS_MAP = {
-	pdf: {
-		iconHref: '/images/courses/sections/pdf.png',
-		width: '50px',
-		hrefTitle: 'Открыть документ',
-		fileType: 'Pdf-документ',
-		target: undefined,
-	},
-	ppt: {
-		iconHref: '/images/courses/sections/ppt.png',
-		width: '50px',
-		hrefTitle: 'Открыть презентацию',
-		fileType: 'Ppt-презентация',
-		target: '_blank',
-	},
-	word: {
-		iconHref: '/images/courses/sections/doc.png',
-		width: '50px',
-		hrefTitle: 'Открыть файл',
-		fileType: 'Word-документ',
-		target: '_blank',
-	},
-	excel: {
-		iconHref: '/images/courses/sections/xls.png',
-		width: '50px',
-		hrefTitle: 'Открыть таблицу',
-		fileType: 'Excel-таблица',
-		target: '_blank',
-	},
-};
+interface ISectionContentDocumentItem
+	extends Omit<SectionItemBaseProps, 'csiid'>,
+		Partial<Pick<SectionItemBaseProps, 'csiid'>> {
+	docid: string;
+	disableControls?: boolean;
+	forcedMode?: CoursesReduxI['mode'];
+}
 
-function SectionContentDocumentItem(
-	props: {
-		forcedMode?: CoursesReduxI['mode'];
-		type: keyof typeof DOCUMENTS_MAP;
-		href?: string;
-		target?: string;
-		sx?: SxProps;
-	} & SectionItemBaseProps,
-) {
+function SectionContentDocumentItem(props: ISectionContentDocumentItem) {
+	const theme = useTheme();
+	const router = useRouter();
+	const userData = useTypedSelector(selectUser);
+	const mobileMode = useMediaQuery(theme.breakpoints.down('lg'));
 	const viewMode = useTypedSelector(store => store.courses.mode);
-	const ContentLink = (
+
+	const { data: docData, isFetching: isDocDataFetching } = rtkApi.useDocumentDataQuery(props.docid);
+
+	const [changeItemStatus] = rtkApi.useSetViewedItemStatusMutation();
+	const { data: currentProgressData } = rtkApi.useCurrentCourseProgressQuery((router.query.cid as string) || '');
+
+	const isViewed = !!currentProgressData
+		? !!currentProgressData.data.progress[router.query.csid as string]?.find(
+				item => item.itemID === (props.csiid || ''),
+		  )?.visited || false
+		: false;
+
+	function handleViewStatusChange(_event: any, status: boolean = true) {
+		if (!!props.csiid && !!router.query.csid && !!currentProgressData?.data.cpid)
+			changeItemStatus({
+				cpid: currentProgressData.data.cpid,
+				csid: router.query.csid as string,
+				csiid: props.csiid,
+				status: status,
+			});
+	}
+
+	const DocumentItem = (
 		<OnyxLink
-			href={props.href || '/'}
-			target={props.target || DOCUMENTS_MAP[props.type].target}
-			title={DOCUMENTS_MAP[props.type].hrefTitle}
-			style={{ flexBasis: props.basis ? `${props.basis}%` : '100%' }}
+			disabled={!docData?.docid}
+			title={!!docData ? SYSTEM_DOCUMENTS_MAP[docData.type].hrefTitle : ''}
+			download={!!docData ? SYSTEM_DOCUMENTS_MAP[docData.type].target === '_blank' : false}
+			rel={!!docData && SYSTEM_DOCUMENTS_MAP[docData.type].target === '_blank' ? 'noreferrer' : undefined}
+			target={!!docData ? SYSTEM_DOCUMENTS_MAP[docData.type].target : undefined}
+			href={
+				props.hide && SystemRolesOptions[userData._systemRole].accessLevel < 2
+					? '/'
+					: !!docData
+					? SYSTEM_DOCUMENTS_MAP[docData.type].target !== '_blank'
+						? (router.asPath.split('?')[0].split('/').includes('additionals') // parse additionals/ pages or course-sections pages
+								? `${process.env.NEXT_PUBLIC_SELF}/courses/${
+										router.query.cid
+								  }/additionals/document?addType=${router.query.addType || 'files'}&docid=${
+										props.docid
+								  }`
+								: `${process.env.NEXT_PUBLIC_SELF}/courses/${router.query.cid}/${router.query.csid}/document?docid=${props.docid}`) +
+						  (isInLectureContent(router) ? `&from=${parseCurrentUrlWithoutFromQuery(router)}` : '')
+						: `${process.env.NEXT_PUBLIC_SERVER}/documents/${props.docid}` +
+						  (isInLectureContent(router) ? `?from=${parseCurrentUrlWithoutFromQuery(router)}` : '')
+					: '/'
+			}
+			style={{
+				display:
+					SystemRolesOptions[userData._systemRole].accessLevel < 1 && !!props.hide && viewMode === 'observe'
+						? 'none'
+						: '',
+				opacity:
+					SystemRolesOptions[userData._systemRole].accessLevel < 1 && !!props.hide && viewMode === 'observe'
+						? '0'
+						: !!props.hide
+						? '.75'
+						: '1',
+				filter: !!props.hide ? 'grayscale(1)' : undefined,
+				width: mobileMode ? '100%' : props.basis ? `${props.basis}%` : '100%',
+				flexBasis: mobileMode ? '100%' : props.basis ? `${props.basis}%` : '100%',
+			}}
+			onClick={handleViewStatusChange}
 		>
 			<Button
 				fullWidth
 				variant='outlined'
-				sx={{ height: '100%', padding: '.5rem .5rem .25rem !important', flexDirection: 'column' }}
+				sx={{
+					height: '100%',
+					padding: '.5rem .5rem .25rem !important',
+					flexDirection: 'column',
+					flexBasis: mobileMode ? '100%' : props.basis ? `${props.basis}% !important` : '100%',
+					borderWidth:
+						props.styles?.borderWidth !== undefined ? `${props.styles.borderWidth}px !important` : '1px',
+					borderColor: `${props.styles?.borderColor} !important`,
+					borderStyle: `${props.styles?.borderStyle} !important`,
+					color: props.styles?.color,
+				}}
 			>
 				<Stack width='100%' height='100%' direction='row' alignItems='center' gap={2}>
-					<img
-						alt='File icon'
-						src={DOCUMENTS_MAP[props.type].iconHref}
-						style={{ width: DOCUMENTS_MAP[props.type].width }}
-					/>
+					{!isDocDataFetching ? (
+						<img
+							alt='File icon'
+							src={
+								!!docData && docData.docid
+									? SYSTEM_DOCUMENTS_MAP[docData.type].iconHref
+									: '/images/courses/no-document.png'
+							}
+							style={{
+								width:
+									!!docData && docData.docid
+										? SYSTEM_DOCUMENTS_MAP[docData.type].width
+										: SYSTEM_DOCUMENTS_MAP.pdf.width,
+							}}
+						/>
+					) : (
+						<ClassicLoader size={50} />
+					)}
 					<OnyxTypography text={props.text} />
 				</Stack>
+
 				<CourseSectionItemFooter
-					viewed={props.viewed}
+					viewed={isViewed}
+					onStatusClickCallback={isViewed ? () => handleViewStatusChange(undefined, false) : undefined}
 					additional={{
 						fileSize: props.fileSize,
-						fileType: DOCUMENTS_MAP[props.type].fileType,
+						fileType: docData && SYSTEM_DOCUMENTS_MAP[docData.type].fileType,
 					}}
 				/>
 			</Button>
 		</OnyxLink>
 	);
 
-	return props.forcedMode === 'observe' || (props.forcedMode !== 'editor' && viewMode === 'observe') ? (
-		ContentLink
+	return !!props.skeleton ? (
+		<SectionContentSkeleton {...props} iconType='document' />
+	) : props.forcedMode === 'observe' || (props.forcedMode !== 'editor' && viewMode === 'observe') ? (
+		DocumentItem
 	) : (
-		<EditFieldsetDocumentWrapper {...props}>{ContentLink}</EditFieldsetDocumentWrapper>
+		<EditFieldsetDocumentWrapper {...props}>{DocumentItem}</EditFieldsetDocumentWrapper>
 	);
 }
 
@@ -112,72 +170,121 @@ export default SectionContentDocumentItem;
 export function EditFieldsetDocumentWrapper(
 	props: ComponentProps<typeof SectionContentDocumentItem> & { title?: string; children: ReactNode },
 ) {
+	const router = useRouter();
+	const isAxiosFired = React.useRef<boolean>(false);
+
 	const [configState, setConfigState] = React.useState<boolean>(false);
+	const [editModalState, setEditModalState] = React.useState<boolean>(false);
+	const [changeDocumentModalState, setChangeDocumentModalState] = React.useState<boolean>(false);
+
+	const { data: docData } = rtkApi.useDocumentDataQuery(props.docid);
+	const [editCourseDocumentSource] = rtkApi.useEditCourseDocumentSourceMutation();
+	const [editLectureDocumentSource] = rtkApi.useEditLectureDocumentSourceMutation();
+
+	function handleChangeTestSource(docid: string) {
+		if (!docid || !props.csiid || isAxiosFired.current) return;
+		isAxiosFired.current = true;
+		const currentID = parseCurrentContentID(router);
+
+		(currentID.isLecture
+			? editLectureDocumentSource({
+					cslid: currentID.id,
+					csiid: props.csiid,
+					docid,
+			  })
+			: editCourseDocumentSource({
+					cid: router.query.cid as string,
+					csid: currentID.id,
+					csiid: props.csiid,
+					docid,
+			  })
+		)
+			.then(response => {
+				if (typeof response === 'object' && 'error' in response)
+					notification({
+						message: (response.error as OnyxApiErrorResponseType).data?.message,
+						type: 'error',
+					});
+				else if ('result' in response.data && !!response.data.result) {
+					notification({
+						message: `Новый документ успешно привязан!`,
+						type: 'success',
+					});
+					setChangeDocumentModalState(false);
+				}
+			})
+			.catch(() =>
+				notification({
+					message:
+						'Произошла ошибка в процессе изменения документа! Попробуйте позже или обратитесь в поддержку.',
+					type: 'error',
+				}),
+			)
+			.finally(() => (isAxiosFired.current = false));
+	}
+
 	return (
 		<EditFieldset styles={{ borderStyle: 'ridge', width: !!props.basis ? `${props.basis}%` : '100%' }}>
 			<EditFieldsetLegend>
-				Элемент - {DOCUMENTS_MAP[props.type]['fileType']}
+				{!!props.hide && (
+					<OnyxTypography
+						tpSize='.7rem'
+						component='span'
+						tpColor='warning'
+						sx={{
+							padding: '1px .25rem',
+							marginRight: '.25rem',
+							borderRadius: '6px',
+							border: theme => `1px solid ${theme.palette.warning.dark}`,
+						}}
+					>
+						Скрытый элемент
+					</OnyxTypography>
+				)}
+				Элемент - {!!docData ? SYSTEM_DOCUMENTS_MAP[docData.type]['fileType'] : 'не определить тип'}
 				<SectionEditCofigButton configState={configState} setConfigState={setConfigState} />
 				<SectionEditConfigSubDial
 					orderNumber={1}
 					configState={configState}
 					ariaLabel='Container config'
 					items={[
-						{ name: 'Ограничения', icon: <SecurityIcon /> },
-						{ name: 'Редактировать', icon: <EditIcon /> },
+						{
+							name: 'Перейти в хранилище',
+							icon: <DocumentScannerOutlinedIcon />,
+							href: `/storage/documents/${props.docid}`,
+						},
+						{
+							name: 'Выбрать документ',
+							icon: <ChangeCircleIcon />,
+							onClick: () => setChangeDocumentModalState(prev => !prev),
+						},
+						{
+							name: 'Редактировать',
+							icon: <EditIcon />,
+							onClick: () => setEditModalState(prev => !prev),
+						},
 					]}
 				/>
-				<SectionEditConfigSubDial
+				<EditMovementSubDial
 					orderNumber={2}
-					icon={<SwapVertIcon />}
-					configState={configState}
-					ariaLabel='Container movement'
-					items={[
-						{ name: 'Переместить вниз', icon: <ArrowDropDownIcon /> },
-						{ name: 'Вынести из конейнера', icon: <UTurnLeftIcon /> },
-						{ name: 'Переместить', icon: <AirlineStopsIcon /> },
-						{ name: 'Переместить вверх', icon: <ArrowDropUpIcon /> },
-					]}
+					state={configState}
+					csiid={props.csiid}
+					parentCsiid={props.parentCsiid}
+					excludeOutOfContainer={!props.parentCsiid}
 				/>
-				<SectionEditConfigSubDial
-					orderNumber={3}
-					icon={<HeightIcon sx={{ transform: 'rotate(90deg)' }} />}
-					configState={configState}
-					ariaLabel='Container size'
-					items={[
-						{
-							name: '25% ширины',
-							icon: <Crop75Icon color={props.basis === 25 ? 'secondary' : 'primary'} />,
-						},
-						{
-							name: '50% ширины',
-							icon: <WidthNormalIcon color={props.basis === 50 ? 'secondary' : 'primary'} />,
-						},
-						{
-							name: '75% ширины',
-							icon: <WidthWideIcon color={props.basis === 75 ? 'secondary' : 'primary'} />,
-						},
-						{
-							name: 'Вся ширина',
-							icon: (
-								<WidthFullIcon color={!props.basis || props.basis === 100 ? 'secondary' : 'primary'} />
-							),
-						},
-					]}
-				/>
-				<SectionEditConfigSubDial
-					orderNumber={4}
-					icon={<ErrorIcon />}
-					configState={configState}
-					ariaLabel='Container options'
-					items={[
-						{ name: 'Удалить элемент', icon: <DeleteForeverIcon color='error' /> },
-						{ name: 'Дублировать элемент', icon: <ControlPointDuplicateIcon /> },
-					]}
-				/>
+				<EditWidthSubDial basis={props.basis} orderNumber={3} csiid={props.csiid} state={configState} />
+				<ManageOptionsSubDial orderNumber={4} state={configState} hide={props.hide} csiid={props.csiid} />
 			</EditFieldsetLegend>
 
 			{props.children}
+
+			<DocumentEditModal {...props} modalState={editModalState} setModalState={setEditModalState} />
+			<DocumentChangeModal
+				{...props}
+				modalState={changeDocumentModalState}
+				setModalState={setChangeDocumentModalState}
+				onSubmitCallback={handleChangeTestSource}
+			/>
 		</EditFieldset>
 	);
 }

@@ -39,7 +39,7 @@ const TextEditor = props => {
 			// }}
 			onBlur={(event, editor) => {
 				const currentContent = editor.getData();
-				// if (currentContent !== props.content) props.updateContent(currentContent);
+				if (!!props.updateContent && currentContent !== props.content) props.updateContent(currentContent);
 				logapp.log('OnBlur new content save!');
 			}}
 			// onFocus={(event, editor) => {
@@ -82,7 +82,7 @@ function getEditorConfiguration() {
 				'mediaEmbed',
 				'|',
 				'findAndReplace',
-				'sourceEditing',
+				// 'sourceEditing',
 				'removeFormat',
 				'|',
 				'undo',

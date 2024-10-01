@@ -3,14 +3,15 @@ import { checkAccessTokenValidity } from '../../utils/http';
 import logapp from '../../utils/logapp';
 import { AccessTokenI, LoginFullObjI } from '../api';
 import { clearAccessToken, setAccessToken } from '../slices/accessToken';
-import { setAuthState, setLastPages, setSessionState } from '../slices/auth';
+import { setAuthState, setBusyState, setLastPages, setSessionState } from '../slices/auth';
 import { clearBearer, setBearer } from '../slices/axiosInstance';
 import { AccessTokenPayload, clearUserData, setUserDataFromPayload } from '../slices/user';
 import { AsyncThunkConfig, createAppAsyncThunk } from '../utils/thunkUtils';
 
 const isAccessToken = (obj: Object): obj is AccessTokenI => 'access_token' in obj && 'expires_in' in obj;
 
-const getUserPayload = (data: AccessTokenI): AccessTokenPayload => jwt_decode(data.access_token) as AccessTokenPayload;
+export const getUserPayload = (data: AccessTokenI): AccessTokenPayload =>
+	jwt_decode(data.access_token) as AccessTokenPayload;
 
 /**
  * @IUnknown404I
@@ -62,8 +63,8 @@ export default class AuthThunks {
 	});
 
 	/**
-	 * @IUnknown404I
-	 * Implementing all logic for close the session, logout user and e.t.c. methods.
+	 * @IUnknown404I Implementing all logic for close the session, logout user and e.t.c. methods.
+	 * @description Only update the redux auth-attribute, doesn't disconnect the user!
 	 * @param boolean Pass [false] for session changer mode (set the sesion to "expired") and [true] for the pure logout (by default).
 	 */
 	public static disconnect = createAppAsyncThunk<void, boolean | void, AsyncThunkConfig>(
@@ -75,48 +76,46 @@ export default class AuthThunks {
 			const dispatcher = thunkAPI.dispatch;
 
 			store.axiosInstance?.instance
-				.put('/users/logout', { username: store.user.username })
-				.then(() => {
-					dispatcher(clearUserData());
-					dispatcher(clearBearer());
-					dispatcher(clearAccessToken());
-					dispatcher(setLastPages());
-					if (arg && store.auth.sessionState !== 'closed') dispatcher(setSessionState('closed'));
-					else if (!arg && store.auth.sessionState !== 'expired') dispatcher(setSessionState('expired'));
-					if (store.auth.state) dispatcher(setAuthState(false));
-				})
+				.put('/users/logout')
+				.then(() => {})
 				.catch(() => store.axiosInstance.instance.get(`${process.env.NEXT_PUBLIC_SELF}/api/clear-cookies`))
 				.finally(() => {
-					// dispatcher(clearUserData());
-					// dispatcher(clearBearer());
-					// dispatcher(setLastPages());
-				});
+					dispatcher(setAuthState(false));
+					dispatcher(clearUserData());
+					dispatcher(setLastPages());
+					dispatcher(clearBearer());
+					dispatcher(clearAccessToken());
 
-			// if (arg) {
-			// 	if (store.auth.sessionState !== 'closed') dispatcher(setSessionState('closed'));
-			// 	if (store.auth.state) dispatcher(setAuthState(false));
-			// } else {
-			// 	if (store.auth.sessionState !== 'expired') dispatcher(setSessionState('expired'));
-			// 	if (store.auth.state) dispatcher(setAuthState(false));
-			// }
+					if (arg && store.auth.sessionState !== 'closed') dispatcher(setSessionState('closed'));
+					else if (!arg && store.auth.sessionState !== 'expired') dispatcher(setSessionState('expired'));
+					logapp.info('[#auth/disconnect thunk] finished clearing');
+				});
 		},
 	);
 
 	/**
-	 * @IUnknown404I
-	 * This thunk is fetching new tokens and update them.
+	 * @IUnknown404I This thunk is fetching new tokens and update them.
+	 * @description Updates the isBusy auth's state => if already been busy stops request immediatelly.
 	 * @param boolean - to save data pass [true] (by default), pass [false] for just get update refresh and get data as LoginFullObjI.
 	 * @returns object: LoginFullObjI for fullfilled or undefined for error-cases.
 	 */
 	public static fetchAndUpdateTokens = createAppAsyncThunk<
-		LoginFullObjI | undefined,
+		LoginFullObjI | 'busy' | undefined,
 		boolean | void,
 		AsyncThunkConfig
 	>('auth/fetchAndUpdateTokens', async (arg: void | boolean = true, thunkAPI) => {
-		logapp.info('[#auth/fetchAndUpdateTokens thunk] triggered, got:', arg);
+		logapp.info('[#auth/fetchAndUpdateTokens thunk] triggered, got:', arg, +new Date());
 
 		const store = thunkAPI.getState();
 		const dispatcher = thunkAPI.dispatch;
+
+		// if auth is busy, stop immediatelly
+		if (store.auth.isBusy) {
+			logapp.log('[#auth/fetchAndUpdateTokens thunk canceled] auth-busy-state is already occupied');
+			return 'busy';
+		}
+		// borrow the auth state
+		dispatcher(setBusyState(true));
 
 		return await store.axiosInstance?.instance
 			.put(`${process.env.NEXT_PUBLIC_SERVER}/auth/refresh-token`)
@@ -139,6 +138,10 @@ export default class AuthThunks {
 				}
 				if (store.auth.sessionState === 'active') dispatcher(setSessionState('expired'));
 				return undefined;
+			})
+			.finally(() => {
+				// unoccupy the auth-busy state
+				dispatcher(setBusyState(false));
 			});
 	});
 

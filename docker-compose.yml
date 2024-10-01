@@ -1,22 +1,52 @@
-version: "3.7"
-
 services:
+  motion:
+    build: ./MD/
+    restart: always
+    container_name: motion
+    ports:
+      - *:*
+  eco:
+    build: ./ecology/
+    restart: always
+    container_name: eco
+    ports:
+      - *:*
+
   onyx_db:
-    #image: mongo:5.0.2
     image: mongo
     restart: always
     container_name: onyx_db
     ports:
-      - 4004:27017
+      - *:*
     networks:
       onyx_net:
-        ipv4_address: "172.23.0.2"
+        ipv4_address: "*"
     volumes:
       - onyx_vol:/data/db
+      - *
     environment:
-      MONGO_INITDB_ROOT_USERNAME: *
-      MONGO_INITDB_ROOT_PASSWORD: *
-    command: mongod --auth
+      MONGO_INITDB_ROOT_USERNAME: x
+      MONGO_INITDB_ROOT_PASSWORD: x
+    command: mongod --auth --config *
+    #command: mongod -v *:* --auth --config *
+
+  onyx_cache:
+    container_name: onyx_cache
+    image: redis:latest
+    restart: always
+    entrypoint: redis-server --appendonly yes --requirepass *** --maxmemory 512mb --maxmemory-policy allkeys-lru
+    networks:
+      onyx_net:
+        ipv4_address: *
+    ports:
+      - "*:*"
+    volumes:
+      - onyx_vol:/data/redis/
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    #depends_on:
+    #  - onyx_db
+
   onyx_api:
     build: ./onyx-api/
     restart: always
@@ -24,13 +54,14 @@ services:
     env_file:
       - .env-api
     ports:
-      - 4444:4444
-      - 4488:4488
+      - *:*
+      - *:*
     networks:
       onyx_net:
-        ipv4_address: "172.23.0.3"
+        ipv4_address: *
     depends_on:
       - onyx_db
+      
   onyx_client:
     build: ./onyx-client/
     restart: always
@@ -38,10 +69,24 @@ services:
     env_file:
       - .env.local
     ports:
-      - 4040:4040
+      - *:*
     networks:
       onyx_net:
-        ipv4_address: "172.23.0.4"
+        ipv4_address: *
+    depends_on:
+      - onyx_api
+      
+  onyx_dev_client:
+    build: ./onyx-dev/onyx_client/
+    restart: always
+    container_name: onyx_dev_client
+    env_file:
+      - ./onyx-dev/.env.local
+    ports:
+      - *:*
+    networks:
+      onyx_net:
+        ipv4_address: *
     depends_on:
       - onyx_api
 
@@ -60,5 +105,5 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: "172.23.0.0/16"
-          #gateway: "172.23.0.1"
+        - subnet: *
+          gateway: *

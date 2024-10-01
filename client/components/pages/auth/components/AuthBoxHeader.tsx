@@ -28,7 +28,7 @@ const AuthBoxHeader = (props: { children: JSX.Element | JSX.Element[] }) => {
 				},
 			}}
 		>
-			{Array.isArray(props.children) ? props.children.map(el => el) : props.children}
+			{props.children}
 		</Box>
 	);
 };

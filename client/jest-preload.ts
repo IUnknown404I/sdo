@@ -14,14 +14,16 @@ global.console = {
 jest.mock('next/router', () => ({
 	useRouter: jest.fn(),
 }));
+
 // setup a new mocking function for push method
-const pushMock = jest.fn();
+const pushMock = jest.fn(() => new Promise(() => true));
 // mock a return value on useRouter
 (useRouter as jest.Mock).mockReturnValue({
 	query: {},
-	// return mock for push method
+	route: '/login',
+	asPath: 'login',
 	push: pushMock,
-	// ... add the props or methods you need
+	// push: () => new Promise(() => true),
 });
 
 afterEach(cleanup);

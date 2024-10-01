@@ -1,28 +1,44 @@
-import { Box, LinearProgress, Paper, Typography } from '@mui/material';
+import { Box, LinearProgress, Paper, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { yellow } from '@mui/material/colors';
 import { Stack } from '@mui/system';
+import { rtkApi } from '../../../../../../redux/api';
 import OnyxImage from '../../../../../basics/OnyxImage';
+import ClassicLoader from '../../../../../utils/loaders/ClassicLoader';
 
-export const LevelCard = () => {
+const LevelCard = () => {
+	const theme = useTheme();
+	const isMobileVersion = useMediaQuery(theme.breakpoints.down('sm'));
+
+	const { currentData: userLoyality, isFetching: isUserLoyalityFetching } = rtkApi.useUserLoyalityQuery();
+
 	return (
-		<>
-			<Paper
+		<Paper
+			sx={{
+				width: '100%',
+				padding: '20px',
+				borderRadius: '20px',
+			}}
+		>
+			<Stack
+				width='100%'
+				flexDirection='row'
+				spacing={5}
 				sx={{
 					width: '100%',
-					height: '100%',
-					borderRadius: '20px',
-					padding: '20px',
+					alignItems: 'center',
+					justifyContent: 'space-around',
+					gap: '.5rem',
+					// ...(isMobileVersion
+					// 	? {
+					// 			width: '100%',
+					// 			alignItems: 'center',
+					// 			justifyContent: 'center',
+					// 			gap: '.5rem',
+					// 	  }
+					// 	: {}),
 				}}
 			>
-				<Stack
-					direction={{
-						xs: 'column',
-						md: 'column',
-						lg: 'row',
-					}}
-					alignItems={'center'}
-					spacing={5}
-				>
+				<Stack direction='row' alignItems='center' justifyContent='center' gap={2}>
 					<Box
 						sx={{
 							width: '70px',
@@ -36,32 +52,44 @@ export const LevelCard = () => {
 								textAlign: 'center',
 								position: 'absolute',
 								top: 11,
-								right: 0,
 								left: 0,
+								right: 0,
 								bottom: 0,
 							}}
 						>
-							<Typography variant={'h4'} fontWeight={'bold'} color={yellow[600]}>
-								1
-							</Typography>
+							{!userLoyality || isUserLoyalityFetching ? (
+								<ClassicLoader size={30} sx={{ top: '9px' }} />
+							) : (
+								<Typography variant='h4' fontWeight='bold' color={yellow[600]}>
+									{userLoyality.level}
+								</Typography>
+							)}
 						</Box>
 					</Box>
-					<Stack>
+
+					<Box sx={{ marginTop: 'unset !important' }}>
 						<Typography variant='body1'>УРОВЕНЬ</Typography>
 						<Typography variant='overline'>новичок</Typography>
-					</Stack>
-					<Stack
-						sx={{ marginTop: '20px' }}
-						direction={'column'}
-						alignItems={'center'}
-						justifyContent={'center'}
-					>
-						<Typography variant='overline'>Следующий уровень</Typography>
-
-						<LinearProgress sx={{ width: '100%' }} variant='determinate' value={65} />
-					</Stack>
+					</Box>
 				</Stack>
-			</Paper>
-		</>
+
+				<Stack
+					direction='column'
+					alignItems='center'
+					justifyContent='center'
+					sx={{ marginTop: 'unset !important' }}
+				>
+					<Typography variant='overline'>Следующий уровень</Typography>
+
+					<LinearProgress
+						sx={{ width: '100%' }}
+						variant='determinate'
+						value={userLoyality?.experience || 0}
+					/>
+				</Stack>
+			</Stack>
+		</Paper>
 	);
 };
+
+export default LevelCard;

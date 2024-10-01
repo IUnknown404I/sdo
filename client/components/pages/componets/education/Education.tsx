@@ -1,184 +1,152 @@
-import ArrowBackIosOutlinedIcon from '@mui/icons-material/ArrowBackIosOutlined';
-import ArrowForwardIosOutlinedIcon from '@mui/icons-material/ArrowForwardIosOutlined';
-import ExitToAppOutlinedIcon from '@mui/icons-material/ExitToAppOutlined';
-import { Box, Button, Chip, Grid, IconButton, Paper, Stack, Tab, Tabs, Typography } from '@mui/material';
-import { useRouter } from 'next/router';
-import React, { SetStateAction, useEffect, useState } from 'react';
-import { querySwitcher } from '../../../../utils/http';
-import OnyxImage from '../../../basics/OnyxImage';
+import ContactsOutlinedIcon from '@mui/icons-material/ContactsOutlined';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
+import LocalLibraryOutlinedIcon from '@mui/icons-material/LocalLibraryOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
+import { Box, Fade, Grid, Stack } from '@mui/material';
+import React from 'react';
+import { rtkApi } from '../../../../redux/api';
+import { CourseProgressWithRestrictmentsI } from '../../../../redux/endpoints/courseProgressEnd';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
-import {
-	CourseProgress,
-	CourseSectionsProgress,
-	EducationEvaluations,
-	EducationEvaluationsChart,
-	EducationPlan,
-} from '../../../index';
-import OnyxLink from '../../../basics/OnyxLink';
+import ModernLoader from '../../../utils/loaders/ModernLoader';
+import EducationPanelContent from './EducationPanelContent';
 
-interface TabPanelProps {
-	children?: React.ReactNode;
-	index: number;
-	value: number;
-}
-
-const TabPanel = (props: TabPanelProps) => {
-	const { children, value, index, ...other } = props;
-
-	return (
-		<Box
-			role='tabpanel'
-			hidden={value !== index}
-			id={`vertical-tabpanel-${index}`}
-			aria-labelledby={`vertical-tab-${index}`}
-			{...other}
-		>
-			{value === index && (
-				<Box>
-					<Typography component={'span'}>{children}</Typography>
-				</Box>
-			)}
-		</Box>
+const Education = () => {
+	const {
+		data: myProgresses,
+		isFetching: isMyProgressesFetching,
+		isError: isMyProgressesError,
+	} = rtkApi.useMyProgressesQuery('');
+	const myParsedProgresses = React.useMemo<CourseProgressWithRestrictmentsI[]>(
+		() =>
+			myProgresses?.filter(
+				progress =>
+					progress.status === 'active' &&
+					(progress.role === 'student' || (progress.role === 'teacher' && !!progress.lgid)),
+			) || [],
+		[myProgresses],
 	);
-};
-
-const EDUCATION_QUARY_CASES = ['graph', 'progress', 'marks', 'mark-stats'];
-
-export const Education = () => {
-	const router = useRouter();
-	const [position, setPosition] = useState(0);
-
-	const handlePositionChange = (event: any, newPosition: SetStateAction<number>) => {
-		router.replace(`study?current=${EDUCATION_QUARY_CASES[newPosition as number]}`);
-		setPosition(() => newPosition as number);
-	};
-
-	useEffect(() => {
-		const positionByQueryChange = querySwitcher('current', EDUCATION_QUARY_CASES, router.query);
-		setPosition(() => (positionByQueryChange === undefined ? 0 : positionByQueryChange));
-	}, [router.query]);
 
 	return (
 		<Grid container spacing={3}>
-			<Grid item xs={12} md={12} lg={5} xl={4}>
-				<Paper
-					sx={{
-						borderRadius: '20px',
-						width: '100%',
-						display: 'flex',
-						justifyContent: 'center',
-						alignItems: 'center',
-						padding: '20px',
-					}}
-				>
-					<OnyxImage
-						src='/images/courses/coursesCard/sizPreview.svg'
-						alt='Education program label'
-						width='130px'
-						height='80px'
+			{isMyProgressesFetching || isMyProgressesError || !myParsedProgresses ? (
+				<Stack width='100%' minHeight='calc(100lvh - 300px)' sx={{ position: 'relative' }}>
+					<ModernLoader
+						loading
+						centered
+						size={125}
+						tripleLoadersMode
+						containerSx={{ top: '50%', transform: 'translateY(-50%)' }}
 					/>
-
-					<OnyxLink href='/courses/personal-protective-equipment' fullwidth style={{ marginInline: '.5rem' }}>
-						<Button
-							endIcon={<ExitToAppOutlinedIcon />}
-							sx={{ borderRadius: '40px', width: '100%', height: '100%' }}
-							color='primary'
-							size='large'
+				</Stack>
+			) : !myParsedProgresses?.length ? (
+				<Fade in timeout={2500}>
+					<Stack
+						width='100%'
+						alignItems='center'
+						justifyContent='space-around'
+						sx={{
+							flexDirection: { xs: 'column-reverse', md: 'row' },
+							padding: '1rem',
+							paddingLeft: '2rem',
+							marginTop: { xs: '1.5rem', md: '.5rem' },
+							'> img': { display: { xs: 'none', md: 'initial' } },
+						}}
+						gap={2}
+					>
+						<Box
+							sx={{
+								width: { xs: '100%', md: '60%' },
+								'> ul > span, a': { width: 'fit-content', display: 'block' },
+							}}
 						>
-							Перейти к курсу
-						</Button>
-					</OnyxLink>
-
-					<Stack direction={'row'}>
-						<IconButton aria-label='left' size='large'>
-							<ArrowBackIosOutlinedIcon />
-						</IconButton>
-						<IconButton aria-label='right' size='large'>
-							<ArrowForwardIosOutlinedIcon />
-						</IconButton>
+							<OnyxTypography
+								tpSize='1.35rem'
+								tpWeight='bold'
+								tpColor='primary'
+								text='Вы ещё не записаны на обучение, поэтому данный раздел сейчас пустует'
+								sx={{ marginBottom: '2rem', textTransform: 'uppercase' }}
+							/>
+							<Box
+								component='ul'
+								sx={{
+									'> span': { marginBottom: '1rem' },
+									'> span:last-child': { marginTop: '2rem', marginBottom: 'unset' },
+								}}
+							>
+								<OnyxTypography
+									component='li'
+									lkHref='/courses'
+									tpSize='1.25rem'
+									ttPlacement='top'
+									ttNode='Перейти к списку курсов в текущей системе'
+									ttFollow
+									centeredFlex
+								>
+									<LocalLibraryOutlinedIcon />
+									Посмотрите, какие образовательные программы доступны на нашей платформе
+								</OnyxTypography>
+								<OnyxTypography
+									component='li'
+									lkHref='/courses'
+									lkProps={{ rel: 'referrer', target: '_blank' }}
+									tpSize='1.25rem'
+									ttPlacement='top'
+									ttNode='Титульные страницы программ на сайте НОЦ'
+									ttFollow
+									centeredFlex
+								>
+									<LanguageOutlinedIcon />
+									Ознакомьтесь с титульными страницами курсов на нашем сайте
+									<OpenInNewOutlinedIcon sx={{ fontSize: '.85rem' }} />
+								</OnyxTypography>
+								<OnyxTypography
+									component='li'
+									lkHref='/courses'
+									lkProps={{ rel: 'referrer', target: '_blank' }}
+									tpSize='1.25rem'
+									ttPlacement='top'
+									ttNode='График обучения на сайте НОЦ'
+									ttFollow
+									centeredFlex
+								>
+									<EventAvailableOutlinedIcon />
+									Взгляните на график планового обучения на текущий год
+									<OpenInNewOutlinedIcon sx={{ fontSize: '.85rem' }} />
+								</OnyxTypography>
+								<OnyxTypography
+									component='li'
+									lkHref='/support'
+									tpSize='1.25rem'
+									ttPlacement='top'
+									ttNode='Контакты научно-образовательного центра'
+									ttFollow
+									centeredFlex
+								>
+									<ContactsOutlinedIcon />
+									Свяжитесь с нами удобным для вас способом, если возникли вопросы
+								</OnyxTypography>
+							</Box>
+						</Box>
+						<img
+							loading='lazy'
+							alt='Empty courses image'
+							src='/images/courses/Education-empty.png'
+							style={{
+								maxWidth: 'min(1250px, 40vw)',
+								minWidth: '350px',
+								maxHeight: 'min(750px, 75lvh)',
+								minHeight: '300px',
+								userSelect: 'none',
+							}}
+						/>
 					</Stack>
-				</Paper>
-			</Grid>
-
-			<Grid item xs={12} md={12} lg={7} xl={8} sx={{ position: 'relative' }}>
-				<Chip
-					component='div'
-					variant='filled'
-					color='success'
-					size='small'
-					label='идет обучение'
-					sx={{
-						position: 'absolute',
-						top: '20px',
-						right: '0',
-						padding: '10px',
-					}}
-				/>
-				<OnyxTypography
-					tpVariant='h6'
-					tpWeight='bold'
-					tpColor='inherit'
-					tpSize='1.25rem'
-					sx={{
-						textAlign: { xs: 'center', lg: 'left' },
-						marginBottom: { xs: '20px', lg: '0' },
-						height: '100%',
-						display: 'flex',
-						justifyContent: 'center',
-						alignItems: 'center',
-						padding: '20px',
-					}}
-					text='Правила проведения входного контроля средств индивидуальной защиты'
-				/>
-			</Grid>
-
-			<Grid item xs={12} md={12} lg={12}>
-				<Tabs
-					orientation='horizontal'
-					variant='scrollable'
-					scrollButtons
-					allowScrollButtonsMobile
-					value={position}
-					onChange={handlePositionChange}
-					aria-label='меню личного кабинета'
-				>
-					<Tab iconPosition='start' label='График' />
-					<Tab iconPosition='start' label='Прогресс' />
-					<Tab iconPosition='start' label='Оценки' />
-					<Tab iconPosition='start' label='Статистика оценок' />
-				</Tabs>
-			</Grid>
-
-			<Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-				<TabPanel value={position} index={0}>
-					<EducationPlan />
-				</TabPanel>
-
-				<TabPanel value={position} index={1}>
-					<Grid container spacing={3}>
-						<Grid item xs={12} md={12} lg={3}>
-							<Stack direction='column' spacing={3}>
-								<Typography variant='body1'>Общий прогресс</Typography>
-								<CourseProgress />
-							</Stack>
-						</Grid>
-
-						<Grid item xs={12} md={12} lg={9}>
-							<Stack direction='column' spacing={3}>
-								<Typography variant='body1'>Прогресс по темам / разделам</Typography>
-								<CourseSectionsProgress />
-							</Stack>
-						</Grid>
-					</Grid>
-				</TabPanel>
-
-				<TabPanel value={position} index={2}>
-					<EducationEvaluations />
-				</TabPanel>
-				<TabPanel value={position} index={3}>
-					<EducationEvaluationsChart />
-				</TabPanel>
-			</Grid>
+				</Fade>
+			) : (
+				<EducationPanelContent progresses={myParsedProgresses} />
+			)}
 		</Grid>
 	);
 };
+
+export default Education;

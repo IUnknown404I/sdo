@@ -1,37 +1,110 @@
 import { Box, Button, Divider, Stack, TextField, useTheme } from '@mui/material';
+import { useRouter } from 'next/router';
 import React, { ComponentProps } from 'react';
+import { useDebouncedState } from '../../../../hooks/useDebouncedState';
+import { OnyxApiErrorResponseType, rtkApi } from '../../../../redux/api';
+import { parseCurrentContentID } from '../../../../redux/endpoints/lecturesEnd';
 import { COROPRATIVE_COLOR_DARK, COROPRATIVE_COLOR_LIGHT } from '../../../../theme/ThemeOptions';
 import OnyxAlertModal from '../../../basics/OnyxAlertModal';
 import OnyxSelect from '../../../basics/OnyxSelect';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
+import { notification } from '../../../utils/notifications/Notification';
+import { LINKS_MAP } from '../courseItemsTypes';
 import SectionContentLinkItem from '../section-elements/SectionContentLinkItem/SectionContentLinkItem';
 
-const ContentLinkEditModal = (
-	props: ComponentProps<typeof SectionContentLinkItem> & {
-		modalState: boolean;
-		setModalState: React.Dispatch<React.SetStateAction<boolean>>;
-		onSubmitCallback?: () => void;
-		onCancelCallback?: () => void;
-	},
-) => {
+interface IContentLinkEditModal extends ComponentProps<typeof SectionContentLinkItem> {
+	modalState: boolean;
+	setModalState: React.Dispatch<React.SetStateAction<boolean>>;
+	onSubmitCallback?: () => void;
+	onCancelCallback?: () => void;
+}
+
+const ContentLinkEditModal = (props: IContentLinkEditModal) => {
 	const theme = useTheme();
+	const router = useRouter();
+	const isAxiosFired = React.useRef<boolean>(false);
 	const fontColorInputRef = React.useRef<HTMLInputElement>(null);
 	const borderColorInputRef = React.useRef<HTMLInputElement>(null);
 
+	const [editCourseLink] = rtkApi.useEditCourseLinkMutation();
+	const [editLectureLink] = rtkApi.useEditLectureLinkMutation();
+
 	const [flexBasis, setFlexBasis] = React.useState<number>(props.basis || 100);
 	const [title, setTitle] = React.useState<string>(props.text || 'Текст элемента');
-	const [elementType, setElementType] = React.useState<string>(props.type || 'link');
-	const [fontColor, setFontColor] = React.useState<string>(
-		props.styles?.borderColor || theme.palette.mode === 'light' ? COROPRATIVE_COLOR_LIGHT : COROPRATIVE_COLOR_DARK,
-	);
+	const [elementType, setElementType] = React.useState<keyof typeof LINKS_MAP>(props.linkType || 'link');
+	const [itemUrl, setItemUrl] = React.useState<string>(props.href || '');
 
-	const [borderWidth, setBorderWidth] = React.useState<number>(props.styles?.borderWidth || 1);
+	const [fontColor, setFontColor] = useDebouncedState<string>(
+		props.styles?.color || (theme.palette.mode === 'light' ? COROPRATIVE_COLOR_LIGHT : COROPRATIVE_COLOR_DARK),
+		250,
+	);
+	const [borderWidth, setBorderWidth] = React.useState<number>(props.styles?.borderWidth ?? 1);
 	const [borderStyle, setBorderStyle] = React.useState<string>(props.styles?.borderStyle || 'solid');
-	const [borderColor, setBorderColor] = React.useState<string>(
-		props.styles?.borderColor || theme.palette.mode === 'light' ? COROPRATIVE_COLOR_LIGHT : COROPRATIVE_COLOR_DARK,
+	const [borderColor, setBorderColor] = useDebouncedState<string>(
+		props.styles?.borderColor ||
+			(theme.palette.mode === 'light' ? COROPRATIVE_COLOR_LIGHT : COROPRATIVE_COLOR_DARK),
+		250,
 	);
 
 	function handleSubmit() {
+		if (isAxiosFired.current || !props.csiid) return;
+		isAxiosFired.current = true;
+		const currentID = parseCurrentContentID(router);
+
+		(currentID.isLecture
+			? editLectureLink({
+					cslid: currentID.id,
+					csiid: props.csiid,
+					basis: flexBasis,
+					title,
+					linkType: elementType,
+					href: itemUrl,
+					styles: {
+						color: fontColor,
+						borderWidth: borderWidth,
+						borderStyle: borderStyle,
+						borderColor: borderColor,
+					},
+			  })
+			: editCourseLink({
+					cid: router.query.cid as string,
+					csid: currentID.id,
+					csiid: props.csiid,
+					basis: flexBasis,
+					title,
+					linkType: elementType,
+					href: itemUrl,
+					styles: {
+						color: fontColor,
+						borderWidth: borderWidth,
+						borderStyle: borderStyle,
+						borderColor: borderColor,
+					},
+			  })
+		)
+			.then(response => {
+				if (typeof response === 'object' && 'error' in response)
+					notification({
+						message: (response.error as OnyxApiErrorResponseType).data?.message,
+						type: 'error',
+					});
+				else if ('result' in response.data && !!response.data.result) {
+					notification({
+						message: `Параметры ссылочного элемента успешно изменены!`,
+						type: 'success',
+					});
+					props.setModalState(false);
+				}
+			})
+			.catch(() =>
+				notification({
+					message:
+						'Произошла ошибка в процессе изменения параметров ссылочного элемента! Попробуйте позже или обратитесь в поддержку.',
+					type: 'error',
+				}),
+			)
+			.finally(() => (isAxiosFired.current = false));
+
 		if (!!props.onSubmitCallback) props.onSubmitCallback();
 		props.setModalState(false);
 	}
@@ -108,10 +181,12 @@ const ContentLinkEditModal = (
 						<OnyxSelect
 							fullwidth
 							value={elementType}
-							setValue={e => setElementType(e.target.value as string)}
+							setValue={e => setElementType(e.target.value as keyof typeof LINKS_MAP)}
 							disableEmptyOption
-							listItems={['Веб-ссылка', 'Видеофайл', 'Опросный лист']}
-							itemsIndexes={['link', 'video', 'feedback']}
+							listItems={Object.keys(LINKS_MAP).map(
+								attribute => LINKS_MAP[attribute as keyof typeof LINKS_MAP].fileType,
+							)}
+							itemsIndexes={Object.keys(LINKS_MAP)}
 							size='small'
 						/>
 					</Box>
@@ -189,6 +264,19 @@ const ContentLinkEditModal = (
 					</Stack>
 				</Stack>
 
+				<Box sx={{ width: '100%' }}>
+					<OnyxTypography text='Ссылка на источник:' tpColor='secondary' tpSize='.85rem' />
+					<TextField
+						fullWidth
+						placeholder='Укажите url ресурса'
+						value={itemUrl}
+						onChange={e => setItemUrl(e.target.value)}
+						type='url'
+						size='small'
+						variant='outlined'
+					/>
+				</Box>
+
 				<Divider sx={{ margin: '0 auto', width: '100%' }} />
 
 				<Box>
@@ -207,7 +295,7 @@ const ContentLinkEditModal = (
 							forcedMode='observe'
 							href='/'
 							text={title}
-							type={elementType as ComponentProps<typeof SectionContentLinkItem>['type']}
+							linkType={elementType as ComponentProps<typeof SectionContentLinkItem>['linkType']}
 							basis={flexBasis}
 							styles={{
 								color: fontColor,
@@ -220,10 +308,10 @@ const ContentLinkEditModal = (
 				</Box>
 
 				<Stack direction='row' justifyContent='flex-end' alignItems='center' gap={1.5}>
-					<Button variant='contained' sx={{ paddingInline: '2.25rem' }} onClick={handleSubmit}>
+					<Button color='success' variant='outlined' sx={{ paddingInline: '2.25rem' }} onClick={handleSubmit}>
 						Сохранить изменения
 					</Button>
-					<Button variant='outlined' onClick={handleCancel}>
+					<Button variant='contained' sx={{ paddingInline: '1.75rem' }} onClick={handleCancel}>
 						Вернуться
 					</Button>
 				</Stack>

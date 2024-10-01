@@ -1,21 +1,10 @@
-import {
-	Body,
-	Controller,
-	Get,
-	Param,
-	Post,
-	Put,
-	Query,
-	Request,
-	UnauthorizedException,
-	UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UnauthorizedException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { NotValidDataError } from 'errors/NotValidDataError';
 import { StringValidationPipe } from 'globalPipes/StringValidationPipe';
-import { AccessTokenGuard } from 'guards/AccessTokenGuard';
-import { RefreshOrAccessTokenGuard } from 'guards/RefreshOrAccessTokenGuard';
-import { AccessTokenPayload, UserFriendsI } from 'src/users/users.schema';
+import { UserData } from 'metadata/metadata-decorators';
+import { UsersFriendsService } from 'src/users/users-friends.service';
+import { User, UserFriendsI } from 'src/users/users.schema';
 import { UsersService } from 'src/users/users.service';
 import { UserChatDataI } from './chat.schema';
 import { ChatService } from './chat.service';
@@ -24,6 +13,7 @@ import { ChatService } from './chat.service';
 export class ChatController {
 	constructor(
 		readonly usersService: UsersService,
+		readonly usersFriendsService: UsersFriendsService,
 		readonly chatsService: ChatService,
 	) {}
 
@@ -35,51 +25,41 @@ export class ChatController {
 
 	@Get('')
 	@ApiTags('Chats')
-	@UseGuards(AccessTokenGuard)
-	async getUserChats(@Request() req) {
-		let usernameFromToken = '';
-		if (req.headers?.authorization)
-			usernameFromToken = (
-				(await this.usersService.decodeJWT(req.headers.authorization.split(' ')[1])) as AccessTokenPayload
-			)?.username;
-		else usernameFromToken = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username;
-		return this.chatsService.getUserChats(usernameFromToken);
+	async getUserChats(@UserData() userData: User) {
+		return this.chatsService.getUserChats(userData.username);
+	}
+
+	@Get('data/group/:rid')
+	@ApiTags('Chats')
+	async getGroupChatData(@Param('rid') rid: string, @UserData() userData: User) {
+		return await this.chatsService.getGroupChatData(rid, userData);
 	}
 
 	@Get('data/:rid')
 	@ApiTags('Chats')
-	@UseGuards(AccessTokenGuard)
-	async getChatData(@Param('rid') rid: string) {
-		return await this.chatsService.getChatData(rid);
+	async getChatData(@Param('rid') rid: string, @UserData() userData: User) {
+		return await this.chatsService.getChatData(rid, userData);
 	}
 
 	@Get('messages/:rid')
 	@ApiTags('Chats')
-	@UseGuards(AccessTokenGuard)
 	async getChatMessages(@Param('rid') rid: string) {
 		return await this.chatsService.getMessagesFromChat({ rid });
 	}
 
 	@Post('private')
 	@ApiTags('Chats')
-	@UseGuards(RefreshOrAccessTokenGuard)
 	async createPrivateChat(
-		@Request() req,
+		@UserData() userData: User,
 		@Body('name', StringValidationPipe) name: string,
 		@Body('initialUsers') initialUsers?: string[],
 	) {
-		let usernameFromToken = '';
-		if (req.headers?.authorization)
-			usernameFromToken = (
-				(await this.usersService.decodeJWT(req.headers.authorization.split(' ')[1])) as AccessTokenPayload
-			)?.username;
-		else usernameFromToken = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username;
-		const user = await this.usersService.findUser({ username: usernameFromToken });
+		const user = await this.usersService.findUser({ username: userData.username });
 		if (!user) throw new UnauthorizedException();
 
 		if (initialUsers && initialUsers.length === 2)
 			for (const rid of user.chats.private) {
-				const chatData = await this.chatsService.getChatData(rid);
+				const chatData = await this.chatsService.getChatData(rid, userData);
 				if (
 					chatData.participators.find(participator => participator.username === initialUsers[0]) &&
 					chatData.participators.find(participator => participator.username === initialUsers[1])
@@ -87,57 +67,45 @@ export class ChatController {
 					throw new NotValidDataError('Приватный чат с пользователем уже существует!');
 			}
 
-		return await this.chatsService.createPrivateChat(usernameFromToken, name, initialUsers);
+		return await this.chatsService.createPrivateChat(userData.username, name, initialUsers);
 	}
 
 	@Put('private/leave/:rid')
 	@ApiTags('Chats')
-	@UseGuards(AccessTokenGuard)
-	async leavePrivateChat(@Request() req, @Param('rid') rid: string) {
-		if (!req.headers.authorization.split(' ')[1]) throw new UnauthorizedException();
-		let usernameFromToken = (
-			(await this.usersService.decodeJWT(req.headers.authorization.split(' ')[1])) as AccessTokenPayload
-		)?.username;
-		if (!usernameFromToken) throw new UnauthorizedException();
+	async leavePrivateChat(@Param('rid') rid: string, @UserData() userData: User) {
+		return await this.chatsService.leavePrivateChat({ username: userData.username, rid });
+	}
 
-		return await this.chatsService.leavePrivateChat({ username: usernameFromToken, rid });
+	@Put('group/leave/:rid')
+	@ApiTags('Chats')
+	async leaveGroupChat(@Param('rid') rid: string, @UserData() userData: User) {
+		// return await this.chatsService.leaveGroupChat({ username: userData.username, rid });
 	}
 
 	@Get('private/get-rid/:username')
 	@ApiTags('Chats')
-	@UseGuards(AccessTokenGuard)
-	async getPrivateChatRid(@Request() req, @Param('username', StringValidationPipe) username: string) {
-		let usernameFromToken = (
-			(await this.usersService.decodeJWT(req.headers.authorization.split(' ')[1])) as AccessTokenPayload
-		)?.username;
-		if (!usernameFromToken) throw new UnauthorizedException();
-
-		return await this.chatsService.findPrivateChatRid(usernameFromToken, username);
+	async getPrivateChatRid(@Param('username', StringValidationPipe) username: string, @UserData() userData: User) {
+		return await this.chatsService.findPrivateChatRid(userData.username, username);
 	}
 
 	@Get('contacts')
 	@ApiTags('Chats')
-	@UseGuards(RefreshOrAccessTokenGuard)
-	async getChatContacts(@Request() req, @Query('username') username?: string, @Query('email') email?: string) {
+	async getChatContacts(
+		@UserData() userData: User,
+		@Query('username') username?: string,
+		@Query('email') email?: string,
+	) {
 		if (!username && !email) throw new NotValidDataError('Предоставлено недостаточно данных!');
-
-		let usernameFromToken = '';
-		if (req.headers?.authorization)
-			usernameFromToken = (
-				(await this.usersService.decodeJWT(req.headers.authorization.split(' ')[1])) as AccessTokenPayload
-			)?.username;
-		else usernameFromToken = (await this.usersService.findByRefreshToken(req.cookies.refreshToken))?.username;
 
 		return await this.chatsService.getContactsByUsernameOrEmail({
 			username,
 			email,
-			requestedUsername: usernameFromToken,
+			requestedUsername: userData.username,
 		});
 	}
 
 	@Get('user-data/:username')
 	@ApiTags('Chats')
-	@UseGuards(RefreshOrAccessTokenGuard)
 	async getUserChatData(@Param('username') username: string): Promise<UserChatDataI> {
 		if (username === 'system')
 			return {
@@ -151,75 +119,58 @@ export class ChatController {
 
 	@Get('user-participators/private')
 	@ApiTags('Chats')
-	@UseGuards(AccessTokenGuard)
-	async getUserPrivateParticipators(@Request() req): Promise<string[]> {
-		let usernameFromToken = ((await this.usersService.decodeJWT(
-			req.headers.authorization.split(' ')[1],
-		)) as AccessTokenPayload)!.username;
-		if (!usernameFromToken) throw new NotValidDataError();
-		return await this.chatsService.userPrivateParticipators(usernameFromToken);
+	async getUserPrivateParticipators(@UserData() userData: User): Promise<string[]> {
+		return await this.chatsService.userPrivateParticipators(userData.username);
 	}
 
 	@Get('friends')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async getUserFriends(@Request() req): Promise<UserFriendsI> {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.getUserFriends(decodedTokenData.username);
+	async getUserFriends(@UserData() userData: User): Promise<UserFriendsI> {
+		return await this.usersFriendsService.getUserFriends(userData.username);
 	}
 
 	@Put('friends/add')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async updateUserFriends(@Request() req, @Body('friendUsername', StringValidationPipe) friendUsername: string) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.addUserFriend(decodedTokenData.username, friendUsername);
+	async updateUserFriends(
+		@UserData() userData: User,
+		@Body('friendUsername', StringValidationPipe) friendUsername: string,
+	) {
+		return await this.usersFriendsService.addUserFriend(userData.username, friendUsername);
 	}
 
 	@Put('friends/request')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async requestUserFriends(@Request() req, @Body('friendUsername', StringValidationPipe) friendUsername: string) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.requestUserFriend(decodedTokenData.username, friendUsername);
+	async requestUserFriends(
+		@UserData() userData: User,
+		@Body('friendUsername', StringValidationPipe) friendUsername: string,
+	) {
+		return await this.usersFriendsService.requestUserFriend(userData.username, friendUsername);
 	}
 
 	@Put('friends/request-reject')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
 	async requestRejectUserFriends(
-		@Request() req,
+		@UserData() userData: User,
 		@Body('friendUsername', StringValidationPipe) friendUsername: string,
 	) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.requestRejectUserFriend(decodedTokenData.username, friendUsername);
+		return await this.usersFriendsService.requestRejectUserFriend(userData.username, friendUsername);
 	}
 
 	@Put('friends/reject')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async rejectUserFriends(@Request() req, @Body('friendUsername', StringValidationPipe) friendUsername: string) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.rejectUserFriend(decodedTokenData.username, friendUsername);
+	async rejectUserFriends(
+		@UserData() userData: User,
+		@Body('friendUsername', StringValidationPipe) friendUsername: string,
+	) {
+		return await this.usersFriendsService.rejectUserFriend(userData.username, friendUsername);
 	}
 
 	@Put('friends/delete')
 	@ApiTags('Users')
-	@UseGuards(AccessTokenGuard)
-	async deleteUserFriends(@Request() req, @Body('friendUsername', StringValidationPipe) friendUsername: string) {
-		const decodedTokenData: AccessTokenPayload = (await this.usersService.decodeJWT(
-			req.headers.authorization?.split(' ')[1],
-		)) as AccessTokenPayload;
-		return await this.usersService.deleteUserFriend(decodedTokenData.username, friendUsername);
+	async deleteUserFriends(
+		@UserData() userData: User,
+		@Body('friendUsername', StringValidationPipe) friendUsername: string,
+	) {
+		return await this.usersFriendsService.deleteUserFriend(userData.username, friendUsername);
 	}
 }

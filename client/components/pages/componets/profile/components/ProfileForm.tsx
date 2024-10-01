@@ -9,6 +9,7 @@ interface ProfileFormI {
 	formik: any;
 	Loader: JSX.Element;
 	loadingState: boolean;
+	onCancelEditingHandler?: () => void;
 }
 
 const ProfileForm = (props: ProfileFormI) => {
@@ -21,8 +22,8 @@ const ProfileForm = (props: ProfileFormI) => {
 			container
 			component='form'
 			onSubmit={props.formik.handleSubmit}
-			spacing={2}
 			sx={{ height: 'calc(100% - 40px)', maxHeight: 'calc(100% - 40px)' }}
+			spacing={2}
 		>
 			<Grid item xs={12} lg={12}>
 				<Stack sx={{ width: '100%' }} justifyContent='flex-end' alignItems='flex-end'>
@@ -128,7 +129,10 @@ const ProfileForm = (props: ProfileFormI) => {
 	);
 
 	function toggleEditMode() {
-		if (editMode) props.formik.resetForm();
+		if (editMode) {
+			if (!!props.onCancelEditingHandler) props.onCancelEditingHandler();
+			else props.formik.resetForm();
+		}
 		setEditMode(prev => !prev);
 	}
 };

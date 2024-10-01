@@ -10,37 +10,34 @@ import { OnyxTypography } from '../OnyxTypography';
 import classes from './fileDropper.module.scss';
 import { FilesFetch } from './filesFetch';
 
-export type OnyxFileTypes =
-	| 'image/webp'
-	| 'image/svg+xml'
-	| 'image/png'
-	| 'image/jpeg'
-	| 'video/webm'
-	| 'video/mp4'
-	| 'application/pdf'
-	| 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 export type UploadURIType = { uri: string; method: 'POST' | 'PUT' };
 export interface OnyxFileDropperI {
-	uploadUri: UploadURIType;
-	callback?: Function;
-	onUploadEndMerge?: (source: string) => void;
 	fullwidth?: boolean;
-	containerClassName?: string;
-	fileType?: OnyxFileTypes | OnyxFileTypes[];
+	uploadUri?: UploadURIType;
+	submitButtonText?: string;
+	changeButtonText?: string;
 	maxSizeKb?: number;
+	fileType?: 'all' | OnyxFileTypes | OnyxFileTypes[];
+	previewImageUrl?: string;
+	containerClassName?: string;
+	callback?: (file: File) => void;
+	onFileDropCallback?: (file: File) => void;
+	onUploadEndMerge?: (source: string) => void;
 }
 
 /**
  * @IUnknown404I FileDropper component for drag-and-drop or basic choosing the file\files to be sent to the server side according passed config.
+ * @description if uploadUri haven't been passed or the uri attribute in uploadUri
  * @param props as a config Object:
     - path: string as path for server-side be processed;
     - callback?: Function that will be fired after onClick event for upload button will be done in .finally() block;
     - onUploadEndMerge?: (source: string) => void as filter-function for processing responce from the server if responce containing string[] data (not FileWithSizes[]);
+	- previewImageUrl?: uri for the image to be placed next to the uploaded data's meta information if the preview-img cannot be get from the file;
     - fullwidth?: boolean;
     - containerClassName?: string;
-    - fileType?: OnyxFileTypes | OnyxFileTypes[];
+    - fileType?: 'all' | OnyxFileTypes | OnyxFileTypes[];
     - maxSizeKb?: number;
- * @returns a FileDropper component.
+ * @returns a FileDropper JSX.Element.
  */
 const OnyxFileDropper = (props: OnyxFileDropperI) => {
 	const theme = useTheme();
@@ -53,9 +50,11 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 		minute: 'numeric',
 		second: 'numeric',
 	});
+
 	const authInstance = useTypedSelector(store => store.axiosInstance.instance);
 	const dropRef = React.useRef<HTMLDivElement>(null);
 	const inputRef = React.useRef<HTMLInputElement>(null);
+
 	const [file, setFile] = React.useState<File | undefined>(undefined);
 	const [preview, setPreview] = React.useState<string | null>('');
 
@@ -68,14 +67,19 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 		if (!file) return;
 		const reader = new FileReader();
 
-		reader.onloadend = () => {
-			try {
-				setPreview(reader.result as string | null);
-			} catch (error) {
-				logapp.log('[!] Unable to read file from OnyxFileDropper on the client!');
-				if (preview != null) setPreview(null);
-			}
-		};
+		if (props.fileType)
+			reader.onloadend = () => {
+				try {
+					setPreview(
+						!!reader.result && typeof reader.result === 'string' && reader.result.includes('data:image/')
+							? (reader.result as string)
+							: null,
+					);
+				} catch (error) {
+					logapp.log('[!] Unable to read file from OnyxFileDropper on the client!');
+					if (preview != null) setPreview(null);
+				}
+			};
 		reader.readAsDataURL(file);
 	}, [file]);
 
@@ -131,12 +135,16 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 
 			<input
 				hidden
-				ref={inputRef}
 				type='file'
+				role='button'
+				alt='file-input'
+				ref={inputRef}
 				accept={
-					props.fileType
-						? Array.isArray(props.fileType)
-							? props.fileType.toString().replaceAll(',', ', ')
+					!!props.fileType
+						? props.fileType === 'all'
+							? allOnyxFileTypes.join(', ')
+							: Array.isArray(props.fileType)
+							? props.fileType.join(', ')
 							: props.fileType
 						: 'image/webp, video/webm, application/pdf, image/svg+xml, application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 				}
@@ -150,8 +158,41 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 
 			{file !== undefined && (
 				<Grid container fontSize='1.25rem' rowGap={1}>
-					<Grid item lg={6} md={12} sx={{ textAlign: 'center' }}>
-						<img src={preview || ''} alt='Preview' style={{ maxWidth: 'min(90%, 700px)' }} />
+					<Grid item lg={6} md={12} sx={{ textAlign: 'center', marginInline: 'auto' }}>
+						<Stack
+							sx={{
+								position: 'relative',
+								width: '100%',
+								overflow: 'hidden',
+							}}
+						>
+							<img
+								src={preview ?? props.previewImageUrl ?? '/images/courses/sections/fileicon.png'}
+								alt='Preview'
+								style={{
+									marginInline: 'auto',
+									minWidth: 'min(25%, 200px)',
+									maxWidth: 'min(85%, 600px)',
+									filter: !preview && !props.previewImageUrl ? 'opacity(0.5)' : undefined,
+								}}
+							/>
+							{!preview && !props.previewImageUrl && (
+								<OnyxTypography
+									text='Предпросмотр недоступен'
+									tpColor='primary'
+									tpSize='1rem'
+									tpWeight='bold'
+									sx={{
+										position: 'absolute',
+										opacity: '.75',
+										top: '50%',
+										left: '50%',
+										textAlign: 'center',
+										transform: 'translate(-50%, -50%)',
+									}}
+								/>
+							)}
+						</Stack>
 					</Grid>
 
 					<Grid item lg={6} md={12}>
@@ -193,101 +234,68 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 								>
 									<Button
 										fullWidth
+										color='success'
 										variant='contained'
 										onClick={() => {
 											handleUpload().finally(() => {
-												if (props.callback) props.callback();
+												console.log('[!!!] OnyxFileDroppper handleUpload - FINAL block fired.');
+												if (props.callback) props.callback(file);
 											});
 										}}
 									>
-										Загрузить
+										{props.submitButtonText || 'Загрузить'}
 									</Button>
 									<Button
 										fullWidth
 										variant='outlined'
 										onClick={() => {
+											if (!!props.onFileDropCallback) props.onFileDropCallback(file);
 											setFile(undefined);
 										}}
 									>
-										Выбрать другой
+										{props.changeButtonText || 'Выбрать другой'}
 									</Button>
 								</Stack>
 							)}
 						</Stack>
 					</Grid>
-
-					{file !== undefined && (
-						<Grid item lg={0} md={12} sx={{ display: { xs: '', lg: 'none' } }}>
-							{file !== undefined && (
-								<Box
-									sx={{
-										display: 'flex',
-										flexDirection: 'row',
-										gap: '1.25rem',
-										width: '100%',
-										marginTop: '1rem',
-									}}
-								>
-									<Button
-										fullWidth
-										variant='contained'
-										onClick={() => {
-											handleUpload().finally(() => {
-												if (props.callback) props.callback();
-											});
-										}}
-									>
-										Загрузить
-									</Button>
-									<Button
-										sx={{ paddingInline: '1.25rem', minWidth: '220px' }}
-										variant='outlined'
-										onClick={() => {
-											setFile(undefined);
-										}}
-									>
-										Выбрать другой
-									</Button>
-								</Box>
-							)}
-						</Grid>
-					)}
 				</Grid>
 			)}
 		</Box>
 	);
 
 	async function handleUpload() {
-		if (file instanceof File && !Array.isArray(file)) {
-			await FilesFetch.uploadFile({ axiosInstance: authInstance, uploadUri: props.uploadUri, file })
-				.then(res => {
-					if (typeof res === 'string' && props.onUploadEndMerge) props.onUploadEndMerge(res);
-					notification({
-						message:
-							'Файл успешно загружен!',
-						type: 'success',
-					});
-				})
-				.catch(() =>
-					notification({
-						message:
-							'Не удалось загрузить файл! Попробуйте перезагрузить страницу и попробовать снова.',
-						type: 'error',
-					}),
-				);
+		if (!!props.uploadUri) {
+			if (!props.uploadUri?.uri)
+				notification({
+					message: `${!!props.uploadUri ? 'Указан некорректный' : 'Не указан'} url для отправки файла!`,
+					type: 'error',
+				});
+			else if (file instanceof File && !Array.isArray(file)) {
+				await FilesFetch.uploadFile({ axiosInstance: authInstance, uploadUri: props.uploadUri, file })
+					// .then(response => {
+					// 	if (typeof response === 'string' && props.onUploadEndMerge) props.onUploadEndMerge(response);
+					// 	notification({
+					// 		message: 'Файл успешно загружен!',
+					// 		type: 'success',
+					// 	});
+					// })
+					// .catch(() =>
+					// 	notification({
+					// 		message:
+					// 			'Не удалось загрузить файл! Попробуйте перезагрузить страницу и попробовать снова.',
+					// 		type: 'error',
+					// 	}),
+					// );
+			}
 		}
 	}
 
 	function fileCheck(file: File | undefined | null): boolean {
+		// file instance check
 		if (!file || !(file instanceof File)) return false;
-		if (file.size >= (props.maxSizeKb != undefined ? props.maxSizeKb * 1024 : 10 * 1024 * 1024)) {
-			notification({
-				type: 'error',
-				message: 'Размер файла превышает ограничения!',
-				autoClose: 5000,
-			});
-			return false;
-		}
+
+		// file size edge case check
 		if (isNaN(file.size)) {
 			notification({
 				type: 'error',
@@ -296,11 +304,24 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 			});
 			return false;
 		}
+		// file size check
+		if (file.size >= (props.maxSizeKb != undefined ? props.maxSizeKb * 1024 : 10 * 1024 * 1024)) {
+			notification({
+				type: 'error',
+				message: 'Размер файла превышает ограничения!',
+				autoClose: 5000,
+			});
+			return false;
+		}
+
+		// file type check
 		if (
 			file.type === undefined ||
 			file.type.trim() === '' ||
-			(props.fileType !== undefined && props.fileType
-				? !props.fileType.includes(file.type as OnyxFileTypes)
+			(!!props.fileType
+				? props.fileType === 'all'
+					? !allOnyxFileTypes.includes(file.type as OnyxFileTypes)
+					: !props.fileType.includes(file.type as OnyxFileTypes)
 				: ![
 						'image/webp',
 						'video/webm',
@@ -309,9 +330,20 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 						'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 				  ].includes(file.type))
 		) {
+			// check for zip allias (all counts as valid)
+			if (
+				(props.fileType === 'application/zip' ||
+					(Array.isArray(props.fileType) && props.fileType.includes('application/zip'))) &&
+				(file.type === 'application/x-zip' ||
+					file.type === 'application/x-zip-compressed' ||
+					file.type === 'multipart/x-zip')
+			)
+				return true;
+
+			// throws an error message and return false
 			notification({
 				type: 'error',
-				message: 'Расширение выбранного файла не соответствует критериям!',
+				message: 'Расширение выбранного файла не соответствует критериям!' + ' <--> ' + file.type.trim(),
 				autoClose: 5000,
 			});
 			return false;
@@ -320,3 +352,51 @@ const OnyxFileDropper = (props: OnyxFileDropperI) => {
 };
 
 export default OnyxFileDropper;
+
+export type OnyxFileTypes =
+	// images
+	| 'image/jpeg'
+	| 'image/png'
+	| 'image/webp'
+	| 'image/svg+xml'
+	// videos
+	| 'video/webm'
+	| 'video/mp4'
+	// zip
+	| 'application/zip' // application/octet-stream and multipart/x-zip
+	// docs
+	| 'application/pdf'
+	// word
+	| 'application/msword' // doc
+	| 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // docx
+	| 'application/vnd.ms-word.document.macroEnabled.12' // docm
+	// powerpoint
+	| 'application/vnd.ms-powerpoint' //ppt
+	| 'application/vnd.openxmlformats-officedocument.presentationml.presentation' //pptx
+	| 'application/vnd.ms-powerpoint.presentation.macroEnabled.12' //pptm
+	// excel
+	| 'text/csv' // csv
+	| 'application/vnd.ms-excel' // xls
+	| 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // xlsx
+	| 'application/vnd.ms-excel.sheet.macroEnabled.12'; // xlsm
+
+var allOnyxFileTypes: OnyxFileTypes[] = [
+	'image/jpeg',
+	'image/png',
+	'image/webp',
+	'image/svg+xml',
+	'video/webm',
+	'video/mp4',
+	'application/zip',
+	'application/pdf',
+	'application/msword',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'application/vnd.ms-word.document.macroEnabled.12',
+	'application/vnd.ms-powerpoint',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+	'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
+	'text/csv',
+	'application/vnd.ms-excel',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	'application/vnd.ms-excel.sheet.macroEnabled.12',
+];

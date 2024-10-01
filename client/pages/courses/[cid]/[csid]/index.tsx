@@ -3,8 +3,6 @@ import AutoFixOffIcon from '@mui/icons-material/AutoFixOff';
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import PrintIcon from '@mui/icons-material/Print';
-import SaveIcon from '@mui/icons-material/Save';
-import SecurityIcon from '@mui/icons-material/Security';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Button, Stack } from '@mui/material';
 import Head from 'next/head';
@@ -13,37 +11,65 @@ import React from 'react';
 import OnyxLink from '../../../../components/basics/OnyxLink';
 import OnyxSpeedDial from '../../../../components/basics/OnyxSpeedDial';
 import { OnyxTypography } from '../../../../components/basics/OnyxTypography';
-import { CourseSectionType } from '../../../../components/pages/courses/coursesTypes';
-import SectionContent from '../../../../components/pages/courses/section-elements/SectionContent';
+import SectionContentBlock from '../../../../components/pages/courses/section-elements/SectionContentBlock';
 import { SectionContentPagination } from '../../../../components/pages/courses/section-elements/SectionItems';
 import ModernLoader from '../../../../components/utils/loaders/ModernLoader';
+import { notification } from '../../../../components/utils/notifications/Notification';
 import CoursesLayout from '../../../../layout/CoursesLayout';
-import { rtkApi } from '../../../../redux/api';
+import { OnyxApiErrorResponseType, rtkApi } from '../../../../redux/api';
 import { useTypedDispatch, useTypedSelector } from '../../../../redux/hooks';
 import { changeCourseViewMode } from '../../../../redux/slices/courses';
+import { SystemRolesOptions, selectUser } from '../../../../redux/slices/user';
 
 const CourseSectionPage = () => {
 	const router = useRouter();
 	const dispatcher = useTypedDispatch();
+
+	const userData = useTypedSelector(selectUser);
 	const viewMode = useTypedSelector(store => store.courses.mode);
 
 	const { data: courseData, isLoading: isDataLoading } = rtkApi.useCourseDataQuery(
 		(router.query.cid as string | undefined) || '',
 	);
 
-	const [sectionData, setSectionData] = React.useState<CourseSectionType | undefined>(undefined);
+	const {
+		data: sectionData,
+		isLoading: isSectionDataLoading,
+		isFetching: isSectionDataFetching,
+		fulfilledTimeStamp,
+		refetch,
+		error,
+	} = rtkApi.useCourseExactSectionQuery({
+		cid: (router.query.cid as string | undefined) || '',
+		csid: (router.query.csid as string | undefined) || '',
+	});
 
 	React.useEffect(() => {
-		if (!courseData || !courseData.sections.length) return;
-		setSectionData(courseData.sections.find(section => section.csid === (router.query.csid as string | undefined)));
-	}, [courseData]);
-
-	React.useEffect(() => {
-		if (!!courseData && (!sectionData?.csid || (router.query.csid as string) !== sectionData?.csid))
-			setSectionData(
-				courseData.sections.find(section => section.csid === (router.query.csid as string | undefined)),
-			);
+		refetch();
 	}, [router.query]);
+
+	React.useEffect(() => {
+		if (!!error) {
+			if (!!(error as OnyxApiErrorResponseType).data?.message)
+				notification({
+					type: 'error',
+					message: (error as OnyxApiErrorResponseType).data.message as string,
+					autoClose: 7500,
+				});
+			router.push(`/courses/${router.query?.cid || ''}`);
+		}
+	}, [error]);
+
+	React.useEffect(() => {
+		if (!sectionData && !isSectionDataLoading && fulfilledTimeStamp) {
+			router.push(`/courses/${router.query.cid as string}`);
+			notification({
+				message: 'Запрашиваемый раздел не был найден! Перенаправляем на страницу программы...',
+				type: 'warning',
+				autoClose: 7500,
+			});
+		}
+	}, [isSectionDataLoading, sectionData]);
 
 	return (
 		<>
@@ -53,9 +79,8 @@ const CourseSectionPage = () => {
 			</Head>
 
 			<CoursesLayout
-				progressValue={30}
-				courseIconUrl={courseData?.main.previewScreenshot}
-				breadcrumbsCourseContent={[
+				courseIconUrl={courseData?.main?.previewScreenshot}
+				breadcrumbs={[
 					{
 						element: `Раздел программы`,
 						href: `/courses/${router.query.cid as string}/${router.query.csid as string}`,
@@ -63,19 +88,24 @@ const CourseSectionPage = () => {
 					},
 				]}
 			>
-				{!courseData || !sectionData || isDataLoading ? (
-					<Stack width='100%'>
-						<ModernLoader centered tripleLoadersMode loading />
+				{!courseData || !sectionData || isDataLoading || isSectionDataFetching ? (
+					<Stack width='100%' height='calc(100lvh - 300px)'>
+						<ModernLoader
+							loading
+							centered
+							tripleLoadersMode
+							containerSx={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+						/>
 					</Stack>
 				) : (
-					<Stack component='section' width='100%' direction='column' gap={2}>
-						{/* header */}
+					<Stack component='section' minHeight='calc(100vh - 175px)' width='100%' direction='column' gap={2}>
 						<Stack
+							aria-label='content-header'
 							width='100%'
 							justifyContent='space-between'
-							alignItems={{ xs: 'flex-end', md: 'center' }}
-							direction={{ xs: 'column-reverse', md: 'row' }}
-							gap={{ xs: 0.25, md: 2 }}
+							alignItems={{ sx: 'flex-end', md: 'center' }}
+							direction={{ sx: 'column-reverse', md: 'row' }}
+							gap={{ sx: 0.25, md: 2 }}
 						>
 							<OnyxTypography
 								text={`Раздел ${sectionData.orderNumber}. ${sectionData.title}`}
@@ -83,7 +113,9 @@ const CourseSectionPage = () => {
 								tpSize='1.5rem'
 								tpWeight='bold'
 								component='h1'
+								sx={{ width: { sx: '100%', md: undefined }, textAlign: { sx: 'left', md: undefined } }}
 							/>
+
 							<OnyxLink href={`/courses/${router.query.cid as string}`}>
 								<Button variant='contained' size='small'>
 									<KeyboardBackspaceIcon sx={{ fontSize: '1.25rem', marginRight: '.25rem' }} />
@@ -92,47 +124,40 @@ const CourseSectionPage = () => {
 							</OnyxLink>
 						</Stack>
 
-						{/* content */}
-						<SectionContent />
-						{/* <SectionContentBlock
-							sectionContent={
-								courseData.sections.find(section => section.csid === router.query.csid)?.content || []
-							}
-						/> */}
+						<SectionContentBlock sectionContent={sectionData.content} sx={{ flexGrow: '1' }} />
 
-						{/* sections-pagination */}
 						<SectionContentPagination courseData={courseData} sectionData={sectionData} />
 
-						<OnyxSpeedDial
-							ariaLabel='Modify Tools'
-							items={[
-								{
-									icon: viewMode === 'observe' ? <AutoFixHighIcon /> : <AutoFixOffIcon />,
-									name: viewMode === 'observe' ? 'Режим редактирования' : 'Режим просмотра',
-									onClick: e =>
-										dispatcher(changeCourseViewMode(viewMode === 'observe' ? 'editor' : 'observe')),
-								},
-								{
-									icon: <SettingsIcon />,
-									name: 'Настройки раздела',
-									href: `/courses/${router.query.cid}/${router.query.csid}/config`,
-								},
-								{
-									icon: <SecurityIcon />,
-									name: 'Ограничения раздела',
-									href: `/courses/${router.query.cid}/${router.query.csid}/config/security`,
-								},
-								{
-									icon: <SaveIcon />,
-									name: 'Сохранить изменения',
-								},
-								{
-									icon: <PrintIcon />,
-									name: 'На печать',
-									onClick: e => window?.print(),
-								},
-							]}
-						/>
+						{SystemRolesOptions[userData._systemRole].accessLevel > 1 && (
+							<OnyxSpeedDial
+								ariaLabel='Modify Tools'
+								items={[
+									{
+										icon: viewMode === 'observe' ? <AutoFixHighIcon /> : <AutoFixOffIcon />,
+										name: viewMode === 'observe' ? 'Режим редактирования' : 'Режим просмотра',
+										onClick: () =>
+											dispatcher(
+												changeCourseViewMode(viewMode === 'observe' ? 'editor' : 'observe'),
+											),
+									},
+									{
+										icon: <SettingsIcon />,
+										name: 'Параметры раздела',
+										href: `/admin-courses/${router.query.cid}/sections/${router.query.csid}`,
+									},
+									{
+										icon: <SettingsIcon />,
+										name: 'Настройки курса',
+										href: `/admin-courses/${router.query.cid}`,
+									},
+									{
+										icon: <PrintIcon />,
+										name: 'На печать',
+										onClick: () => window?.print(),
+									},
+								]}
+							/>
+						)}
 					</Stack>
 				)}
 			</CoursesLayout>

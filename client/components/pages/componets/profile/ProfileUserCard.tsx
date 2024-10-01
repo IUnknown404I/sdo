@@ -2,10 +2,12 @@ import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
-import { Chip, List, Paper, Stack, Typography } from '@mui/material';
+import { Box, Chip, List, Paper, Stack, Typography } from '@mui/material';
 import { rtkApi } from '../../../../redux/api';
 import { useTypedSelector } from '../../../../redux/hooks';
+import { SystemRolesOptions, selectUser } from '../../../../redux/slices/user';
 import { OnyxTypography } from '../../../basics/OnyxTypography';
+import AccountRoleChanger from '../../../layout/accountMenu/AccountRoleChanger';
 import { BgAvatars } from '../../../utils/bgAvatars/BgAvatars';
 import ClassicLoader from '../../../utils/loaders/ClassicLoader';
 import ProfileCardElement from './components/ProfileCardElement';
@@ -28,8 +30,9 @@ interface ProfileUserCardI {
 }
 
 function ProfileUserCard(props: ProfileUserCardI) {
+	const userDTO = useTypedSelector(selectUser);
+
 	const { currentData: userPersonal } = rtkApi.usePersonalQuery('');
-	const userDTO = useTypedSelector(state => state.user);
 
 	return (
 		<Stack direction='column' spacing={2}>
@@ -62,19 +65,43 @@ function ProfileUserCard(props: ProfileUserCardI) {
 
 					<Stack spacing={1} alignItems='center'>
 						<Typography variant='caption'>роль в системе</Typography>
-						{/* <Chip variant="outlined" color="info" label={'слушатель'} /> */}
-						{/* <Chip variant="outlined" color="warning" label={'куратор'} /> */}
-						<Chip variant='outlined' color='error' label='администратор' />
+
+						{!!userDTO._systemRole && (
+							<Chip
+								variant='outlined'
+								color={
+									SystemRolesOptions[userDTO._systemRole].accessLevel >= 4
+										? 'error'
+										: SystemRolesOptions[userDTO._systemRole].accessLevel >= 1
+										? 'warning'
+										: 'info'
+								}
+								label={SystemRolesOptions[userDTO._systemRole].translation}
+							/>
+						)}
 					</Stack>
 				</Stack>
 			</Paper>
+
+			{!!userDTO._systemRole &&
+				!!userDTO._permittedSystemRoles?.length &&
+				userDTO._permittedSystemRoles?.length > 1 && (
+					<Box sx={{ paddingInline: '.75rem', alignSelf: 'flex-end' }}>
+						<AccountRoleChanger
+							onyxSelectProps={{
+								label: 'Сменить текущую роль',
+								labelPlacement: 'start',
+							}}
+						/>
+					</Box>
+				)}
 
 			<Paper sx={{ borderRadius: '20px', padding: '20px' }}>
 				<List sx={{ width: '100%' }}>
 					<ProfileCardElement
 						icon={<AccountCircleOutlinedIcon fontSize='large' color='primary' />}
 						helperText='Логин'
-						value={userDTO.username != null && userDTO.username || 'Не определен'}
+						value={(userDTO.username != null && userDTO.username) || 'Не определен'}
 					/>
 					<ProfileCardElement
 						icon={<VpnKeyOutlinedIcon fontSize='large' color='primary' />}

@@ -20,12 +20,12 @@ const ScormConfigPage = () => {
 			</Head>
 
 			<CoursesLayout
-				backButtonprops={{
+				backButtonProps={{
 					text: 'К презентации',
 					href: `/courses/${router.query.cid}/${router.query.csid}/scorm/${router.query.scid}`,
 				}}
-				progressValue={30}
-				breadcrumbsCourseContent={[
+				
+				breadcrumbs={[
 					{
 						href: `/courses/${router.query.cid}/${router.query.csid}`,
 						element: 'Раздел',

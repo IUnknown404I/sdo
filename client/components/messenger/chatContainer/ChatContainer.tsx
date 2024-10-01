@@ -5,12 +5,13 @@ import { useChatSocket } from '../../../hooks/useChatSocket';
 import { rtkApi } from '../../../redux/api';
 import { ChatMessageI, ChatParticipatorI } from '../../../redux/endpoints/chatEnd';
 import { useTypedSelector } from '../../../redux/hooks';
+import { SystemRolesOptions, selectUser } from '../../../redux/slices/user';
 import { scrollDivToBottom } from '../../../utils/utilityFunctions';
 import ChatContainerComponent from './ChatContainerComponent';
 
 export function ChatContainer(props: ChatContainerProps) {
 	const router = useRouter();
-	const userData = useTypedSelector(state => state.user);
+	const userData = useTypedSelector(selectUser);
 	const isFullMode = !!props.mode && props.mode === 'full';
 
 	const [chatSocket, isSocketConnected, online] = useChatSocket(props.rid);
@@ -42,7 +43,7 @@ export function ChatContainer(props: ChatContainerProps) {
 	}, [router.asPath]);
 
 	// WS-logic
-	React.useEffect(() => {
+	React.useMemo(() => {
 		// listen for incoming messages
 		chatSocket.on('message:send', incomingMessage => {
 			if (incomingMessage.rid !== props.rid) return;
@@ -178,18 +179,22 @@ export function ChatContainer(props: ChatContainerProps) {
 					: `Пользователь ${userData.username}`,
 			timeSent: +new Date(),
 			username: userData.username ? userData.username : 'Пользователь системы',
+			role: userData._systemRole !== 'user' ? SystemRolesOptions[userData._systemRole].translation : undefined,
 		};
 
 		chatSocket.emit('message:send', messageData);
 		setInputText('');
 	}
 
-	function updateMessageText(text: string) {
-		setInputText(prev =>
-			prev.endsWith(' ') || prev.endsWith('\n') || text.startsWith(' ') || text.startsWith('\n')
-				? prev + text
-				: prev + ` ${text}`,
-		);
+	function updateMessageText(text: string, caretPosition?: number) {
+		setInputText(prev => {
+			if (typeof caretPosition === 'number' && caretPosition < prev.trim().length)
+				return prev.slice(0, caretPosition) + text + prev.slice(caretPosition);
+			else
+				return prev.endsWith(' ') || prev.endsWith('\n') || text.startsWith(' ') || text.startsWith('\n')
+					? prev + text
+					: prev + ` ${text}`;
+		});
 	}
 }
 
@@ -212,6 +217,7 @@ export interface ChatContainerProps {
 	mode?: 'full' | 'line';
 	sidebarChat?: boolean;
 	inputEnable?: boolean;
+	showEnterButton?: boolean;
 	transparent?: boolean;
 	bottomDivider?: boolean;
 	disableHeader?: boolean;

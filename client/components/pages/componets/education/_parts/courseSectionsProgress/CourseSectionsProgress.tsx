@@ -1,301 +1,355 @@
-import { Grow, Paper, Stack, useMediaQuery, useTheme } from '@mui/material';
-import Box from '@mui/material/Box';
+import ExtensionOffTwoToneIcon from '@mui/icons-material/ExtensionOffTwoTone';
+import LaunchTwoToneIcon from '@mui/icons-material/LaunchTwoTone';
+import { Chip, Grow, Paper, Skeleton, Stack, useMediaQuery, useTheme } from '@mui/material';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
 import Step from '@mui/material/Step';
 import StepButton from '@mui/material/StepButton';
 import Stepper from '@mui/material/Stepper';
-import Typography from '@mui/material/Typography';
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { checkSectionAvailability } from '../../../../../../layout/CoursesLayout';
+import {
+	ProgressStatsOptions,
+	UserStatsByProgressForSectionType,
+} from '../../../../../../redux/endpoints/courseProgressEnd';
+import { useTypedSelector } from '../../../../../../redux/hooks';
+import { selectUser } from '../../../../../../redux/slices/user';
+import { formatDate } from '../../../../../../utils/date-utils';
 import OnyxImage from '../../../../../basics/OnyxImage';
+import { OnyxTypography } from '../../../../../basics/OnyxTypography';
+import { LocalGroupRestrictmentsType } from '../../../../courses/coursesTypes';
 
-const steps = ['Тема 1', 'Тема 2', 'Тема 3', 'Тема 4', 'Тема 5', 'Итоговая аттестация'];
-const stepSection = [
-	{
-		id: '1',
-		section: 'Тема 1',
-		title: 'Общие сведения о средствах индивидуальной защиты',
-		sectionMaterial: [
-			{ id: '1', title: 'Теоретический материал', progress: 100 },
-			{ id: '2', title: 'Вебинары', progress: 80 },
-			{ id: '3', title: 'Самостоятельная работа', progress: 50 },
-			{ id: '4', title: 'Тестирование', progress: 100 },
-		],
-	},
-	{
-		id: '2',
-		section: 'Тема 2',
-		title: 'Входной контроль при поставках средств индивидуальной защиты',
-		sectionMaterial: [
-			{ id: '1', title: 'Теоретический материал', progress: 80 },
-			{ id: '2', title: 'Вебинары', progress: 90 },
-			{ id: '3', title: 'Самостоятельная работа', progress: 40 },
-			{ id: '4', title: 'Тестирование', progress: 0 },
-		],
-	},
-	{
-		id: '3',
-		section: 'Тема 3',
-		title: 'Требования к составу сопроводительной документации, упаковке и маркировке СИЗ ',
-		sectionMaterial: [
-			{ id: '1', title: 'Практическая работа', progress: 0 },
-			{ id: '2', title: 'Тестирование', progress: 0 },
-		],
-	},
-	{
-		id: '4',
-		section: 'Тема 4',
-		title: 'Выявление нарушений при входном контроле СИЗ',
-		sectionMaterial: [
-			{ id: '1', title: 'Практическая работа', progress: 0 },
-			{ id: '2', title: 'Тестирование', progress: 0 },
-		],
-	},
-	{
-		id: '5',
-		section: 'Тема 5',
-		title: 'Списание и утилизация средств индивидуальной защиты',
-		sectionMaterial: [
-			{ id: '1', title: 'Практическая работа', progress: 0 },
-			{ id: '2', title: 'Тестирование', progress: 0 },
-		],
-	},
-	{
-		id: '6',
-		section: 'Итоговая аттестация',
-		title: 'Итоговая аттестация',
-		sectionMaterial: [{ id: '1', title: 'Итоговая аттестация', progress: 0 }],
-	},
-];
-
-function LinearProgressWithLabel(props: LinearProgressProps & { value: number }) {
-	return (
-		<Box sx={{ display: 'flex', alignItems: 'center' }}>
-			<Box sx={{ width: '100%', mr: 1 }}>
-				<LinearProgress variant='determinate' {...props} />
-			</Box>
-			<Box sx={{ minWidth: 35 }}>
-				<Typography variant='body2' color='text.secondary'>{`${Math.round(props.value)}%`}</Typography>
-			</Box>
-		</Box>
-	);
-}
-
-export const CourseSectionsProgress = () => {
+export const CourseSectionsProgress = (props: {
+	cid?: string;
+	sectionStats?: UserStatsByProgressForSectionType[];
+	restrictments?: Omit<LocalGroupRestrictmentsType, 'meta'>;
+}) => {
 	const theme = useTheme();
+	const userData = useTypedSelector(selectUser);
 	const lessThanSmall = useMediaQuery(theme.breakpoints.down('sm'));
-	const [activeStep, setActiveStep] = useState(0);
-	const [completed, setCompleted] = useState<{
-		[k: number]: boolean;
-	}>({});
 
-	const returnIconPath = (title: string): string => {
-		let path;
-		switch (title) {
-			case 'Теоретический материал':
-				path = '/icons/folder.svg';
-				break;
-			case 'Вебинары':
-				path = '/icons/videos3.svg';
-				break;
-			case 'Самостоятельная работа':
-				path = '/icons/selfWork3.svg';
-				break;
-			case 'Практическая работа':
-				path = '/icons/caret.svg';
-				break;
-			case 'Тестирование':
-				path = '/icons/tests.svg';
-				break;
-			case 'Итоговая аттестация':
-				path = '/icons/finalTest.svg';
-				break;
-			default:
-				path = '/icons/folder.svg';
-				break;
-		}
-		return path;
-	};
-	const changeDirection = () => {
-		if (lessThanSmall) {
-			return 'vertical';
-		} else {
-			return 'horizontal';
-		}
-	};
+	const [activeStep, setActiveStep] = useState<number>(0);
 
-	const totalSteps = () => {
-		return steps.length;
-	};
-
-	const completedSteps = () => {
-		return Object.keys(completed).length;
-	};
-
-	const isLastStep = () => {
-		return activeStep === totalSteps() - 1;
-	};
-
-	const allStepsCompleted = () => {
-		return completedSteps() === totalSteps();
-	};
-
-	const handleNext = () => {
-		const newActiveStep =
-			isLastStep() && !allStepsCompleted()
-				? // It's the last step, but not all steps have been completed,
-				  // find the first step that has been completed
-				  steps.findIndex((step, i) => !(i in completed))
-				: activeStep + 1;
-		setActiveStep(newActiveStep);
-	};
-
-	const handleBack = () => {
-		setActiveStep(prevActiveStep => prevActiveStep - 1);
-	};
-
-	const handleStep = (step: number) => () => {
+	const handleStepChange = (step: number) => () => {
+		if (!props.sectionStats?.length || step < 0 || step > props.sectionStats.length - 1) return;
 		setActiveStep(step);
 	};
 
-	const handleComplete = () => {
-		const newCompleted = completed;
-		newCompleted[activeStep] = true;
-		setCompleted(newCompleted);
-		handleNext();
+	const isCompletedSection = (sectionIndex: number): boolean => {
+		if (
+			!props.sectionStats?.length ||
+			!props.sectionStats[sectionIndex] ||
+			Object.keys(props.sectionStats[sectionIndex])?.length <= 2
+		)
+			return false;
+		let flag = true;
+		for (const attr in props.sectionStats[sectionIndex]) {
+			if (attr === 'title' || attr === 'csid') continue;
+			if ((props.sectionStats[sectionIndex][attr as keyof (typeof props.sectionStats)[number]] as number) < 100) {
+				flag = false;
+				break;
+			}
+		}
+		return flag;
 	};
 
-	const handleReset = () => {
-		setActiveStep(0);
-		setCompleted({});
-	};
-
+	if (!props.sectionStats?.length) return <CourseSectionsSkeleton />;
 	return (
-		<Box sx={{ width: '100%' }}>
+		<Stack width='100%' gap={2} sx={{ width: '100%' }}>
 			<Paper
-				sx={{
-					padding: '20px',
-					borderRadius: '20px',
-				}}
+				sx={{ padding: '1.25rem .5rem', borderRadius: '20px', paddingInline: { xs: '1.25rem', sm: 'unset' } }}
 			>
-				<Stepper orientation={changeDirection()} nonLinear activeStep={activeStep}>
-					{stepSection.map((el, index) => (
-						<Step key={el.id} completed={completed[index]}>
-							<StepButton color='inherit' onClick={handleStep(index)}>
-								{el.section}
+				<Stepper nonLinear activeStep={activeStep} orientation={lessThanSmall ? 'vertical' : 'horizontal'}>
+					{props.sectionStats.map((section, index, arr) => (
+						<Step
+							key={section.csid}
+							sx={{
+								span: activeStep === index ? { fontWeight: 'bold !important' } : {},
+								svg: isCompletedSection(index)
+									? { color: theme => `${theme.palette.success.main} !important` }
+									: {},
+							}}
+						>
+							<StepButton
+								color='inherit'
+								onClick={handleStepChange(index)}
+								sx={{ display: { xs: 'block', sm: '' } }}
+							>
+								<OnyxTypography
+									// component='span'
+									text={index === arr.length - 1 ? `Финальный раздел` : `Раздел ${index + 1}`}
+									sx={{ textAlign: 'center', width: '100%' }}
+								/>
 							</StepButton>
 						</Step>
 					))}
 				</Stepper>
 			</Paper>
-			<Box>
-				{allStepsCompleted() ? (
-					<>
-						<Typography sx={{ mt: 2, mb: 1 }}>All steps completed - you&apos;re finished</Typography>
-					</>
-				) : (
-					<>
-						{stepSection.map(section => {
-							return (
-								<React.Fragment key={section.id}>
-									{parseInt(section.id) === activeStep + 1 ? (
-										<React.Fragment key={section.id}>
-											<Grow
-												in={true}
-												style={{ transformOrigin: '0 0 0' }}
-												{...(activeStep + 1 ? { timeout: 1000 } : {})}
-											>
-												<Box sx={{ marginY: '20px' }}>
-													<Typography variant='body1' sx={{ marginY: '20px' }}>
-														{section.title}
-													</Typography>
-													<Grid container spacing={3}>
-														{section.sectionMaterial.map(el => {
-															return (
-																<React.Fragment key={el.id}>
-																	<Grid item xs={12} md={12} lg={4}>
-																		<Paper
-																			sx={{
-																				borderRadius: '10px',
-																				padding: '20px',
-																			}}
-																		>
-																			<Stack direction={'row'} spacing={3}>
-																				<OnyxImage
-																					src={returnIconPath(el.title)}
-																					alt={el.title}
-																					width='100px'
-																					height='100px'
-																				/>
-																				<Stack
-																					direction={'column'}
-																					spacing={1}
-																					sx={{
-																						width: '100%',
-																					}}
-																				>
-																					<Typography variant='body1'>
-																						{el.title}
-																					</Typography>
-																					<Typography variant='caption'>
-																						Процент завершения
-																					</Typography>
-																					<LinearProgressWithLabel
-																						value={el.progress}
-																					/>
-																				</Stack>
-																			</Stack>
-																		</Paper>
-																	</Grid>
-																</React.Fragment>
-															);
-														})}
-													</Grid>
-												</Box>
-											</Grow>
-										</React.Fragment>
-									) : null}
-								</React.Fragment>
-							);
-						})}
-						<Box sx={{ display: 'flex', flexDirection: 'row', pt: 2, height: '100%' }}>
-							<Button
-								color='primary'
-								disabled={activeStep === 0}
-								onClick={handleBack}
-								sx={{ mr: 1, borderRadius: '30px', width: '150px' }}
-								variant='outlined'
-								size={'small'}
-							>
-								Назад
-							</Button>
-							<Box sx={{ flex: '1 1 auto' }} />
-							<Button
-								onClick={handleNext}
-								variant='contained'
-								sx={{ mr: 1, borderRadius: '30px', width: '150px' }}
-								size={'small'}
-							>
-								Далее
-							</Button>
-							{/* {activeStep !== steps.length &&
-								(completed[activeStep] ? (
-									<Typography variant="caption" sx={{ display: 'inline-block' }}>
-										Step {activeStep + 1} already completed
-									</Typography>
-								) : (
-									<Button onClick={handleComplete}>
-										{completedSteps() === totalSteps() - 1
-											? 'Finish'
-											: 'Complete Step'}
-									</Button>
-								))} */}
-						</Box>
-					</>
-				)}
-			</Box>
-		</Box>
+
+			<Stack width='100%' gap={3}>
+				<>
+					{props.sectionStats.map((stats, index) => (
+						<Grow
+							timeout={750}
+							key={stats.csid}
+							in={activeStep === index}
+							style={{ display: activeStep === index ? '' : 'none', transformOrigin: '0 0 0' }}
+						>
+							<Stack width='100%' gap={2}>
+								<ProgressSectionHeader sectionIndex={index} sectionStats={stats} />
+
+								<Grid container spacing={3}>
+									{Object.keys(stats).filter(attr => attr !== 'title' && attr !== 'csid')?.length ? (
+										Object.keys(stats)
+											.filter(attr => attr !== 'title' && attr !== 'csid')
+											.map((option, index) => (
+												<Grid key={index} item xs={12} md={12} lg={4}>
+													<Paper
+														sx={{
+															display: 'flex',
+															flexDirection: 'row',
+															borderRadius: '10px',
+															padding: '1rem',
+															gap: '1rem',
+														}}
+													>
+														<OnyxImage
+															src={
+																ProgressStatsOptions[
+																	option as keyof typeof ProgressStatsOptions
+																].svgPath
+															}
+															alt='Stats type icon'
+															width='100px'
+															height='100px'
+														/>
+
+														<Stack width='100%' direction='column' gap={0.25}>
+															<OnyxTypography
+																tpSize='1.05rem'
+																text={
+																	ProgressStatsOptions[
+																		option as keyof typeof ProgressStatsOptions
+																	].translation
+																}
+																sx={{ marginBottom: '.5rem' }}
+															/>
+															<OnyxTypography text='Процент изучения' tpSize='.85rem' />
+															<LinearProgressWithLabel
+																value={stats[option as keyof typeof stats] as number}
+															/>
+														</Stack>
+													</Paper>
+												</Grid>
+											))
+									) : (
+										<Stack
+											width='100%'
+											direction='row'
+											minHeight='200px'
+											alignItems='center'
+											justifyContent='center'
+											gap={1.5}
+											sx={{
+												svg: { fontSize: '2.75rem' },
+												color: theme => ' ' || theme.palette.primary.main,
+											}}
+										>
+											<ExtensionOffTwoToneIcon color='primary' /> Данный раздел пока что не
+											содержит отслеживаемых элементов!
+										</Stack>
+									)}
+								</Grid>
+							</Stack>
+						</Grow>
+					))}
+
+					<Stack width='100%' direction='row' alignItems='center' justifyContent='space-between' gap={1}>
+						<Button
+							size='small'
+							color='primary'
+							variant='outlined'
+							disabled={activeStep === 0}
+							onClick={() => setActiveStep(prev => prev - 1)}
+							sx={{ mr: 1, borderRadius: '30px', paddingInline: '3.5rem' }}
+						>
+							Назад
+						</Button>
+
+						<Button
+							size='small'
+							variant='contained'
+							disabled={activeStep === props.sectionStats.length - 1}
+							onClick={() => setActiveStep(prev => prev + 1)}
+							sx={{ mr: 1, borderRadius: '30px', paddingInline: '3.5rem' }}
+						>
+							Далее
+						</Button>
+					</Stack>
+				</>
+			</Stack>
+		</Stack>
 	);
+
+	function ProgressSectionHeader({
+		sectionIndex,
+		sectionStats,
+	}: {
+		sectionIndex: number;
+		sectionStats: UserStatsByProgressForSectionType;
+	}) {
+		const now = +new Date();
+		const isAvailable =
+			userData._systemRole !== 'user' || !props.restrictments
+				? true
+				: checkSectionAvailability(sectionStats.csid, props.restrictments);
+
+		const restrictmentsText = React.useMemo<string>(() => {
+			const sectionRestrictments = !!props.restrictments?.sections
+				? props.restrictments.sections[sectionStats.csid]
+				: undefined;
+			const startWords =
+				!!sectionRestrictments && (!!sectionRestrictments.availableFrom || !!sectionRestrictments.availableTo)
+					? `${
+							!!sectionRestrictments.availableTo && sectionRestrictments.availableTo < now
+								? 'было доступно '
+								: 'доступно '
+					  }`
+					: '';
+			return (
+				startWords +
+				(!!sectionRestrictments && (!!sectionRestrictments.availableFrom || !!sectionRestrictments.availableTo)
+					? `${
+							!startWords.includes('было доступно') && sectionRestrictments.availableFrom
+								? 'c ' +
+								  formatDate(new Date(sectionRestrictments.availableFrom), { mode: 'full_short' })
+								: ''
+					  }${
+							!startWords.includes('было доступно') &&
+							!!sectionRestrictments.availableFrom &&
+							!!sectionRestrictments.availableTo
+								? ' - '
+								: ''
+					  }${
+							sectionRestrictments.availableTo
+								? 'по ' + formatDate(new Date(sectionRestrictments.availableTo), { mode: 'full_short' })
+								: ''
+					  }`
+					: '')
+			);
+		}, [props.restrictments]);
+
+		function DatesAlertChip() {
+			return (
+				<Chip
+					size='small'
+					variant='outlined'
+					color={
+						(!!props.restrictments?.startDate && props.restrictments?.startDate > now) ||
+						(!!props.restrictments?.endDate && props.restrictments?.endDate <= now)
+							? 'error'
+							: 'warning'
+					}
+					label={
+						!!restrictmentsText
+							? restrictmentsText
+							: !!props.restrictments?.startDate && props.restrictments?.startDate > now
+							? 'обучение ещё не началось'
+							: 'обучение уже завершилось'
+					}
+					sx={{ paddingInline: '.15rem', fontSize: '.85rem', fontWeight: 'normal' }}
+				/>
+			);
+		}
+
+		function ProgressSectionTitle() {
+			return isAvailable ? (
+				<OnyxTypography
+					ttArrow
+					boxWrapper
+					component='div'
+					tpSize='1.15rem'
+					tpWeight='bold'
+					ttPlacement='top'
+					ttNode={props.cid ? 'Перейти к разделу программы' : undefined}
+					lkHref={props.cid ? `/courses/${props.cid}/${sectionStats.csid}` : undefined}
+					sx={{
+						width: 'fit-content',
+						svg: { fontSize: '1rem', marginLeft: '.25rem', transform: 'translateY(-5px)' },
+					}}
+				>
+					{sectionStats.title}
+					<LaunchTwoToneIcon />
+					{!!restrictmentsText && (
+						<>
+							{' '}
+							<DatesAlertChip />
+						</>
+					)}
+				</OnyxTypography>
+			) : (
+				<OnyxTypography component='div' tpSize='1.15rem' tpWeight='bold' sx={{ width: 'fit-content' }}>
+					{sectionStats.title} <DatesAlertChip />
+				</OnyxTypography>
+			);
+		}
+
+		if (typeof sectionIndex !== 'number' || !sectionStats) return null;
+		return isCompletedSection(sectionIndex) ? (
+			<Stack
+				width='100%'
+				alignItems='flex-start'
+				sx={{
+					flexDirection: { xs: 'column-reverse', sm: 'row' },
+					gap: { xs: '.15rem', sm: '1.5rem' },
+				}}
+			>
+				<ProgressSectionTitle />
+				<Chip
+					size='small'
+					color='success'
+					variant='outlined'
+					label='раздел изучен'
+					sx={{ paddingInline: '1rem', display: { xs: 'non !important', md: '' } }}
+				/>
+			</Stack>
+		) : (
+			<ProgressSectionTitle />
+		);
+	}
 };
+
+function LinearProgressWithLabel(props: LinearProgressProps & { value: number }) {
+	return (
+		<Stack direction='row' width='100%' alignItems='center' gap={1}>
+			<LinearProgress variant='determinate' sx={{ width: '100%' }} {...props} />
+			<OnyxTypography component='span' tpColor='text.secondary'>{`${Math.round(props.value)}%`}</OnyxTypography>
+		</Stack>
+	);
+}
+
+function CourseSectionsSkeleton() {
+	return (
+		<Stack width='100%' gap={1}>
+			<Skeleton variant='text' width='150px' />
+			<Skeleton variant='rounded' width='100%' height={75} />
+			<Skeleton variant='text' width='250px' />
+
+			<Stack width='100%' direction='row' justifyContent='flex-start' gap={1.5}>
+				<Skeleton variant='rounded' width='30%' height={125} />
+				<Skeleton variant='rounded' width='30%' height={125} />
+				<Skeleton variant='rounded' width='30%' height={125} />
+			</Stack>
+			<Stack width='100%' direction='row' justifyContent='flex-start' gap={1.5}>
+				<Skeleton variant='rounded' width='30%' height={150} />
+				<Skeleton variant='rounded' width='30%' height={150} />
+			</Stack>
+
+			<Stack width='100%' direction='row' alignItems='center' justifyContent='space-between' gap={1}>
+				<Skeleton variant='rounded' width={125} height={35} />
+				<Skeleton variant='rounded' width={125} height={35} />
+			</Stack>
+		</Stack>
+	);
+}

@@ -25,7 +25,7 @@ export class EmailService {
 	}
 
 	async sendEmailVerification(email: string, token: string) {
-		const tokenLink = `https://api.sdo.rnprog.ru/email/validate/${token}`;
+		const tokenLink = `${process.env.SELF_DOMAIN}/email/validate/${token}`;
 		return await this.mailerService
 			.sendMail({
 				to: [email.trim()],
@@ -35,7 +35,7 @@ export class EmailService {
 				html: `
                     <h2>Вам необходимо активировать учётную запись!</h2>
                     <p>Чтобы начать пользоваться образовательной платформой научно-образовательного центра Газпром межрегионгаз инжиниринг, необходимо перейти по указанной ниже ссылке</p>
-                    <a title="Активировать аккаунт" href={tokenLink}>{tokenLink}</a>
+                    <a title="Активировать аккаунт" href={${tokenLink}}>{${tokenLink}}</a>
                     <br/>
                     <p>Если это были не вы или письмо пришло к вам ошибочно, просто проигнорируйте его.</p>
                     <p>По любым вопросам Вы всегда можете связаться с нами по указанным на нашем сайте контактам: <a title="Контакты НОЦ" href="https://umcmrg.ru/contacts">https://umcmrg.ru/contacts</a></p>

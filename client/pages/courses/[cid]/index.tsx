@@ -6,16 +6,26 @@ import React, { Suspense } from 'react';
 import CourseMainPage from '../../../components/pages/courses/CourseMainPage';
 import CoursePageComponent from '../../../components/pages/courses/CoursePage';
 import ModernLoader from '../../../components/utils/loaders/ModernLoader';
+import { notification } from '../../../components/utils/notifications/Notification';
 import CoursesLayout from '../../../layout/CoursesLayout';
-import { rtkApi } from '../../../redux/api';
+import { OnyxApiErrorResponseType, rtkApi } from '../../../redux/api';
 
 const CoursePage = (props: { cid: string }) => {
 	const router = useRouter();
-	const { data: courseData, isLoading: isDataLoading } = rtkApi.useCourseDataQuery(props.cid);
+	const { data: courseData, isLoading: isDataLoading, error } = rtkApi.useCourseDataQuery(props.cid);
 
 	React.useEffect(() => {
-		
-	}, [router.isFallback]);
+		if (!!error) {
+			if (!!(error as OnyxApiErrorResponseType).data?.message)
+				notification({
+					type: 'error',
+					message: (error as OnyxApiErrorResponseType).data.message as string,
+					autoClose: 7500,
+				});
+			router.push('/courses');
+		}
+	}, [error]);
+	React.useEffect(() => {}, [router.isFallback]);
 
 	if (router.isFallback)
 		return (
@@ -26,11 +36,18 @@ const CoursePage = (props: { cid: string }) => {
 						name='description'
 						content='Научно-образовательный центр ООО «Газпром межрегионгаз инжиниринг»'
 					/>
-					<meta name='robots' content='index, follow' />
+					<meta name='robots' content='noindex, nofollow' />
 				</Head>
+
 				<CoursesLayout>
-					<Stack width='100%' height='100%'>
-						<ModernLoader centered tripleLoadersMode loading />
+					<Stack
+						width='100%'
+						height='calc(100lvh - 250px)'
+						position='relative'
+						alignItems='center'
+						justifyContent='center'
+					>
+						<ModernLoader centered tripleLoadersMode loading size={125} />
 					</Stack>
 				</CoursesLayout>
 			</>
@@ -44,8 +61,20 @@ const CoursePage = (props: { cid: string }) => {
 			</Head>
 
 			{!!courseData && !isDataLoading ? (
-				<CoursesLayout courseIconUrl={courseData.main.previewScreenshot} progressValue={30}>
-					<Suspense fallback={<ModernLoader centered tripleLoadersMode loading />}>
+				<CoursesLayout courseIconUrl={courseData.main.previewScreenshot}>
+					<Suspense
+						fallback={
+							<Stack
+								width='100%'
+								height='60lvh'
+								position='relative'
+								alignItems='center'
+								justifyContent='center'
+							>
+								<ModernLoader centered tripleLoadersMode loading />
+							</Stack>
+						}
+					>
 						{props.cid === 'personal-protective-equipment' ? (
 							<CourseMainPage courseData={courseData} />
 						) : (
@@ -55,7 +84,7 @@ const CoursePage = (props: { cid: string }) => {
 				</CoursesLayout>
 			) : (
 				<CoursesLayout>
-					<Stack width='100%'>
+					<Stack width='100%' height='calc(100lvh - 300px)'>
 						<ModernLoader centered tripleLoadersMode loading />
 					</Stack>
 				</CoursesLayout>
@@ -80,7 +109,6 @@ export async function getStaticProps(props: { params: { cid: string } }) {
 	return {
 		props: {
 			cid: props.params.cid,
-			// courseData: (await axios.get(`${process.env.NEXT_PUBLIC_SERVER}/courses/${props.params.cid}`)).data,
 		},
 		revalidate: 30,
 	};

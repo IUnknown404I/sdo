@@ -61,7 +61,12 @@ const MinifiedHeader = () => {
 					{[
 						{
 							icon: (
-								<Link href='mailto:u2610272@mrgeng.ru' target='_blank' rel='noreffer' aria-label='send email'>
+								<Link
+									href='mailto:u2610272@mrgeng.ru'
+									target='_blank'
+									rel='noreffer'
+									aria-label='send email'
+								>
 									<AlternateEmailIcon />
 								</Link>
 							),
@@ -76,12 +81,14 @@ const MinifiedHeader = () => {
 							name: 'Позвонить на телефон',
 						},
 					].map(action => (
-						<SpeedDialAction key={action.name} icon={action.icon} tooltipTitle={action.name} />
+						<SpeedDialAction arrow key={action.name} icon={action.icon} tooltipTitle={action.name} />
 					))}
 				</SpeedDial>
-				<SwitchTheme />
+
+				<SwitchTheme arrow />
+
 				<Link href='https://umcmrg.ru' target='_blank'>
-					<Tooltip title='Перейти на сайт НОЦ' sx={{ marginLeft: '.5rem' }}>
+					<Tooltip arrow title='Перейти на сайт НОЦ' sx={{ marginLeft: '.5rem' }}>
 						<IconButton>
 							<LanguageRoundedIcon
 								sx={{ color: theme => (theme.palette.mode === 'light' ? '#424242' : '') }}

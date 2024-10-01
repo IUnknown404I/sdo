@@ -1,16 +1,28 @@
 /**
  * @IUnknown404I
  * @param date as Date object to be formatted;
- * @param options
+ * @param options.errorHandling - will catch the error and return '-' string. By default throws an error;
+ * @param options.cutStartingZeroes - will left only one zero at the start if multiply presented (numeric time representation part of the output);
  * @param enableSeconds seconds-output is disabled by default;
  * @returns formatted data in string format.
  */
-export const formatData = (
+export const formatDate = (
 	date: Date,
 	options?: {
-		mode: 'full' | 'full_short' | 'only_date' | 'only_time' | 'week_date';
+		mode:
+			| 'full'
+			| 'full_short'
+			| 'date_short'
+			| 'only_month'
+			| 'only_month_short'
+			| 'only_date'
+			| 'only_date_with_day'
+			| 'only_time'
+			| 'week_date';
 		locale?: string;
 		options?: Intl.DateTimeFormatOptions;
+		cutStartingZeroes?: boolean;
+		errorHandling?: boolean;
 	},
 	enableSeconds?: boolean,
 ): string => {
@@ -27,7 +39,15 @@ export const formatData = (
 	const dateFormatter = new Intl.DateTimeFormat(
 		options?.locale || 'ru',
 		options?.options || (options && options.mode !== 'full')
-			? options.mode === 'only_date'
+			? options.mode === 'date_short'
+				? { year: 'numeric', month: '2-digit', day: '2-digit' }
+				: options.mode === 'only_month'
+				? { year: 'numeric', month: 'long' }
+				: options.mode === 'only_month_short'
+				? { year: '2-digit', month: 'long' }
+				: options.mode === 'only_date'
+				? { year: 'numeric', month: 'long', day: 'numeric' }
+				: options.mode === 'only_date_with_day'
 				? { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
 				: options.mode === 'only_time'
 				? { hour: 'numeric', minute: 'numeric', second: enableSeconds ? 'numeric' : undefined }
@@ -44,13 +64,22 @@ export const formatData = (
 			: fullModeOptions,
 	);
 
-	let formattedDate = dateFormatter.format(date);
-	const formattedDateArray = formattedDate.split(' ');
-	if (formattedDateArray.length > 1 && formattedDateArray[1].startsWith('0')) {
-		formattedDateArray[1] = formattedDateArray[1].slice(1);
-		formattedDate = formattedDateArray.join(' ');
-	} else if (formattedDate.startsWith('0')) formattedDate = formattedDate.slice(1);
-	return formattedDate;
+	try {
+		let formattedDateArray = dateFormatter.format(date).split(' ');
+		if (options?.mode !== 'full_short' && formattedDateArray.length > 1 && formattedDateArray[1].startsWith('0')) {
+			formattedDateArray[1] = formattedDateArray[1].slice(1);
+		}
+		if (!!options?.cutStartingZeroes)
+			formattedDateArray = formattedDateArray.map(part =>
+				part.startsWith('0') && !Number.isNaN(parseInt(part[1])) ? part.slice(1) : part,
+			);
+		return formattedDateArray.join(' ');
+	} catch (e) {
+		if (!!options?.errorHandling) {
+			console.error(e);
+			return '-';
+		} else throw e;
+	}
 };
 
 export enum months {

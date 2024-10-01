@@ -1,18 +1,21 @@
 import { Body, Controller, Post, Put, Request, Response, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { RegistrationAvailableGuard } from 'guards/RegistrationAvailableGuard';
+import { PublicRoute } from 'metadata/metadata-decorators';
+import { User } from 'src/users/users.schema';
 import { cookiesConfig, withoutSaveCookiesConfig } from 'utils/cookiesConfig';
 import { NotValidDataError } from '../../errors/NotValidDataError';
 import { EmailValidationPipe } from '../../globalPipes/EmailValidationPipe';
 import { PasswordValidationPipe } from '../../globalPipes/PasswordValidationPipe';
 import { StringValidationPipe } from '../../globalPipes/StringValidationPipe';
 import { UsernameValidationPipe } from '../../globalPipes/UsernameValidationPipes';
-import { RefreshTokenGuard } from '../../guards/RefreshTokenGuard';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
 	constructor(private authService: AuthService) {}
 
+	@PublicRoute()
 	@Put('login-in')
 	@ApiTags('Auth')
 	async loginIn(
@@ -40,17 +43,19 @@ export class AuthController {
 		else res.cookie('refreshToken', tokens.refresh_token, withoutSaveCookiesConfig);
 
 		// sending tokens, expired data for access_token and visited pages from the user's last login-in date
-		const responceData = {
+		const responseData = {
 			access_token: tokens.access_token,
 			expires_in: tokens.expires_in,
 			lastDayVisits: await this.authService.getUserLastPage(
 				username && username !== 'DisabledValue*0' ? { username } : { email },
 			),
 		};
-		if (!responceData.lastDayVisits) delete responceData.lastDayVisits;
-		return res.send(responceData);
+		if (!responseData.lastDayVisits) delete responseData.lastDayVisits;
+		return res.send(responseData);
 	}
 
+	@UseGuards(RegistrationAvailableGuard)
+	@PublicRoute()
 	@Post('registry')
 	@ApiTags('Auth')
 	async registration(
@@ -63,7 +68,6 @@ export class AuthController {
 		return !!resultOfCreatingUser;
 	}
 
-	@UseGuards(RefreshTokenGuard)
 	@Put('refresh-token')
 	@ApiTags('Auth')
 	async refreshAccessToken(@Response() res, @Request() req) {
@@ -89,5 +93,30 @@ export class AuthController {
 		);
 		res.cookie('refreshToken', tokens.refresh_token, cookiesConfig);
 		return res.send({ access_token: tokens.access_token, expires_in: tokens.expires_in });
+	}
+
+	@Put('my-role')
+	@ApiTags('Auth')
+	async changeUserSystemRole(
+		@Request() req,
+		@Response() res,
+		@Body('newRole', StringValidationPipe) newRole: User['_systemRole'],
+	) {
+		if (!req.guardUserData) throw new UnauthorizedException();
+		// collect fresh tokens
+		const tokens = await this.authService.changeUserCurrentRole(
+			req.guardUserData as User & { _id: string },
+			newRole,
+		);
+		// update cookies
+		res.cookie('refreshToken', tokens.refresh_token, cookiesConfig);
+		// sending tokens, expired data for access_token and visited pages from the user's last login-in date
+		const responseData = {
+			access_token: tokens.access_token,
+			expires_in: tokens.expires_in,
+			lastDayVisits: await this.authService.getUserLastPage({ username: (req.guardUserData as User).username }),
+		};
+		if (!responseData.lastDayVisits) delete responseData.lastDayVisits;
+		return res.send(responseData);
 	}
 }

@@ -17,7 +17,7 @@ import {
 import React, { ComponentProps, ReactNode } from 'react';
 import OnyxLink from './OnyxLink';
 
-const DEFAULT_ITEMS: OnyxSpeedDialAction[] = [
+export const DEFAULT_ONYX_SPEED_DIAL_ITEMS: OnyxSpeedDialAction[] = [
 	{
 		icon: <AutoFixHighIcon />,
 		name: 'Режим редактирования',
@@ -88,8 +88,12 @@ interface OnyxSpeedDialAction extends ComponentProps<typeof SpeedDialAction> {
 const OnyxSpeedDial = (props: OnyxSpeedDialI) => {
 	const theme = useTheme();
 	const fullScreen = useMediaQuery(theme.breakpoints.up('md'));
-
 	const [state, setState] = React.useState(false);
+
+	const speedDialParsedItems = React.useMemo(
+		() => (!!props.items && props.items.length > 0 ? props.items : DEFAULT_ONYX_SPEED_DIAL_ITEMS).slice().reverse(),
+		[props.items],
+	);
 
 	const handleOpen = () => setState(true);
 	const handleClose = () => setState(false);
@@ -113,11 +117,10 @@ const OnyxSpeedDial = (props: OnyxSpeedDialI) => {
 				open={state}
 				direction={props.placement === 'top' ? 'down' : 'up'}
 				icon={
-					props.icon || (
-						<SpeedDialIcon
-							openIcon={!!props.disableOpenIcon ? undefined : props.openIcon || <EditIcon />}
-						/>
-					)
+					<SpeedDialIcon
+						icon={props.icon}
+						openIcon={!!props.disableOpenIcon ? undefined : props.openIcon || <EditIcon />}
+					/>
 				}
 				{...props}
 				onOpen={handleOpen}
@@ -139,7 +142,7 @@ const OnyxSpeedDial = (props: OnyxSpeedDialI) => {
 					...props.sx,
 				}}
 			>
-				{(!!props.items && props.items.length > 0 ? props.items : DEFAULT_ITEMS).toReversed().map(item => (
+				{speedDialParsedItems.map(item => (
 					<OnyxSpeedDialAction
 						{...item}
 						tooltipOpen

@@ -8,7 +8,7 @@ const LoginPage = () => {
 			<Head>
 				<title>Вход в систему</title>
 				<meta name='description' content='Вход в систему' />
-				<meta name='robots' content='index, follow' />
+				<meta name='robots' content='index, nofollow' />
 			</Head>
 
 			<main>

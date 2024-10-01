@@ -3,7 +3,7 @@ import { useFormik } from 'formik';
 import React from 'react';
 import * as yup from 'yup';
 import useLoading from '../../../../../hooks/useLoading';
-import { rtkApi } from '../../../../../redux/api';
+import { OnyxApiErrorResponseType, rtkApi } from '../../../../../redux/api';
 import { useTypedSelector } from '../../../../../redux/hooks';
 import { UserPersonalT } from '../../../../../redux/slices/user';
 import { YUP_SCHEMA_HELPERS } from '../../../../../utils/yup/validationSchemaHelpers';
@@ -22,9 +22,21 @@ const profileValidationSchema = yup.object({
 
 const ProfileInformationComponent = () => {
 	const userDTO = useTypedSelector(state => state.user);
-	const [personalDataUpdate] = rtkApi.usePutPersonalMutation();
-	const { data: userPersonal } = rtkApi.usePersonalQuery('');
 	const { Loader, state: isLoading, setState: setIsLoading } = useLoading({ iconVariant: true });
+
+	const { data: userPersonal } = rtkApi.usePersonalQuery('');
+	const [personalDataUpdate] = rtkApi.usePutPersonalMutation();
+
+	function fillFormData(personal?: UserPersonalT) {
+		formik.setValues({
+			surname: personal?.surname || '',
+			name: personal?.name || '',
+			tel: personal?.tel || '',
+			company: personal?.company || '',
+			city: personal?.city || '',
+			position: personal?.position || '',
+		});
+	}
 
 	const formik = useFormik({
 		initialValues: {
@@ -37,50 +49,58 @@ const ProfileInformationComponent = () => {
 		},
 		validationSchema: profileValidationSchema,
 		onSubmit: async values => {
-			if (!checkForChanges(userPersonal || {}, values)) return;
+			if (!checkForChanges(userPersonal || {}, values)) {
+				notification({
+					type: 'warning',
+					message: 'Ещё не было внесено изменений в ваши персональные данные для сохранения.',
+				});
+				return;
+			}
 			setIsLoading(prev => !prev);
 
 			personalDataUpdate
 				.call('', { ...values, avatar: userPersonal?.avatar })
-				.then(res =>
-					'data' in res &&
-					'modifiedCount' in res.data &&
-					res.data.modifiedCount === 1 &&
-					'data' in res &&
-					'matchedCount' in res.data &&
-					res.data.matchedCount === 1
-						? true
-						: false,
-				)
-				.then(res => {
-					//@ts-ignore
-					if (!res) userPersonal !== undefined ? formik.setValues(userPersonal, false) : formik.resetForm();
-					notification({
-						type: res ? 'success' : 'error',
-						message: res
-							? 'Личные данные успешно изменены!'
-							: 'Не удалось изменить личные данные. Обновите странице и попробуйте ещё раз.',
-					});
+				.then(response => {
+					if (typeof response === 'object' && 'error' in response)
+						notification({
+							message: (response.error as OnyxApiErrorResponseType).data?.message,
+							type: 'error',
+						});
+					else
+						notification({
+							type: 'success',
+							message: 'Персональные данные успешно изменены!',
+						});
+				})
+				.catch(e => {
+					if (!!e?.response?.data?.message)
+						notification({
+							message: e.response.data.message,
+							type: 'error',
+						});
+					else
+						notification({
+							message:
+								'Произошла ошибка в процессе изменения персональных данных! Обновите страницу и попробуйте ещё раз или обратитесь в техническу поддержку.',
+							type: 'error',
+						});
 				})
 				.finally(() => setIsLoading(prev => !prev));
 		},
 	});
 
 	React.useEffect(() => {
-		if (userPersonal != null)
-			formik.setValues({
-				surname: userPersonal?.surname || '',
-				name: userPersonal?.name || '',
-				tel: userPersonal?.tel || '',
-				company: userPersonal?.company || '',
-				city: userPersonal?.city || '',
-				position: userPersonal?.position || '',
-			});
+		if (userPersonal != null) fillFormData(userPersonal);
 	}, [userPersonal]);
 
 	return (
 		<Paper sx={{ padding: '20px  30px', borderRadius: '20px' }}>
-			<ProfileForm formik={formik} loadingState={isLoading} Loader={Loader} />
+			<ProfileForm
+				formik={formik}
+				Loader={Loader}
+				loadingState={isLoading}
+				onCancelEditingHandler={() => fillFormData(userPersonal)}
+			/>
 			<Stack sx={{ marginTop: '.75rem' }} direction='row' justifyContent='space-between' alignItems='center'>
 				<OnyxTypography boxWrapper tpColor='darkgray' tpSize='1rem' boxWidth='fit-content'>
 					Учетная запись создана: {userDTO.createdAt || 'не определено'}
@@ -105,7 +125,12 @@ function checkForChanges(initialValues: UserPersonalT, newValues: UserPersonalT)
 	let flag = false;
 	const keysArray = Object.keys(newValues);
 	for (let key of keysArray)
-		if (newValues[key as keyof typeof initialValues] !== initialValues[key as keyof typeof initialValues]) {
+		if (
+			newValues[key as keyof typeof initialValues] !== initialValues[key as keyof typeof initialValues] &&
+			(initialValues[key as keyof typeof initialValues] === undefined
+				? newValues[key as keyof typeof initialValues] !== ''
+				: true)
+		) {
 			flag = true;
 			break;
 		}

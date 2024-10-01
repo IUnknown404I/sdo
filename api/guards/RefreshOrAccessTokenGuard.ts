@@ -1,29 +1,50 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { ErrorMessages } from 'guards';
-import { AccessTokenPayload } from 'src/users/users.schema';
+import { PublicRoute } from 'metadata/metadata-decorators';
+import { UsersAuthService } from 'src/users/users-auth-service';
 import { UsersService } from 'src/users/users.service';
+import { isProductionMode } from 'utils/utilityFunctions';
 import { AuthService } from '../src/auth/auth.service';
 
 @Injectable()
 export class RefreshOrAccessTokenGuard extends AuthGuard('jwt') implements CanActivate {
-	constructor(private readonly authService: AuthService, private readonly usersService: UsersService) {
+	constructor(
+		private reflector: Reflector,
+		private readonly authService: AuthService,
+		private readonly usersService: UsersService,
+		private readonly usersAuthService: UsersAuthService,
+	) {
 		super();
 	}
 
-	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const request = context.switchToHttp().getRequest();
-		const accessToken = request?.headers.authorization?.split(' ')[1];
-		const refreshToken = request?.cookies?.refreshToken;
+	private extractAccessTokenFromHeader(request: Request): string | undefined {
+		if (!('authorization' in request.headers)) return;
+		const [type, token] = (request.headers.authorization as string).split(' ') ?? [];
+		return type === 'Bearer' ? token : undefined;
+	}
 
+	private getRefreshToken(request: Request): string | undefined {
+		if (!('cookies' in request) || !('refreshToken' in (request.cookies as object))) return;
+		return (request.cookies as { refreshToken: string }).refreshToken;
+	}
+
+	async canActivate(context: ExecutionContext): Promise<boolean> {
+		// check for non-auth flag
+		const isPublicRoute = this.reflector.get(PublicRoute, context.getHandler());
+		if (!!isPublicRoute) return true;
+
+		const request = context.switchToHttp().getRequest();
+		const accessToken = this.extractAccessTokenFromHeader(request);
+		const refreshToken = this.getRefreshToken(request);
 		if (!refreshToken && !accessToken)
 			throw new UnauthorizedException('Не предоставлены идентификаторы пользователя!');
 
-		const requestedPath =
-			context.switchToHttp().getRequest().url || context.switchToHttp().getRequest().path || 'undefined';
+		const requestedPath = request.url || request.path || 'undefined';
 		const requestedUser = refreshToken
 			? await this.usersService.findByRefreshToken(refreshToken)
-			: ((await this.usersService.decodeJWT(accessToken)) as AccessTokenPayload);
+			: await this.usersService.getUserByAccessToken(accessToken, true);
 		if (!requestedUser?.username) throw new UnauthorizedException('Предоставлены неверные авторизационные данные!');
 
 		let tokenDecision = true;
@@ -39,18 +60,43 @@ export class RefreshOrAccessTokenGuard extends AuthGuard('jwt') implements CanAc
 			tokenDecision = !!(await this.authService.validateToken(
 				typeof accessToken === 'string' ? accessToken : '',
 			));
-		const userValidation = await this.usersService.validateUser(requestedUser);
+
+		const userValidation = await this.usersAuthService.validateUser(requestedUser);
 		userDecision = (typeof userValidation === 'object' && 'username' in userValidation) || false;
 
 		// updating history and send decision
-		if (requestedPath !== '/users/leave-meta')
+		if (
+			requestedPath !== 'undefined' &&
+			requestedPath !== '/users/leave-meta' &&
+			!requestedPath?.startsWith('/chats/')
+		)
 			this.usersService.updateUserRequestsLogs({
 				username: requestedUser.username,
 				decision: tokenDecision && userDecision,
 				lastRequest: requestedPath,
 			});
 		if (!tokenDecision || !userDecision) throw new UnauthorizedException(ErrorMessages.AUTH_ERROR);
-		else return true;
+
+		// add to request's payload user-data to use in handlers
+		request['guardUserData'] = requestedUser;
+
+		// proceed ip-collection function
+		if (
+			isProductionMode() &&
+			process.env.PROXY_REAL_IP_HEADER in request.headers &&
+			!!request.headers[process.env.PROXY_REAL_IP_HEADER]
+		) {
+			const realIP =
+				request['realIP'] || (request.headers[process.env.PROXY_REAL_IP_HEADER] as string | undefined);
+			if (!realIP) return true;
+			if (!requestedUser._lastIPs.includes(realIP))
+				// write the ip from request if its unique for the user
+				this.usersService.updateUserIP(realIP, requestedUser);
+			if (!request['realIP']) request['realIP'] = realIP;
+		}
+
+		// pass the request
+		return true;
 	}
 
 	async activate(context: ExecutionContext): Promise<boolean> {
